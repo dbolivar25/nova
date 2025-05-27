@@ -1,26 +1,32 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { useUser } from "@clerk/nextjs"
-import { format } from "date-fns"
-import Link from "next/link"
-import { 
-  ArrowRight, 
-  ChartBar, 
-  MessageSquare, 
-  PenLine, 
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { useUser } from "@clerk/nextjs";
+import { format } from "date-fns";
+import Link from "next/link";
+import {
+  ArrowRight,
+  ChartBar,
+  MessageSquare,
+  PenLine,
   Sparkles,
   TrendingUp,
   Clock,
   Target,
-  Brain
-} from "lucide-react"
+  Brain,
+} from "lucide-react";
 
 // Mock data for recent entries
 const recentEntries = [
@@ -29,24 +35,24 @@ const recentEntries = [
   { date: new Date(2025, 4, 23), wordCount: 189, mood: "positive" },
   { date: new Date(2025, 4, 22), wordCount: 756, mood: "thoughtful" },
   { date: new Date(2025, 4, 21), wordCount: 423, mood: "grateful" },
-]
+];
 
 const novaSuggestions = [
   "Help me reflect on today",
   "What patterns do you see in my journal?",
   "Guide me through a difficult situation",
   "Analyze my emotional growth this week",
-]
+];
 
 export default function DashboardPage() {
-  const { user } = useUser()
-  const [novaInput, setNovaInput] = useState("")
-  const today = new Date()
-  const currentStreak = 5
-  const todayProgress = 33 // percentage of today's entry completed
+  const { user } = useUser();
+  const [novaInput, setNovaInput] = useState("");
+  const today = new Date();
+  const currentStreak = 5;
+  const todayProgress: number = 33; // percentage of today's entry completed
 
-  const greeting = getGreeting()
-  const firstName = user?.firstName || "there"
+  const greeting = getGreeting();
+  const firstName = user?.firstName || "there";
 
   return (
     <div className="space-y-6">
@@ -100,7 +106,9 @@ export default function DashboardPage() {
                 className="min-h-[80px] resize-none"
               />
               <Button className="w-full" asChild>
-                <Link href={`/nova${novaInput ? `?prompt=${encodeURIComponent(novaInput)}` : ""}`}>
+                <Link
+                  href={`/nova${novaInput ? `?prompt=${encodeURIComponent(novaInput)}` : ""}`}
+                >
                   Start Conversation
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -125,10 +133,9 @@ export default function DashboardPage() {
           <CardContent className="space-y-4">
             <Progress value={todayProgress} className="h-2" />
             <p className="text-sm text-muted-foreground">
-              {todayProgress === 0 
+              {todayProgress === 0
                 ? "Start your daily reflection"
-                : `You've answered ${Math.floor(todayProgress / 33)} of 3 prompts`
-              }
+                : `You've answered ${Math.floor(todayProgress / 33)} of 3 prompts`}
             </p>
             <Button className="w-full" asChild>
               <Link href="/journal/today">
@@ -192,24 +199,22 @@ export default function DashboardPage() {
                   <p className="text-2xl font-bold">{currentStreak}</p>
                   <p className="text-xs text-muted-foreground">Day Streak 🔥</p>
                 </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {recentEntries.length}
-                </p>
-                <p className="text-xs text-muted-foreground">Total Entries</p>
+                <div>
+                  <p className="text-2xl font-bold">{recentEntries.length}</p>
+                  <p className="text-xs text-muted-foreground">Total Entries</p>
+                </div>
               </div>
-            </div>
-            <Separator />
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="text-sm">Consistency improving</span>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <span className="text-sm">Consistency improving</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm">Deep reflection mode</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Brain className="h-4 w-4 text-blue-600" />
-                <span className="text-sm">Deep reflection mode</span>
-              </div>
-            </div>
             </div>
           </CardContent>
         </Card>
@@ -247,15 +252,15 @@ export default function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
-
       </div>
     </div>
-  )
+  );
 }
 
 function getGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 12) return "morning"
-  if (hour < 17) return "afternoon"
-  return "evening"
+  const hour = new Date().getHours();
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
 }
+
