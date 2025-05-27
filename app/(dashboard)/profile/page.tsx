@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch"
 import { useUser } from "@clerk/nextjs"
 import { Download, Shield, Bell, Moon } from "lucide-react"
 import { toast } from "sonner"
+import { PageHeader } from "@/components/layout/page-header"
 
 export default function ProfilePage() {
   const { user } = useUser()
@@ -16,13 +17,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold mb-2">Profile Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account and preferences
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader 
+        title="Profile Settings"
+        subtitle="Manage your account and preferences"
+      />
 
       <Card>
         <CardHeader>

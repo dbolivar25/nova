@@ -5,11 +5,11 @@ import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format, isSameDay, startOfMonth, endOfMonth } from "date-fns"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { PageHeader } from "@/components/layout/page-header"
 
 // Mock data - will be replaced with Supabase data
 const mockEntries = [
@@ -34,121 +34,153 @@ export default function JournalPage() {
     : null
 
   return (
-    <div className="grid md:grid-cols-[1fr_350px] gap-8 max-w-6xl mx-auto">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-semibold mb-2">Journal History</h1>
-          <p className="text-muted-foreground">
-            Browse and revisit your past journal entries
-          </p>
-        </div>
+    <div className="space-y-6">
+      <PageHeader 
+        title="Journal History"
+        subtitle="Browse and revisit your past journal entries"
+      />
 
-        <Card>
-          <CardContent className="p-6">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              month={currentMonth}
-              onMonthChange={setCurrentMonth}
-              className="rounded-md border w-full"
-              modifiers={{
-                hasEntry: entriesInMonth.map(e => e.date)
-              }}
-              modifiersStyles={{
-                hasEntry: {
-                  fontWeight: "bold",
-                  textDecoration: "underline",
-                  textUnderlineOffset: "4px",
-                }
-              }}
-            />
-          </CardContent>
-        </Card>
-
-        {selectedEntry && selectedDate && (
+      <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
+        {/* Main Content Area */}
+        <div className="space-y-6">
+          {/* Calendar Card */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">
-                {format(selectedDate, "EEEE, MMMM d, yyyy")}
-              </CardTitle>
+              <CardTitle>Select a Date</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">
-                    {selectedEntry.wordCount} words
-                  </Badge>
-                  <Button asChild>
-                    <Link href={`/journal/${format(selectedDate, "yyyy-MM-dd")}`}>
-                      View Entry
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                month={currentMonth}
+                onMonthChange={setCurrentMonth}
+                className="rounded-xl border"
+                modifiers={{
+                  hasEntry: entriesInMonth.map(e => e.date)
+                }}
+                modifiersStyles={{
+                  hasEntry: {
+                    fontWeight: "bold",
+                    textDecoration: "underline",
+                    textUnderlineOffset: "4px",
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Selected Entry Preview */}
+          {selectedEntry && selectedDate && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  {format(selectedDate, "EEEE, MMMM d, yyyy")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">
+                      {selectedEntry.wordCount} words
+                    </Badge>
+                    <Button asChild>
+                      <Link href={`/journal/${format(selectedDate, "yyyy-MM-dd")}`}>
+                        View Entry
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Click &ldquo;View Entry&rdquo; to read your full journal entry from this day.
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Click &ldquo;View Entry&rdquo; to read your full journal entry from this day.
-                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Entries List - Now in main area */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Entries</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                {mockEntries.slice(0, 9).map((entry, index) => (
+                  <Link 
+                    key={index}
+                    href={`/journal/${format(entry.date, "yyyy-MM-dd")}`}
+                    className="group p-4 rounded-xl border bg-card hover:bg-accent hover:shadow-lg transition-all"
+                  >
+                    <div className="space-y-2">
+                      <p className="font-medium text-sm group-hover:text-primary transition-colors">
+                        {format(entry.date, "MMM d, yyyy")}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{entry.wordCount} words</span>
+                        <Badge variant="outline" className="text-xs">
+                          View
+                        </Badge>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+        </div>
 
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Journal Stats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <p className="text-2xl font-semibold">{mockEntries.length}</p>
-                <p className="text-sm text-muted-foreground">Total Entries</p>
+        {/* Sidebar Stats */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Journal Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <p className="text-3xl font-bold">{mockEntries.length}</p>
+                  <p className="text-sm text-muted-foreground">Total Entries</p>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-3xl font-bold">
+                    {Math.round(mockEntries.reduce((acc, e) => acc + e.wordCount, 0) / mockEntries.length)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Avg Words</p>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-3xl font-bold">4</p>
+                  <p className="text-sm text-muted-foreground">Day Streak 🔥</p>
+                </div>
               </div>
-              <Separator />
-              <div>
-                <p className="text-2xl font-semibold">
-                  {Math.round(mockEntries.reduce((acc, e) => acc + e.wordCount, 0) / mockEntries.length)}
-                </p>
-                <p className="text-sm text-muted-foreground">Average Words per Entry</p>
-              </div>
-              <Separator />
-              <div>
-                <p className="text-2xl font-semibold">4</p>
-                <p className="text-sm text-muted-foreground">Current Streak</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Entries</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-4">
-                {mockEntries.slice(0, 5).map((entry, index) => (
-                  <div key={index}>
-                    <Link 
-                      href={`/journal/${format(entry.date, "yyyy-MM-dd")}`}
-                      className="block p-2 -mx-2 rounded hover:bg-accent transition-colors"
-                    >
-                      <p className="font-medium text-sm">
-                        {format(entry.date, "MMM d, yyyy")}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {entry.wordCount} words
-                      </p>
-                    </Link>
-                    {index < mockEntries.length - 1 && <Separator className="my-2" />}
-                  </div>
-                ))}
+          {/* Writing Insights */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Writing Insights</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Most productive day</span>
+                <Badge variant="secondary">Thursday</Badge>
               </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Favorite time</span>
+                <Badge variant="secondary">Evening</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Total words</span>
+                <Badge variant="secondary">
+                  {mockEntries.reduce((acc, e) => acc + e.wordCount, 0).toLocaleString()}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

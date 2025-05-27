@@ -89,7 +89,7 @@ export default function NovaPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
+    <div className="h-[calc(100vh-8rem)] flex flex-col">
       <div className="mb-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Sparkles className="h-6 w-6 text-primary" />

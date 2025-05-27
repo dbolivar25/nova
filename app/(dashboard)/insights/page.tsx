@@ -1,16 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, Brain, Heart, Target } from "lucide-react"
+import { PageHeader } from "@/components/layout/page-header"
 
 export default function InsightsPage() {
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold mb-2">Weekly Insights</h1>
-        <p className="text-muted-foreground">
-          Personalized analysis and patterns from your journal entries
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader 
+        title="Weekly Insights"
+        subtitle="Personalized analysis and patterns from your journal entries"
+      />
 
       <div className="grid md:grid-cols-2 gap-6">
         <Card>

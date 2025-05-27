@@ -120,3 +120,37 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Custom scrollbar for sidebar */
+  [data-sidebar] [data-sidebar-content]::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  [data-sidebar] [data-sidebar-content]::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  [data-sidebar] [data-sidebar-content]::-webkit-scrollbar-thumb {
+    @apply bg-border/30 rounded-full;
+  }
+  
+  [data-sidebar] [data-sidebar-content]::-webkit-scrollbar-thumb:hover {
+    @apply bg-border/50;
+  }
+  
+  /* Sidebar styles */
+  [data-sidebar] {
+    @apply bg-sidebar/95 backdrop-blur-xl;
+  }
+  
+  /* Remove default transitions on all elements */
+  * {
+    transition-property: none;
+  }
+  
+  /* Add transitions only where needed */
+  button, a, [role="button"] {
+    @apply transition-colors duration-200;
+  }
+}
