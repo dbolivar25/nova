@@ -55,7 +55,7 @@ export function AppSidebar() {
   const { user } = useUser()
 
   return (
-    <Sidebar variant="floating" className="border-0 shadow-2xl [&>div>div]:overflow-hidden">
+    <Sidebar variant="floating" className="border-0 shadow-2xl">
       <SidebarHeader className="border-b border-border/20 px-4 py-4">
         <div className="flex items-center gap-3">
           <motion.div 
