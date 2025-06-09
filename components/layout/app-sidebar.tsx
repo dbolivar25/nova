@@ -1,8 +1,15 @@
-"use client"
+"use client";
 
-import { Home, Sparkles, ChartBar, Settings, PenLine, History } from "lucide-react"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import {
+  Home,
+  Sparkles,
+  ChartBar,
+  Settings,
+  PenLine,
+  History,
+} from "lucide-react";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -12,10 +19,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { UserButton, useUser } from "@clerk/nextjs"
-import Link from "next/link"
-import { motion } from "framer-motion"
+} from "@/components/ui/sidebar";
+import { UserButton, useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import { motion } from "framer-motion";
 
 const navItems = [
   {
@@ -48,17 +55,17 @@ const navItems = [
     url: "/profile",
     icon: Settings,
   },
-]
+];
 
 export function AppSidebar() {
-  const pathname = usePathname()
-  const { user } = useUser()
+  const pathname = usePathname();
+  const { user } = useUser();
 
   return (
-    <Sidebar variant="floating" className="border-0 shadow-2xl">
+    <Sidebar variant="floating" className="border-0">
       <SidebarHeader className="border-b border-border/20 px-4 py-4">
         <div className="flex items-center gap-3">
-          <motion.div 
+          <motion.div
             className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary shadow-sm"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -71,14 +78,16 @@ export function AppSidebar() {
           </div>
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent className="px-2 py-2">
         <SidebarGroup>
           <SidebarMenu className="gap-1">
             {navItems.map((item) => {
-              const isActive = pathname === item.url || 
-                (item.url === "/journal/today" && pathname.startsWith("/journal/today"))
-              
+              const isActive =
+                pathname === item.url ||
+                (item.url === "/journal/today" &&
+                  pathname.startsWith("/journal/today"));
+
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
@@ -86,19 +95,21 @@ export function AppSidebar() {
                     isActive={isActive}
                     className={cn(
                       "h-11 px-3 w-full transition-all duration-200 rounded-xl",
-                      isActive && "bg-accent shadow-sm font-medium"
+                      isActive && "bg-accent shadow-sm font-medium",
                     )}
                   >
                     <Link href={item.url}>
-                      <item.icon className={cn(
-                        "h-4 w-4 transition-colors",
-                        isActive && "text-primary"
-                      )} />
+                      <item.icon
+                        className={cn(
+                          "h-4 w-4 transition-colors",
+                          isActive && "text-primary",
+                        )}
+                      />
                       <span className="flex-1">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )
+              );
             })}
           </SidebarMenu>
         </SidebarGroup>
@@ -106,13 +117,13 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-border/20 p-3">
         <div className="flex items-center gap-3">
-          <UserButton 
+          <UserButton
             afterSignOutUrl="/"
             appearance={{
               elements: {
                 avatarBox: "h-9 w-9",
                 userButtonPopoverCard: "shadow-xl",
-              }
+              },
             }}
           />
           <div className="flex flex-col flex-1 overflow-hidden">
@@ -126,5 +137,6 @@ export function AppSidebar() {
         </div>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
+

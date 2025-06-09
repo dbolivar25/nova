@@ -1,11 +1,15 @@
-import { AppSidebar } from "@/components/layout/app-sidebar"
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
-import { ThemeToggle } from "@/components/layout/theme-toggle"
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import {
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarInset,
+} from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <SidebarProvider>
@@ -17,11 +21,10 @@ export default function DashboardLayout({
           <ThemeToggle />
         </header>
         <main className="flex-1">
-          <div className="p-6">
-            {children}
-          </div>
+          <div className="p-6">{children}</div>
         </main>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
+
