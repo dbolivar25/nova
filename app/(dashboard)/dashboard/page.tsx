@@ -82,7 +82,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {novaSuggestions.map((suggestion, i) => (
                 <Button
                   key={i}
@@ -92,7 +92,7 @@ export default function DashboardPage() {
                 >
                   <Link href={`/nova?prompt=${encodeURIComponent(suggestion)}`}>
                     <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="text-sm">{suggestion}</span>
+                    <span className="text-sm line-clamp-2">{suggestion}</span>
                   </Link>
                 </Button>
               ))}
