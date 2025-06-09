@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { format } from "date-fns"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { EnhancedPromptCard } from "@/components/journal/enhanced-prompt-card"
-import { getRandomPrompts } from "@/lib/prompts"
 import { 
   Sparkles, 
   Save, 
@@ -22,46 +22,127 @@ import {
 import { toast } from "sonner"
 import Link from "next/link"
 import { PageHeader } from "@/components/layout/page-header"
+import { useTodaysJournalEntry, useTodaysPrompts, useUpdateJournalEntry } from "@/hooks/use-journal"
+import { calculateWordCount } from "@/lib/api/journal"
 
 export default function TodayPage() {
   const today = new Date()
-  const [prompts, setPrompts] = useState<string[]>([])
-  const [promptResponses, setPromptResponses] = useState<Record<number, string>>({})
+  const [promptResponses, setPromptResponses] = useState<Record<string, string>>({})
   const [freeformEntry, setFreeformEntry] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [hasLoadedEntry, setHasLoadedEntry] = useState(false)
+  const [isManualSaving, setIsManualSaving] = useState(false)
 
+  // Fetch today's journal entry and prompts
+  const { entry, isLoading: isLoadingEntry, getOrCreateEntry } = useTodaysJournalEntry()
+  const { data: prompts = [], isLoading: isLoadingPrompts } = useTodaysPrompts()
+  const todayDate = format(today, "yyyy-MM-dd")
+  const { trigger: updateEntry } = useUpdateJournalEntry(todayDate)
+
+  // Load existing entry data
   useEffect(() => {
-    const todaysPrompts = getRandomPrompts(3)
-    setPrompts(todaysPrompts)
-  }, [])
+    if (entry && !hasLoadedEntry) {
+      setFreeformEntry(entry.freeform_text || "")
+      if (entry.prompt_responses && Array.isArray(entry.prompt_responses)) {
+        const responses: Record<string, string> = {}
+        entry.prompt_responses.forEach((pr) => {
+          // The prompt_responses includes prompt_id and response_text
+          if (pr.prompt_id && pr.response_text !== null) {
+            responses[pr.prompt_id] = pr.response_text
+          }
+        })
+        setPromptResponses(responses)
+      }
+      setLastSaved(entry.updated_at ? new Date(entry.updated_at) : null)
+      setHasLoadedEntry(true)
+    }
+  }, [entry, hasLoadedEntry])
 
-  const handlePromptChange = (index: number, value: string) => {
+  // Create entry on mount if it doesn't exist
+  useEffect(() => {
+    if (!isLoadingEntry && !entry) {
+      getOrCreateEntry()
+    }
+  }, [isLoadingEntry, entry, getOrCreateEntry])
+
+  const handlePromptChange = (promptId: string, value: string) => {
     setPromptResponses(prev => ({
       ...prev,
-      [index]: value
+      [promptId]: value
     }))
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setLastSaved(new Date())
-    toast.success("Journal entry saved successfully")
-    setIsSaving(false)
-  }
+  const handleSave = useCallback(async (showToast = true) => {
+    if (!entry) return
+
+    if (showToast) {
+      setIsManualSaving(true)
+    }
+
+    try {
+      // Prepare prompt responses - include all responses, not just non-empty ones
+      const promptResponsesData = prompts.map(prompt => ({
+        promptId: prompt.id,
+        responseText: promptResponses[prompt.id] || ""
+      }))
+
+      await updateEntry({
+        freeformText: freeformEntry,
+        promptResponses: promptResponsesData
+      })
+
+      if (showToast) {
+        setLastSaved(new Date())
+        toast.success("Journal entry saved successfully")
+      }
+    } catch (error) {
+      console.error('Failed to save:', error)
+      if (showToast) {
+        toast.error("Failed to save journal entry")
+      }
+    } finally {
+      if (showToast) {
+        setIsManualSaving(false)
+      }
+    }
+  }, [entry, prompts, promptResponses, freeformEntry, updateEntry])
 
   // Calculate progress and stats
   const completedPrompts = Object.values(promptResponses).filter(r => r.trim().length > 20).length
-  const progress = (completedPrompts / prompts.length) * 100
+  const progress = prompts.length > 0 ? (completedPrompts / prompts.length) * 100 : 0
   const totalWords = useMemo(() => {
     const promptWords = Object.values(promptResponses).join(' ')
     const allWords = `${promptWords} ${freeformEntry}`.trim()
-    return allWords.split(/\s+/).filter(Boolean).length
+    return calculateWordCount(allWords)
   }, [promptResponses, freeformEntry])
   
   const hasContent = Object.values(promptResponses).some(r => r.trim()) || freeformEntry.trim()
   const readingTime = Math.max(1, Math.ceil(totalWords / 200))
+
+  // Auto-save functionality (silent)
+  useEffect(() => {
+    if (!hasContent || !entry) return
+
+    const autoSaveTimer = setTimeout(() => {
+      handleSave(false) // Silent save - no toast or visual feedback
+    }, 3000) // Auto-save after 3 seconds of inactivity
+
+    return () => clearTimeout(autoSaveTimer)
+  }, [promptResponses, freeformEntry, hasContent, entry, handleSave])
+
+  if (isLoadingEntry || isLoadingPrompts) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-12 w-1/3" />
+        <Skeleton className="h-32 w-full" />
+        <div className="space-y-4">
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -130,12 +211,12 @@ export default function TodayPage() {
         
         {prompts.map((prompt, index) => (
           <EnhancedPromptCard
-            key={index}
-            prompt={prompt}
-            value={promptResponses[index] || ""}
-            onChange={(value) => handlePromptChange(index, value)}
+            key={prompt.id}
+            prompt={prompt.prompt_text}
+            value={promptResponses[prompt.id] || ""}
+            onChange={(value) => handlePromptChange(prompt.id, value)}
             index={index}
-            isCompleted={(promptResponses[index] || "").trim().length > 20}
+            isCompleted={(promptResponses[prompt.id] || "").trim().length > 20}
           />
         ))}
       </div>
@@ -161,7 +242,7 @@ export default function TodayPage() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between sticky bottom-6 bg-background/80 backdrop-blur-sm p-4 -mx-4 rounded-xl">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-6 border-t">
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -188,11 +269,11 @@ export default function TodayPage() {
 
         <Button
           size="lg"
-          onClick={handleSave}
-          disabled={!hasContent || isSaving}
+          onClick={() => handleSave(true)}
+          disabled={!hasContent || isManualSaving}
           className="sm:min-w-[150px]"
         >
-          {isSaving ? (
+          {isManualSaving ? (
             <>
               <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
               Saving...
