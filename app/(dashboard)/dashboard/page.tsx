@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -19,32 +17,26 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import Link from "next/link";
 import {
   ArrowRight,
-  ChartBar,
-  MessageSquare,
-  PenLine,
-  Sparkles,
   TrendingUp,
-  Clock,
+  Calendar,
+  Sparkles,
+  BarChart3,
+  Flame,
+  PenLine,
+  ChevronRight,
+  BookOpen,
   Target,
-  Brain,
+  PenSquare,
 } from "lucide-react";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/hooks/use-journal";
-
-const novaSuggestions = [
-  "Help me reflect on today",
-  "What patterns do you see in my journal?",
-  "Guide me through a difficult situation",
-  "Analyze my emotional growth this week",
-];
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const [novaInput, setNovaInput] = useState("");
-  const today = new Date();
 
   // Fetch real data
-  const { entry: todayEntry, isLoading: isLoadingToday } = useTodaysJournalEntry();
-  const { data: entriesData, isLoading: isLoadingEntries } = useJournalEntries(10, 0); // Get 10 most recent
+  const { entry: todayEntry } = useTodaysJournalEntry();
+  const { data: entriesData, isLoading: isLoadingEntries } = useJournalEntries(6, 0);
   const { data: stats, isLoading: isLoadingStats } = useJournalStats();
   
   const recentEntries = useMemo(() => entriesData?.entries || [], [entriesData?.entries]);
@@ -104,163 +96,156 @@ export default function DashboardPage() {
     return streak;
   };
 
+  const today = useMemo(() => new Date(), []);
   const currentStreak = stats?.currentStreak || calculateStreak();
   const greeting = getGreeting();
   const firstName = user?.firstName || "there";
 
+  // Calculate mood stats
+  const moodStats = useMemo(() => {
+    if (!stats?.moodDistribution) return null;
+    const topMood = Object.entries(stats.moodDistribution)
+      .sort(([,a], [,b]) => b - a)[0];
+    return topMood?.[0] || null;
+  }, [stats]);
+
   return (
-    <div className="space-y-6">
-      {/* Hero Greeting */}
-      <div className="mb-8">
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Header */}
+      <div>
         <h1 className="text-3xl font-semibold tracking-tight">
           Good {greeting}, {firstName}
         </h1>
-        <p className="text-muted-foreground mt-2">
-          {format(today, "EEEE, MMMM d, yyyy")} • Your journey continues
+        <p className="text-muted-foreground mt-1">
+          {format(today, "EEEE, MMMM d, yyyy")}
         </p>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Nova AI Panel - Spans 2 columns on large screens */}
-        <Card className="lg:col-span-2 bg-gradient-to-br from-background to-muted/20 border-muted">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-primary" />
+      {/* Main Grid - 4 columns */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Today's Journal - Takes 2 columns */}
+        <Card className="md:col-span-2">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <PenLine className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Today&apos;s Journal</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {todayProgress === 0 
+                      ? "Start your daily reflection" 
+                      : `${Math.floor(todayProgress / 33)} of 3 prompts completed`}
+                  </p>
+                </div>
               </div>
-              <CardTitle>Chat with Nova</CardTitle>
             </div>
-            <CardDescription>
-              Your AI companion is here to help you reflect and grow
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {novaSuggestions.map((suggestion, i) => (
-                <Button
-                  key={i}
-                  variant="outline"
-                  className="justify-start text-left h-auto p-3 hover:bg-primary/5"
-                  asChild
-                >
-                  <Link href={`/nova?prompt=${encodeURIComponent(suggestion)}`}>
-                    <MessageSquare className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="text-sm line-clamp-2">{suggestion}</span>
-                  </Link>
-                </Button>
-              ))}
+            <Progress value={todayProgress} className="h-2 mb-3" />
+            <Button className="w-full" asChild>
+              <Link href="/journal/today">
+                {todayProgress === 0 ? "Start Writing" : "Continue Writing"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Streak Card */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between h-full">
+              <div>
+                <p className="text-sm text-muted-foreground">Streak</p>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-2xl font-bold">{currentStreak}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {currentStreak === 1 ? 'day' : 'days'}
+                  </span>
+                </div>
+                {currentStreak > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">Keep it up! 🔥</p>
+                )}
+              </div>
+              <Flame className={cn(
+                "h-8 w-8",
+                currentStreak > 0 ? "text-orange-500" : "text-muted-foreground/30"
+              )} />
             </div>
-            <Separator />
+          </CardContent>
+        </Card>
+
+        {/* Stats Card */}
+        <Card>
+          <CardContent className="pt-4">
             <div className="space-y-3">
-              <Textarea
-                placeholder="Or start a conversation..."
-                value={novaInput}
-                onChange={(e) => setNovaInput(e.target.value)}
-                className="min-h-[80px] resize-none"
-              />
-              <Button className="w-full" asChild>
-                <Link
-                  href={`/nova${novaInput ? `?prompt=${encodeURIComponent(novaInput)}` : ""}`}
-                >
-                  Start Conversation
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Today's Journal Entry */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <PenLine className="h-5 w-5 text-primary" />
-                <CardTitle>Today&apos;s Entry</CardTitle>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Entries</p>
+                <p className="text-xl font-bold">{stats?.totalEntries || 0}</p>
               </div>
-              {todayProgress > 0 && (
-                <Badge variant="secondary">{todayProgress}%</Badge>
-              )}
+              <Separator />
+              <div>
+                <p className="text-xs text-muted-foreground">Avg. Words</p>
+                <p className="text-xl font-bold">{stats?.averageWordCount || 0}</p>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoadingToday ? (
-              <>
-                <Skeleton className="h-2 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-10 w-full" />
-              </>
-            ) : (
-              <>
-                <Progress value={todayProgress} className="h-2" />
-                <p className="text-sm text-muted-foreground">
-                  {todayProgress === 0
-                    ? "Start your daily reflection"
-                    : `You've answered ${Math.floor(todayProgress / 33)} of 3 prompts`}
-                </p>
-                <Button className="w-full" asChild>
-                  <Link href="/journal/today">
-                    {todayProgress === 0 ? "Begin Writing" : "Continue Writing"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </>
-            )}
           </CardContent>
         </Card>
+      </div>
 
+      {/* Bottom Section */}
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Recent Entries */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
+        <Card>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <CardTitle>Recent Entries</CardTitle>
-              </div>
+              <CardTitle className="text-base">Recent Entries</CardTitle>
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/journal">View All</Link>
+                <Link href="/journal">
+                  View All
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Link>
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {isLoadingEntries ? (
-              <div className="space-y-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-3 w-12" />
-                    </div>
-                    <Skeleton className="h-5 w-16" />
-                  </div>
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 rounded-lg" />
                 ))}
               </div>
             ) : recentEntries.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <p className="text-sm">No entries yet</p>
-                <Button size="sm" className="mt-2" asChild>
-                  <Link href="/journal/today">Start Writing</Link>
-                </Button>
+              <div className="text-center py-6 text-muted-foreground">
+                <PenSquare className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">No entries yet. Start journaling today!</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {recentEntries.slice(0, 4).map((entry) => (
                   <Link
                     key={entry.id}
                     href={`/journal/${entry.entry_date}`}
-                    className="flex items-center justify-between p-2 rounded-xl hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
                   >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {format(parseISO(entry.entry_date), "MMM d")}
+                    <div className="text-center min-w-[35px]">
+                      <p className="text-[10px] text-muted-foreground uppercase">
+                        {format(parseISO(entry.entry_date), "MMM")}
+                      </p>
+                      <p className="text-lg font-semibold leading-none">
+                        {format(parseISO(entry.entry_date), "d")}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {format(parseISO(entry.entry_date), "EEEE")}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {entry.word_count || 0} words
                       </p>
                     </div>
                     {entry.mood && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="secondary" className="capitalize text-xs">
                         {entry.mood}
                       </Badge>
                     )}
@@ -271,122 +256,107 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Stats & Streak */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              <CardTitle>Your Progress</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoadingStats || isLoadingEntries ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+        {/* Right Column */}
+        <div className="space-y-4">
+          {/* Progress Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Your Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isLoadingStats ? (
+                <>
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </>
+              ) : (
+                <>
                   <div>
-                    <Skeleton className="h-8 w-12" />
-                    <Skeleton className="h-3 w-20 mt-1" />
-                  </div>
-                  <div>
-                    <Skeleton className="h-8 w-12" />
-                    <Skeleton className="h-3 w-20 mt-1" />
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-2xl font-bold">{currentStreak}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Day Streak {currentStreak > 0 ? '🔥' : ''}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-muted-foreground">Total Words</span>
+                      <span className="text-xs font-medium">
+                        {(stats?.totalWordCount || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={Math.min((stats?.totalWordCount || 0) / 10000 * 100, 100)} 
+                      className="h-1.5"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Goal: 10,000 words
                     </p>
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.totalEntries || recentEntries.length}</p>
-                    <p className="text-xs text-muted-foreground">Total Entries</p>
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-3">
-                  {currentStreak > 2 && (
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-green-600" />
-                      <span className="text-sm">Consistency improving</span>
-                    </div>
-                  )}
-                  {(stats?.averageWordCount || 0) > 200 && (
-                    <div className="flex items-center gap-2">
-                      <Brain className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm">Deep reflection mode</span>
-                    </div>
-                  )}
-                  {currentStreak === 0 && recentEntries.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-orange-600" />
-                      <span className="text-sm">Time to restart your streak!</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Weekly Insights Preview */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ChartBar className="h-5 w-5 text-primary" />
-                <CardTitle>Weekly Insights</CardTitle>
-              </div>
-              {recentEntries.length >= 3 && (
-                <Badge variant="secondary">New</Badge>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Longest Streak</span>
+                    <span className="font-medium">{stats?.longestStreak || 0} days</span>
+                  </div>
+                  
+                  {moodStats && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Top mood</span>
+                      <Badge variant="outline" className="capitalize text-xs">
+                        {moodStats}
+                      </Badge>
+                    </div>
+                  )}
+                </>
               )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {recentEntries.length < 3 ? (
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Write at least 3 entries to unlock insights
-                </p>
-                <Progress value={(recentEntries.length / 3) * 100} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {recentEntries.length}/3 entries
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <div className="grid gap-3">
+            <Link 
+              href="/nova" 
+              className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent hover:border-accent transition-all"
+            >
+              <div className="h-9 w-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Chat with Nova</p>
+                <p className="text-xs text-muted-foreground">Get AI-powered insights</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Link>
+
+            <Link 
+              href="/insights" 
+              className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent hover:border-accent transition-all"
+            >
+              <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <BarChart3 className="h-4 w-4 text-green-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Weekly Insights</p>
+                <p className="text-xs text-muted-foreground">
+                  {recentEntries.length >= 3 
+                    ? "View your analysis" 
+                    : `${3 - recentEntries.length} more entries needed`}
                 </p>
               </div>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Your personalized analysis is ready
-                </p>
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                    <span className="text-sm">3 key themes identified</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                    <span className="text-sm">Emotional growth detected</span>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href="/insights">
-                    View Insights
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Link>
+
+            <Link 
+              href="/journal" 
+              className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent hover:border-accent transition-all"
+            >
+              <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-blue-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Journal History</p>
+                <p className="text-xs text-muted-foreground">Browse all entries</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

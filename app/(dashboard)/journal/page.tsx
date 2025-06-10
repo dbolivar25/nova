@@ -3,11 +3,11 @@
 import { useState, useMemo } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { format, isSameDay, startOfMonth, endOfMonth, parseISO, differenceInDays } from "date-fns"
+import { format, isSameDay, startOfMonth, endOfMonth, parseISO } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, CalendarDays } from "lucide-react"
+import { ChevronRight, CalendarDays, TrendingUp, BarChart3, Clock } from "lucide-react"
 import Link from "next/link"
 import { PageHeader } from "@/components/layout/page-header"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -15,7 +15,7 @@ import { useJournalEntries, useJournalStats } from "@/hooks/use-journal"
 import type { JournalEntry } from "@/lib/types/journal"
 
 export default function JournalPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
   // Fetch entries for the current month
@@ -48,70 +48,68 @@ export default function JournalPage() {
     ? entriesInMonth.find(entry => isSameDay(entry.date, selectedDate))
     : null
 
-  // Calculate streak
-  const calculateStreak = () => {
-    if (!entries.length) return 0
+  // Helper functions
+  const getDayWithMostEntries = (entries: JournalEntry[]): string => {
+    if (!entries.length) return "N/A"
+    const dayCounts: Record<string, number> = {}
     
-    const sortedEntries = [...entries].sort((a, b) => 
-      new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime()
-    )
+    entries.forEach(entry => {
+      const day = format(parseISO(entry.entry_date), "EEEE")
+      dayCounts[day] = (dayCounts[day] || 0) + 1
+    })
     
-    let streak = 1
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    // Check if most recent entry is today or yesterday
-    const mostRecent = new Date(sortedEntries[0].entry_date)
-    mostRecent.setHours(0, 0, 0, 0)
-    const daysDiff = differenceInDays(today, mostRecent)
-    
-    if (daysDiff > 1) return 0 // Streak broken
-    
-    // Count consecutive days
-    for (let i = 1; i < sortedEntries.length; i++) {
-      const current = new Date(sortedEntries[i].entry_date)
-      const previous = new Date(sortedEntries[i - 1].entry_date)
-      current.setHours(0, 0, 0, 0)
-      previous.setHours(0, 0, 0, 0)
-      
-      const diff = differenceInDays(previous, current)
-      if (diff === 1) {
-        streak++
-      } else {
-        break
-      }
-    }
-    
-    return streak
+    const sortedDays = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])
+    return sortedDays[0]?.[0] || "N/A"
   }
 
-  const currentStreak = calculateStreak()
+  const getMostCommonWritingTime = (entries: JournalEntry[]): string => {
+    if (!entries.length) return "N/A"
+    const timeCounts: Record<string, number> = {}
+    
+    entries.forEach(entry => {
+      const hour = new Date(entry.created_at || entry.entry_date).getHours()
+      let timeOfDay: string
+      
+      if (hour < 6) timeOfDay = "Night"
+      else if (hour < 12) timeOfDay = "Morning"
+      else if (hour < 17) timeOfDay = "Afternoon"
+      else if (hour < 21) timeOfDay = "Evening"
+      else timeOfDay = "Night"
+      
+      timeCounts[timeOfDay] = (timeCounts[timeOfDay] || 0) + 1
+    })
+    
+    const sortedTimes = Object.entries(timeCounts).sort((a, b) => b[1] - a[1])
+    return sortedTimes[0]?.[0] || "N/A"
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <PageHeader 
         title="Journal History"
         subtitle="Browse and revisit your past journal entries"
       />
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Main Content Area */}
+      {/* Main Content - Mobile Responsive */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
+        {/* Calendar and Entries Section */}
         <div className="space-y-6">
-          {/* Calendar Card with Selected Entry */}
+          {/* Calendar Card - Responsive */}
           <Card>
             <CardHeader>
               <CardTitle>Select a Date</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
+              {/* Stack on mobile, side-by-side on desktop */}
               <div className="grid md:grid-cols-[auto_1fr]">
-                <div className="p-4">
+                <div className="p-4 md:p-6">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
                     month={currentMonth}
                     onMonthChange={setCurrentMonth}
-                    className="rounded-xl border-0"
+                    className="rounded-xl"
                     modifiers={{
                       hasEntry: entriesInMonth.map(e => e.date)
                     }}
@@ -125,8 +123,8 @@ export default function JournalPage() {
                   />
                 </div>
                 
-                {/* Selected Entry Preview - Right Side */}
-                <div className="border-l p-6 min-h-[320px] flex flex-col">
+                {/* Selected Entry Preview - Hidden on mobile if no selection */}
+                <div className={`border-t md:border-t-0 md:border-l p-6 ${!selectedDate ? 'hidden md:flex' : 'flex'} flex-col`}>
                   {selectedEntry && selectedDate ? (
                     <div className="flex flex-col h-full">
                       <div className="flex-1 space-y-4">
@@ -195,7 +193,7 @@ export default function JournalPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-full flex items-center justify-center">
+                    <div className="h-full flex items-center justify-center min-h-[200px]">
                       <div className="text-center space-y-2 px-4">
                         <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/50" />
                         <p className="text-sm text-muted-foreground">
@@ -209,48 +207,58 @@ export default function JournalPage() {
             </CardContent>
           </Card>
 
-          {/* Recent Entries List - Now in main area */}
+          {/* All Entries - Responsive Grid */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Entries</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>All Entries</CardTitle>
+                <Badge variant="outline">{entries.length} total</Badge>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoadingEntries ? (
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {[...Array(6)].map((_, i) => (
-                    <Skeleton key={i} className="h-20 rounded-xl" />
+                    <Skeleton key={i} className="h-24 rounded-xl" />
                   ))}
                 </div>
               ) : entries.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No journal entries yet.</p>
+                <div className="text-center py-12 text-muted-foreground">
+                  <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p>No journal entries for this month.</p>
                   <Button className="mt-4" asChild>
                     <Link href="/journal/today">
-                      Start Your First Entry
+                      Start Writing Today
                     </Link>
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-                  {entries.slice(0, 9).map((entry) => (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {entries.map((entry) => (
                     <Link 
                       key={entry.id}
                       href={`/journal/${entry.entry_date}`}
-                      className="group p-4 rounded-xl border bg-card hover:bg-accent hover:shadow-lg transition-all"
+                      className="group p-4 rounded-xl border bg-card hover:bg-accent hover:shadow-md transition-all"
                     >
                       <div className="space-y-2">
-                        <p className="font-medium text-sm group-hover:text-primary transition-colors">
-                          {format(parseISO(entry.entry_date), "MMM d, yyyy")}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            {entry.word_count || 0} words
-                          </span>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-medium group-hover:text-primary transition-colors">
+                              {format(parseISO(entry.entry_date), "EEEE")}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(parseISO(entry.entry_date), "MMM d, yyyy")}
+                            </p>
+                          </div>
                           {entry.mood && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs capitalize">
                               {entry.mood}
                             </Badge>
                           )}
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{entry.word_count || 0} words</span>
+                          <Clock className="h-3 w-3" />
                         </div>
                       </div>
                     </Link>
@@ -261,11 +269,15 @@ export default function JournalPage() {
           </Card>
         </div>
 
-        {/* Sidebar Stats */}
-        <div className="space-y-6">
+        {/* Sidebar Stats - Hidden on mobile */}
+        <div className="hidden lg:block space-y-6 w-80">
+          {/* Stats Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Journal Stats</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Journal Stats
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingStats || isLoadingEntries ? (
@@ -281,12 +293,12 @@ export default function JournalPage() {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <p className="text-3xl font-bold">{stats?.totalEntries || entries.length}</p>
                     <p className="text-sm text-muted-foreground">Total Entries</p>
                   </div>
                   <Separator />
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <p className="text-3xl font-bold">
                       {stats?.averageWordCount || 
                         (entries.length > 0 
@@ -297,19 +309,24 @@ export default function JournalPage() {
                     <p className="text-sm text-muted-foreground">Avg Words</p>
                   </div>
                   <Separator />
-                  <div className="space-y-2">
-                    <p className="text-3xl font-bold">{stats?.currentStreak || currentStreak}</p>
-                    <p className="text-sm text-muted-foreground">Day Streak {currentStreak > 0 ? '🔥' : ''}</p>
+                  <div className="space-y-1">
+                    <p className="text-3xl font-bold">{stats?.currentStreak || 0}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Day Streak {(stats?.currentStreak || 0) > 0 ? '🔥' : ''}
+                    </p>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Writing Insights */}
+          {/* Writing Insights Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Writing Insights</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Writing Insights
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {isLoadingStats || isLoadingEntries ? (
@@ -332,13 +349,13 @@ export default function JournalPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Most productive day</span>
                     <Badge variant="secondary">
-                      {entries.length > 0 ? getDayWithMostEntries(entries) : "N/A"}
+                      {getDayWithMostEntries(entries)}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Favorite time</span>
                     <Badge variant="secondary">
-                      {entries.length > 0 ? getMostCommonWritingTime(entries) : "N/A"}
+                      {getMostCommonWritingTime(entries)}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
@@ -355,39 +372,31 @@ export default function JournalPage() {
           </Card>
         </div>
       </div>
+
+      {/* Mobile Stats - Only shown on mobile */}
+      <div className="grid gap-4 lg:hidden">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Quick Stats</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold">{stats?.totalEntries || 0}</p>
+                <p className="text-xs text-muted-foreground">Entries</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats?.currentStreak || 0}</p>
+                <p className="text-xs text-muted-foreground">Streak</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats?.averageWordCount || 0}</p>
+                <p className="text-xs text-muted-foreground">Avg Words</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
-}
-
-// Helper functions
-function getDayWithMostEntries(entries: JournalEntry[]): string {
-  const dayCounts: Record<string, number> = {}
-  
-  entries.forEach(entry => {
-    const day = format(parseISO(entry.entry_date), "EEEE")
-    dayCounts[day] = (dayCounts[day] || 0) + 1
-  })
-  
-  const sortedDays = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])
-  return sortedDays[0]?.[0] || "N/A"
-}
-
-function getMostCommonWritingTime(entries: JournalEntry[]): string {
-  const timeCounts: Record<string, number> = {}
-  
-  entries.forEach(entry => {
-    const hour = new Date(entry.created_at || entry.entry_date).getHours()
-    let timeOfDay: string
-    
-    if (hour < 6) timeOfDay = "Night"
-    else if (hour < 12) timeOfDay = "Morning"
-    else if (hour < 17) timeOfDay = "Afternoon"
-    else if (hour < 21) timeOfDay = "Evening"
-    else timeOfDay = "Night"
-    
-    timeCounts[timeOfDay] = (timeCounts[timeOfDay] || 0) + 1
-  })
-  
-  const sortedTimes = Object.entries(timeCounts).sort((a, b) => b[1] - a[1])
-  return sortedTimes[0]?.[0] || "N/A"
 }
