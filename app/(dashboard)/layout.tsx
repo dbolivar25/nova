@@ -22,8 +22,8 @@ export default function DashboardLayout({
             <div className="flex-1" />
             <ThemeToggle />
           </header>
-          <main className="flex-1">
-            <div className="p-6">{children}</div>
+          <main className="flex-1 flex flex-col">
+            <div className="flex-1 p-6">{children}</div>
           </main>
         </SidebarInset>
       </SidebarProvider>

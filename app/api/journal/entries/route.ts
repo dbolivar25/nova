@@ -149,50 +149,22 @@ export async function POST(request: NextRequest) {
       ? freeform_text.split(/\s+/).filter((word) => word.length > 0).length
       : 0;
 
-    // Check if entry already exists
-    const { data: existingEntry } = await supabase
+    // Use upsert to handle the race condition
+    const { data: entry, error: entryError } = await supabase
       .from("journal_entries")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("entry_date", entry_date)
+      .upsert({
+        user_id: user.id,
+        entry_date,
+        freeform_text,
+        mood,
+        word_count,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,entry_date',
+        ignoreDuplicates: false
+      })
+      .select()
       .single();
-
-    let entry;
-    let entryError;
-
-    if (existingEntry) {
-      // Update existing entry
-      const { data: updatedEntry, error: updateError } = await supabase
-        .from("journal_entries")
-        .update({
-          freeform_text,
-          mood,
-          word_count,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existingEntry.id)
-        .select()
-        .single();
-      
-      entry = updatedEntry;
-      entryError = updateError;
-    } else {
-      // Create new entry
-      const { data: newEntry, error: createError } = await supabase
-        .from("journal_entries")
-        .insert({
-          user_id: user.id,
-          entry_date,
-          freeform_text,
-          mood,
-          word_count,
-        })
-        .select()
-        .single();
-      
-      entry = newEntry;
-      entryError = createError;
-    }
 
     if (entryError) {
       console.error("Error creating journal entry:", entryError);
@@ -201,11 +173,14 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    
+    // Check if this was an update (existing entry)
+    const isUpdate = entry.created_at !== entry.updated_at;
 
     // Handle prompt responses if provided
     if (prompt_responses && prompt_responses.length > 0 && entry) {
       // If updating existing entry, we need to handle existing responses
-      if (existingEntry) {
+      if (isUpdate) {
         // Delete existing prompt responses for this entry
         await supabase
           .from("prompt_responses")

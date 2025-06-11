@@ -242,7 +242,8 @@ export default function TodayPage() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-6 border-t">
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm -mx-6 px-6 py-4 -mb-6 mt-8">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -285,6 +286,7 @@ export default function TodayPage() {
             </>
           )}
         </Button>
+        </div>
       </div>
 
       {/* Floating Nova Button */}
