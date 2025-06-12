@@ -24,8 +24,6 @@ import {
   Flame,
   PenLine,
   ChevronRight,
-  BookOpen,
-  Target,
   PenSquare,
 } from "lucide-react";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/hooks/use-journal";
