@@ -18,6 +18,10 @@ export interface JournalStats {
   averageWordCount: number;
   totalWordCount: number;
   moodDistribution: Record<Mood, number>;
+  streakStartDate?: string;
+  lastEntryDate?: string;
+  streakHistory?: { date: string; hasEntry: boolean }[];
+  milestones?: { days: number; achieved: boolean; achievedDate?: string }[];
 }
 
 export interface JournalInsights {

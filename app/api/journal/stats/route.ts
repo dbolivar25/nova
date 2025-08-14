@@ -45,22 +45,33 @@ export async function GET() {
     const totalWordCount = entries?.reduce((sum, entry) => sum + (entry.word_count || 0), 0) || 0;
     const averageWordCount = totalEntries > 0 ? Math.round(totalWordCount / totalEntries) : 0;
 
-    // Calculate current streak
+    // Calculate current streak and streak start date
     let currentStreak = 0;
+    let streakStartDate: string | undefined;
+    let lastEntryDate: string | undefined;
+    
     if (entries && entries.length > 0) {
+      lastEntryDate = entries[0].entry_date;
       currentStreak = 1;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      // Check if most recent entry is today or yesterday
+      // Check if most recent entry is within the allowed window
+      // Allow streak to continue if:
+      // - Entry is today (daysDiff = 0)
+      // - Entry is yesterday (daysDiff = 1) - gives user all of today to write
+      // - Entry is 2+ days ago (daysDiff > 1) - streak is broken
       const mostRecent = new Date(entries[0].entry_date);
       mostRecent.setHours(0, 0, 0, 0);
       const daysDiff = differenceInDays(today, mostRecent);
       
       if (daysDiff > 1) {
-        currentStreak = 0; // Streak broken
+        // More than 1 day has passed - streak is broken
+        currentStreak = 0;
       } else {
-        // Count consecutive days
+        // Streak continues - count consecutive days
+        streakStartDate = entries[0].entry_date;
+        
         for (let i = 1; i < entries.length; i++) {
           const current = new Date(entries[i].entry_date);
           const previous = new Date(entries[i - 1].entry_date);
@@ -70,6 +81,7 @@ export async function GET() {
           const diff = differenceInDays(previous, current);
           if (diff === 1) {
             currentStreak++;
+            streakStartDate = entries[i].entry_date;
           } else {
             break;
           }
@@ -127,6 +139,31 @@ export async function GET() {
       return acc;
     }, {} as Record<typeof allMoods[number], number>);
 
+    // Calculate streak history for last 30 days
+    const streakHistory: { date: string; hasEntry: boolean }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const hasEntry = entries?.some(entry => entry.entry_date === dateStr) || false;
+      streakHistory.push({ date: dateStr, hasEntry });
+    }
+    
+    // Define milestones and check if achieved
+    const milestones: JournalStats['milestones'] = [
+      { days: 7, achieved: currentStreak >= 7 || longestStreak >= 7 },
+      { days: 14, achieved: currentStreak >= 14 || longestStreak >= 14 },
+      { days: 30, achieved: currentStreak >= 30 || longestStreak >= 30 },
+      { days: 60, achieved: currentStreak >= 60 || longestStreak >= 60 },
+      { days: 90, achieved: currentStreak >= 90 || longestStreak >= 90 },
+      { days: 180, achieved: currentStreak >= 180 || longestStreak >= 180 },
+      { days: 365, achieved: currentStreak >= 365 || longestStreak >= 365 },
+    ];
+    
     const stats: JournalStats = {
       totalEntries,
       currentStreak,
@@ -134,6 +171,10 @@ export async function GET() {
       averageWordCount,
       totalWordCount,
       moodDistribution: fullMoodDistribution,
+      streakStartDate,
+      lastEntryDate,
+      streakHistory,
+      milestones,
     };
 
     return NextResponse.json(stats);

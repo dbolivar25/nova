@@ -11,8 +11,17 @@ import { ChevronRight, CalendarDays, TrendingUp, BarChart3, Clock } from "lucide
 import Link from "next/link"
 import { PageHeader } from "@/components/layout/page-header"
 import { Skeleton } from "@/components/ui/skeleton"
+import { SearchTrigger } from "@/components/journal/search-trigger"
 import { useJournalEntries, useJournalStats } from "@/hooks/use-journal"
 import type { JournalEntry } from "@/lib/types/journal"
+
+interface CalendarEntry {
+  date: Date
+  hasEntry: boolean
+  wordCount: number
+  id: string
+  mood: string | null
+}
 
 export default function JournalPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
@@ -27,14 +36,18 @@ export default function JournalPage() {
     monthStart,
     monthEnd
   )
-  const entries = useMemo(() => entriesData?.entries || [], [entriesData?.entries])
+
+  // Use entries from the API
+  const entries = useMemo(() => {
+    return entriesData?.entries || []
+  }, [entriesData?.entries])
 
   // Fetch journal stats
   const { data: stats, isLoading: isLoadingStats } = useJournalStats()
 
   // Get entries for calendar display
-  const entriesInMonth = useMemo(() => {
-    return entries.map(entry => ({
+  const entriesInMonth = useMemo((): CalendarEntry[] => {
+    return entries.map((entry: JournalEntry) => ({
       date: parseISO(entry.entry_date),
       hasEntry: true,
       wordCount: entry.word_count || 0,
@@ -45,7 +58,7 @@ export default function JournalPage() {
 
   // Find selected entry
   const selectedEntry = selectedDate 
-    ? entriesInMonth.find(entry => isSameDay(entry.date, selectedDate))
+    ? entriesInMonth.find((entry: CalendarEntry) => isSameDay(entry.date, selectedDate))
     : null
 
   // Helper functions
@@ -90,6 +103,9 @@ export default function JournalPage() {
         subtitle="Browse and revisit your past journal entries"
       />
 
+      {/* Search Trigger - Beautiful floating button */}
+      <SearchTrigger variant="floating" />
+
       {/* Main Content - Mobile Responsive */}
       <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
         {/* Calendar and Entries Section */}
@@ -111,7 +127,7 @@ export default function JournalPage() {
                     onMonthChange={setCurrentMonth}
                     className="rounded-xl"
                     modifiers={{
-                      hasEntry: entriesInMonth.map(e => e.date)
+                      hasEntry: entriesInMonth.map((e: CalendarEntry) => e.date)
                     }}
                     modifiersStyles={{
                       hasEntry: {
@@ -234,7 +250,7 @@ export default function JournalPage() {
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {entries.map((entry) => (
+                  {entries.map((entry: JournalEntry) => (
                     <Link 
                       key={entry.id}
                       href={`/journal/${entry.entry_date}`}
@@ -302,7 +318,7 @@ export default function JournalPage() {
                     <p className="text-3xl font-bold">
                       {stats?.averageWordCount || 
                         (entries.length > 0 
-                          ? Math.round(entries.reduce((acc, e) => acc + (e.word_count || 0), 0) / entries.length)
+                          ? Math.round(entries.reduce((acc: number, e: JournalEntry) => acc + (e.word_count || 0), 0) / entries.length)
                           : 0)
                       }
                     </p>
@@ -362,7 +378,7 @@ export default function JournalPage() {
                     <span className="text-sm">Total words</span>
                     <Badge variant="secondary">
                       {stats?.totalWordCount || 
-                        entries.reduce((acc, e) => acc + (e.word_count || 0), 0).toLocaleString()
+                        entries.reduce((acc: number, e: JournalEntry) => acc + (e.word_count || 0), 0).toLocaleString()
                       }
                     </Badge>
                   </div>

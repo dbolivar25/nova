@@ -162,3 +162,38 @@ export function useTodaysJournalEntry() {
     getOrCreateEntry,
   };
 }
+
+// Hook to search journal entries
+export function useJournalSearch(
+  search?: string,
+  mood?: string,
+  onThisDay?: boolean,
+  limit: number = 50
+) {
+  const searchKey = [
+    '/journal/search',
+    search,
+    mood,
+    onThisDay,
+    limit
+  ];
+  
+  return useSWR(
+    searchKey,
+    async () => {
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (mood && mood !== 'all') params.append('mood', mood);
+      if (onThisDay) params.append('onThisDay', 'true');
+      params.append('limit', String(limit));
+      
+      const response = await fetch(`/api/journal/entries?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to search');
+      return response.json();
+    },
+    {
+      onError: handleAPIError,
+      keepPreviousData: true,
+    }
+  );
+}

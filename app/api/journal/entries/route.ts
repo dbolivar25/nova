@@ -60,6 +60,24 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get("end_date");
     const limit = parseInt(searchParams.get("limit") || "30");
     const offset = parseInt(searchParams.get("offset") || "0");
+    const search = searchParams.get("search");
+    const moodParam = searchParams.get("mood");
+    const onThisDay = searchParams.get("onThisDay") === "true";
+    
+    // Validate mood parameter
+    const validMoods = [
+      "positive",
+      "neutral",
+      "negative",
+      "thoughtful",
+      "grateful",
+      "anxious",
+      "excited",
+      "sad",
+      "angry",
+      "peaceful"
+    ] as const;
+    const mood = moodParam && validMoods.includes(moodParam as typeof validMoods[number]) ? moodParam as typeof validMoods[number] : null;
 
     // Build query
     let query = supabase
@@ -79,16 +97,72 @@ export async function GET(request: NextRequest) {
         )
       `
       )
-      .eq("user_id", user.id)
-      .order("entry_date", { ascending: false })
-      .range(offset, offset + limit - 1);
+      .eq("user_id", user.id);
 
+    // Handle "On This Day" feature - get entries from this date in previous years
+    if (onThisDay) {
+      const today = new Date();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      
+      // Get all entries that match this month and day from any year
+      const { data: allEntries, error: fetchError } = await supabase
+        .from("journal_entries")
+        .select(
+          `
+          *,
+          prompt_responses (
+            id,
+            prompt_id,
+            response_text,
+            prompt:journal_prompts (
+              id,
+              prompt_text,
+              category
+            )
+          )
+        `
+        )
+        .eq("user_id", user.id)
+        .order("entry_date", { ascending: false });
+      
+      if (!fetchError && allEntries) {
+        // Filter entries that match month and day
+        const onThisDayEntries = allEntries.filter(entry => {
+          const entryDate = entry.entry_date.split('-');
+          return entryDate[1] === month && entryDate[2] === day;
+        });
+        
+        return NextResponse.json({ 
+          entries: onThisDayEntries,
+          onThisDay: true,
+          date: `${month}-${day}`
+        });
+      }
+    }
+
+    // Apply search filter
+    if (search) {
+      query = query.or(`freeform_text.ilike.%${search}%`);
+    }
+
+    // Apply mood filter
+    if (mood) {
+      query = query.eq("mood", mood);
+    }
+
+    // Apply date range filters
     if (startDate) {
       query = query.gte("entry_date", startDate);
     }
     if (endDate) {
       query = query.lte("entry_date", endDate);
     }
+
+    // Apply ordering and pagination
+    query = query
+      .order("entry_date", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     const { data: entries, error } = await query;
 

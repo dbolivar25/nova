@@ -17,7 +17,6 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import Link from "next/link";
 import {
   ArrowRight,
-  TrendingUp,
   Calendar,
   Sparkles,
   BarChart3,
@@ -27,7 +26,8 @@ import {
   PenSquare,
 } from "lucide-react";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/hooks/use-journal";
-import { cn } from "@/lib/utils";
+import { StreakFlame } from "@/components/journal/streak-flame";
+import { StreakBadges } from "@/components/journal/streak-badges";
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -35,7 +35,7 @@ export default function DashboardPage() {
   // Fetch real data
   const { entry: todayEntry } = useTodaysJournalEntry();
   const { data: entriesData, isLoading: isLoadingEntries } = useJournalEntries(6, 0);
-  const { data: stats, isLoading: isLoadingStats } = useJournalStats();
+  const { data: stats } = useJournalStats();
   
   const recentEntries = useMemo(() => entriesData?.entries || [], [entriesData?.entries]);
 
@@ -69,12 +69,16 @@ export default function DashboardPage() {
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
     
-    // Check if most recent entry is today or yesterday
+    // Check if most recent entry is within the allowed window
+    // Allow streak to continue if:
+    // - Entry is today (daysDiff = 0)
+    // - Entry is yesterday (daysDiff = 1) - gives user all of today to write
+    // - Entry is 2+ days ago (daysDiff > 1) - streak is broken
     const mostRecent = new Date(sortedEntries[0].entry_date);
     mostRecent.setHours(0, 0, 0, 0);
     const daysDiff = differenceInDays(todayDate, mostRecent);
     
-    if (daysDiff > 1) return 0; // Streak broken
+    if (daysDiff > 1) return 0; // More than 1 day has passed - streak broken
     
     // Count consecutive days
     for (let i = 1; i < sortedEntries.length; i++) {
@@ -98,14 +102,6 @@ export default function DashboardPage() {
   const currentStreak = stats?.currentStreak || calculateStreak();
   const greeting = getGreeting();
   const firstName = user?.firstName || "there";
-
-  // Calculate mood stats
-  const moodStats = useMemo(() => {
-    if (!stats?.moodDistribution) return null;
-    const topMood = Object.entries(stats.moodDistribution)
-      .sort(([,a], [,b]) => b - a)[0];
-    return topMood?.[0] || null;
-  }, [stats]);
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -149,26 +145,15 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Streak Card */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between h-full">
-              <div>
-                <p className="text-sm text-muted-foreground">Streak</p>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-2xl font-bold">{currentStreak}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {currentStreak === 1 ? 'day' : 'days'}
-                  </span>
-                </div>
-                {currentStreak > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">Keep it up! 🔥</p>
-                )}
-              </div>
-              <Flame className={cn(
-                "h-8 w-8",
-                currentStreak > 0 ? "text-orange-500" : "text-muted-foreground/30"
-              )} />
+        {/* Enhanced Streak Card */}
+        <Card className="overflow-hidden">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center justify-center h-full">
+              <StreakFlame 
+                streak={currentStreak} 
+                size="sm"
+                showNumber={true}
+              />
             </div>
           </CardContent>
         </Card>
@@ -193,8 +178,10 @@ export default function DashboardPage() {
 
       {/* Bottom Section */}
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Recent Entries */}
-        <Card>
+        {/* Left Column - Recent Entries + Quick Actions */}
+        <div className="space-y-4">
+          {/* Recent Entries */}
+          <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Recent Entries</CardTitle>
@@ -251,58 +238,6 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Right Column */}
-        <div className="space-y-4">
-          {/* Progress Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Your Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {isLoadingStats ? (
-                <>
-                  <Skeleton className="h-8 w-full" />
-                  <Skeleton className="h-8 w-full" />
-                </>
-              ) : (
-                <>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-muted-foreground">Total Words</span>
-                      <span className="text-xs font-medium">
-                        {(stats?.totalWordCount || 0).toLocaleString()}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={Math.min((stats?.totalWordCount || 0) / 10000 * 100, 100)} 
-                      className="h-1.5"
-                    />
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      Goal: 10,000 words
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Longest Streak</span>
-                    <span className="font-medium">{stats?.longestStreak || 0} days</span>
-                  </div>
-                  
-                  {moodStats && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Top mood</span>
-                      <Badge variant="outline" className="capitalize text-xs">
-                        {moodStats}
-                      </Badge>
-                    </div>
-                  )}
-                </>
-              )}
             </CardContent>
           </Card>
 
@@ -355,6 +290,23 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        {/* Right Column - Achievement Badges */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Flame className="h-4 w-4" />
+              Achievement Badges
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StreakBadges 
+              milestones={stats?.milestones}
+              currentStreak={stats?.currentStreak || 0}
+              longestStreak={stats?.longestStreak || 0}
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
