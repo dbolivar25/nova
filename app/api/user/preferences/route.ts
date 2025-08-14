@@ -10,7 +10,6 @@ const preferencesSchema = z.object({
     .string()
     .regex(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/)
     .optional(),
-  auto_dark_mode: z.boolean().optional(),
   prompt_count: z.number().min(1).max(5).optional(),
 });
 

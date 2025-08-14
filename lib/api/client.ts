@@ -85,3 +85,14 @@ export function handleAPIError(error: unknown) {
   
   console.error("API Error:", error);
 }
+
+// SWR fetcher function
+export const fetcher = (url: string) => fetch(url).then((res) => {
+  if (!res.ok) {
+    throw new APIError(
+      `An error occurred while fetching the data.`,
+      res.status
+    );
+  }
+  return res.json();
+});

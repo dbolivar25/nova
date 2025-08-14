@@ -22,6 +22,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Get user's preferences
+    const { data: preferences } = await supabase
+      .from("user_preferences")
+      .select("prompt_count")
+      .eq("user_id", user.id)
+      .single();
+
+    // Get the user's preferred prompt count (default to 3 if not set)
+    const userPromptCount = preferences?.prompt_count || 3;
+
     // Get today's date for consistent prompt selection
     const today = new Date().toISOString().split('T')[0];
     
@@ -55,7 +65,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Use the hash to select prompts deterministically
-    const promptCount = Math.min(3, allPrompts.length);
+    const promptCount = Math.min(userPromptCount, allPrompts.length);
     const selectedIndices = new Set<number>();
     
     // Generate deterministic indices based on the hash
