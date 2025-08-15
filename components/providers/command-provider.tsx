@@ -29,13 +29,13 @@ export function CommandProvider({ children }: { children: React.ReactNode }) {
     const down = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        toggle();
+        setOpen((prev) => !prev);
       }
 
       // Additional shortcuts when command palette is closed
       if (!open) {
         // G + D = Go to Dashboard
-        if (e.key === "g" && !e.metaKey && !e.ctrlKey) {
+        if (e.key === "g" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
           const listener = (e2: KeyboardEvent) => {
             if (e2.key === "d") {
               e2.preventDefault();

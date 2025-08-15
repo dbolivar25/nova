@@ -20,7 +20,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -75,44 +74,35 @@ export function AppSidebar() {
   return (
     <Sidebar variant="floating" className="border-0">
       <SidebarHeader className="border-b border-border/20 px-4 py-4">
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary shadow-sm"
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <motion.div
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary shadow-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Sparkles className="h-5 w-5" />
+            </motion.div>
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold">Nova</span>
+              <span className="text-xs text-muted-foreground">AI Journal</span>
+            </div>
+          </div>
+          <motion.button
+            onClick={toggle}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/50 hover:bg-accent transition-colors mt-0.5"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            title={`Search (${isMac ? '⌘' : 'Ctrl'}+K)`}
           >
-            <Sparkles className="h-5 w-5" />
-          </motion.div>
-          <div className="flex flex-col">
-            <span className="text-lg font-semibold">Nova</span>
-            <span className="text-xs text-muted-foreground">AI Journal</span>
-          </div>
+            <Search className="h-4 w-4" />
+          </motion.button>
         </div>
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-2">
         <SidebarGroup>
           <SidebarMenu className="gap-1">
-            {/* Search Button */}
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={toggle}
-                className={cn(
-                  "h-11 px-3 w-full transition-all duration-200 rounded-xl",
-                  "bg-accent/50 hover:bg-accent shadow-sm",
-                  "group"
-                )}
-              >
-                <Search className="h-4 w-4 transition-colors group-hover:text-primary" />
-                <span className="flex-1">Search</span>
-                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                  <span className="text-xs">{isMac ? "⌘" : "Ctrl"}</span>K
-                </kbd>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarSeparator className="my-2" />
-            
             {navItems.map((item) => {
               const isActive =
                 pathname === item.url ||

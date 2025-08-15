@@ -405,15 +405,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             </CommandItem>
           </CommandGroup>
         )}
-
-        {/* Results Summary */}
-        {debouncedSearch && entries.length > 0 && (
-          <div className="flex items-center justify-center py-2 text-xs text-muted-foreground border-t">
-            <span>
-              {entries.length} {entries.length === 1 ? "entry" : "entries"} found
-            </span>
-          </div>
-        )}
       </CommandList>
     </CommandDialog>
   );
