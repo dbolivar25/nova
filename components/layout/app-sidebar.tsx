@@ -7,6 +7,7 @@ import {
   Settings,
   PenLine,
   History,
+  Search,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -19,10 +20,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useCommand } from "@/components/providers/command-provider";
+import { useEffect, useState } from "react";
 
 const navItems = [
   {
@@ -60,6 +64,13 @@ const navItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { user } = useUser();
+  const { toggle } = useCommand();
+  const [isMac, setIsMac] = useState(false);
+
+  // Detect if user is on Mac for proper keyboard shortcut display
+  useEffect(() => {
+    setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+  }, []);
 
   return (
     <Sidebar variant="floating" className="border-0">
@@ -82,6 +93,26 @@ export function AppSidebar() {
       <SidebarContent className="px-2 py-2">
         <SidebarGroup>
           <SidebarMenu className="gap-1">
+            {/* Search Button */}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={toggle}
+                className={cn(
+                  "h-11 px-3 w-full transition-all duration-200 rounded-xl",
+                  "bg-accent/50 hover:bg-accent shadow-sm",
+                  "group"
+                )}
+              >
+                <Search className="h-4 w-4 transition-colors group-hover:text-primary" />
+                <span className="flex-1">Search</span>
+                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                  <span className="text-xs">{isMac ? "⌘" : "Ctrl"}</span>K
+                </kbd>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            
+            <SidebarSeparator className="my-2" />
+            
             {navItems.map((item) => {
               const isActive =
                 pathname === item.url ||

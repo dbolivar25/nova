@@ -11,7 +11,6 @@ import { ChevronRight, CalendarDays, TrendingUp, BarChart3, Clock } from "lucide
 import Link from "next/link"
 import { PageHeader } from "@/components/layout/page-header"
 import { Skeleton } from "@/components/ui/skeleton"
-import { SearchTrigger } from "@/components/journal/search-trigger"
 import { useJournalEntries, useJournalStats } from "@/hooks/use-journal"
 import type { JournalEntry } from "@/lib/types/journal"
 
@@ -103,8 +102,6 @@ export default function JournalPage() {
         subtitle="Browse and revisit your past journal entries"
       />
 
-      {/* Search Trigger - Beautiful floating button */}
-      <SearchTrigger variant="floating" />
 
       {/* Main Content - Mobile Responsive */}
       <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
