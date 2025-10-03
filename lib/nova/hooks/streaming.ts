@@ -29,7 +29,10 @@ export function createStreamingHooks(
           timestamp: new Date().toISOString(),
         });
 
-        ctx.metrics.trackEvent('sse:stream_start_sent');
+        ctx.metrics.trackEvent('sse:stream_start_sent', {
+          streamId: ctx.streamId,
+          chatId: ctx.chatId,
+        });
       },
       metadata: {
         priority: 5, // Send early
@@ -114,7 +117,10 @@ export function createStreamingHooks(
         });
 
         ctx.metrics.trackEvent('sse:block_complete_sent', { actionId });
-        ctx.metrics.trackEvent('sse:stream_end_sent');
+        ctx.metrics.trackEvent('sse:stream_end_sent', {
+          chatId: ctx.chatId,
+          duration: ctx.metrics.getDuration(),
+        });
       },
       metadata: {
         priority: 20,
@@ -193,7 +199,10 @@ export function createStreamingHooks(
           chatId: ctx.chatId,
         });
 
-        ctx.metrics.trackEvent('sse:timeout_sent');
+        ctx.metrics.trackEvent('sse:timeout_sent', {
+          chatId: ctx.chatId,
+          duration: ctx.metrics.getDuration(),
+        });
       },
       metadata: {
         priority: 10,
