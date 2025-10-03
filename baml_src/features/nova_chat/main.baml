@@ -6,7 +6,7 @@ function GenerateNovaResponse(
   journalContext: JournalEntryContext[],
   temporalContext: TemporalContext
 ) -> NovaAgentContent {
-  client GPT5Mini
+  client GPT5Nano
   prompt #"
 {{ NovaFoundationalPrinciples() }}
 
