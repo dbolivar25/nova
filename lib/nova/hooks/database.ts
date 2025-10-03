@@ -28,12 +28,23 @@ export function createDatabaseHooks(
         try {
           const supabase = await createServerSupabaseClient();
 
+          // Get internal user UUID from Clerk ID
+          const { data: user } = await supabase
+            .from('users')
+            .select('id')
+            .eq('clerk_id', ctx.userId)
+            .single();
+
+          if (!user) {
+            throw new Error('User not found for saving assistant message');
+          }
+
           // Save Nova's response to ai_conversations table
           // Note: This will be called from the API route which already saved the user message
           const { error } = await supabase
             .from('ai_conversations')
             .insert({
-              user_id: ctx.userId,
+              user_id: user.id,
               message_role: 'assistant',
               message_content: content.response,
               // Note: No journal_entry_id since this is a general chat response
