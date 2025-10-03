@@ -76,6 +76,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let currentEvent = '';
 
         while (true) {
           const { done, value } = await reader.read();
@@ -90,14 +91,15 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
             if (!line.trim() || line.startsWith(':')) continue;
 
             if (line.startsWith('event:')) {
-              const eventType = line.slice(6).trim();
+              currentEvent = line.slice(6).trim();
               continue;
             }
 
             if (line.startsWith('data:')) {
               try {
                 const data = JSON.parse(line.slice(5).trim());
-                handleSSEEvent(data);
+                handleSSEEvent(currentEvent, data);
+                currentEvent = ''; // Reset after handling
               } catch (e) {
                 console.error('Failed to parse SSE data:', e);
               }
@@ -115,9 +117,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
     [isStreaming, options]
   );
 
-  const handleSSEEvent = (data: any) => {
-    const eventType = data.type || 'unknown';
-
+  const handleSSEEvent = (eventType: string, data: any) => {
     switch (eventType) {
       case 'stream:start':
         currentMessageIdRef.current = data.streamId || Date.now().toString();
