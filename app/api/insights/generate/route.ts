@@ -10,6 +10,9 @@ import { auth } from '@clerk/nextjs/server';
 import { InsightsService } from '@/lib/nova/services/insights-service';
 import { startOfWeek } from 'date-fns';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();

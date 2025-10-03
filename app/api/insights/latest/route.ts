@@ -9,6 +9,9 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { InsightsService } from '@/lib/nova/services/insights-service';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const { userId } = await auth();
