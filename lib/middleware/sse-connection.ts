@@ -64,7 +64,7 @@ export class SSEConnection implements SSEService {
 
   constructor(
     private readonly encoder: TextEncoder,
-    private readonly writer: WritableStreamDefaultWriter<Uint8Array>,
+    private readonly controller: ReadableStreamDefaultController<Uint8Array>,
     streamId?: string,
     private readonly options: SSEConnectionOptions = {}
   ) {
@@ -107,7 +107,7 @@ export class SSEConnection implements SSEService {
     try {
       // Format and send SSE event
       const eventData = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-      this.writer.write(this.encoder.encode(eventData));
+      this.controller.enqueue(this.encoder.encode(eventData));
 
       this.eventCount++;
     } catch (error) {
@@ -137,7 +137,7 @@ export class SSEConnection implements SSEService {
     if (!this.isConnected()) return;
 
     try {
-      this.writer.write(this.encoder.encode(':ping\n\n'));
+      this.controller.enqueue(this.encoder.encode(':ping\n\n'));
     } catch {
       // Connection likely closed
       this.markDisconnected();
@@ -180,12 +180,12 @@ export class SSEConnection implements SSEService {
     this.ended = true;
     this.cleanup();
 
-    // Close the writer
+    // Close the controller
     try {
-      await this.writer.close();
+      this.controller.close();
     } catch {
-      // Writer may already be closed
-      console.debug(`[SSE] Writer already closed for stream ${this.streamId}`);
+      // Controller may already be closed
+      console.debug(`[SSE] Controller already closed for stream ${this.streamId}`);
     }
 
     // Call disconnection callback
@@ -276,10 +276,8 @@ export function setupSSE(
 
   const stream = new ReadableStream({
     start(controller) {
-      const writer = controller as unknown as WritableStreamDefaultWriter<Uint8Array>;
-
-      // Create SSE connection
-      sseConnection = new SSEConnection(encoder, writer, undefined, options);
+      // Create SSE connection with the controller
+      sseConnection = new SSEConnection(encoder, controller, undefined, options);
 
       // Initialize connection
       sseConnection.initialize();
