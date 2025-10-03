@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
+    "baml:generate": "baml-cli generate --from ./baml_src",
+    "baml:dev": "baml-cli dev --from ./baml_src",
+    "postinstall": "pnpm baml:generate",
+    "dev": "pnpm baml:generate && next dev --turbopack",
+    "build": "pnpm baml:generate && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
@@ -15,6 +18,7 @@
     "check-all": "pnpm typecheck && pnpm lint && pnpm test run"
   },
   "dependencies": {
+    "@boundaryml/baml": "0.206.1",
     "@clerk/nextjs": "^6.20.0",
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -48,6 +52,7 @@
     "sonner": "^2.0.3",
     "swr": "^2.3.3",
     "tailwind-merge": "^3.3.0",
+    "uuid": "^13.0.0",
     "zod": "^3.25.28"
   },
   "devDependencies": {
@@ -59,6 +64,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^4.5.1",
     "@vitest/coverage-v8": "^3.2.3",
     "@vitest/ui": "^3.2.3",

@@ -7,78 +7,42 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ChatMessage } from "@/components/nova/chat-message"
 import { Send, Sparkles } from "lucide-react"
-import { toast } from "sonner"
+import { useNovaChat } from "@/hooks/use-nova-chat"
 
-interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  timestamp: Date
-  sources?: Array<{
-    date: string
-    excerpt: string
-  }>
-}
-
-const initialMessage: Message = {
+const initialMessage = {
   id: "1",
-  role: "assistant",
+  role: "assistant" as const,
   content: "Hello! I'm Nova, your AI companion for reflection and growth. I've been reading your journal entries and I'm here to help you explore your thoughts, identify patterns, and support your personal development journey.\n\nWhat would you like to talk about today?",
   timestamp: new Date(),
 }
 
 export default function NovaPage() {
-  const [messages, setMessages] = useState<Message[]>([initialMessage])
   const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const { messages, sendMessage, isStreaming, currentResponse } = useNovaChat({
+    onComplete: () => {
+      textareaRef.current?.focus()
+    },
+  })
+
+  // Add initial message if no messages yet
+  const displayMessages = messages.length === 0 ? [initialMessage] : messages
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
     }
-  }, [messages])
+  }, [displayMessages, currentResponse])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isStreaming) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input.trim(),
-      timestamp: new Date(),
-    }
-
-    setMessages(prev => [...prev, userMessage])
+    const messageText = input.trim()
     setInput("")
-    setIsLoading(true)
-
-    try {
-      // TODO: Integrate with BAML for AI responses
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "I understand you're exploring that thought. Based on your recent journal entries, I notice you've been reflecting on similar themes. Let me share some insights...\n\nThis is a placeholder response. Once integrated with BAML, I'll provide personalized insights based on your journal history.",
-        timestamp: new Date(),
-        sources: [
-          {
-            date: "May 24, 2025",
-            excerpt: "I've been thinking about growth and what it means to truly change..."
-          }
-        ]
-      }
-
-      setMessages(prev => [...prev, assistantMessage])
-    } catch {  
-      toast.error("Failed to get response from Nova")
-    } finally {
-      setIsLoading(false)
-      textareaRef.current?.focus()
-    }
+    await sendMessage(messageText)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -100,22 +64,37 @@ export default function NovaPage() {
         </p>
       </div>
 
-      <ScrollArea 
+      <ScrollArea
         ref={scrollAreaRef}
         className="flex-1 pr-4 mb-4"
       >
         <div className="space-y-6 pb-4">
-          {messages.map((message) => (
+          {displayMessages.map((message) => (
             <ChatMessage
               key={message.id}
               role={message.role}
               content={message.content}
               timestamp={message.timestamp}
-              sources={message.sources}
+              sources={'sources' in message && message.sources ? message.sources.map(s => ({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                date: 'entryDate' in s ? s.entryDate : (s as any).date,
+                excerpt: s.excerpt
+              })) : undefined}
             />
           ))}
-          
-          {isLoading && (
+
+          {/* Show streaming response */}
+          {isStreaming && currentResponse && (
+            <ChatMessage
+              role="assistant"
+              content={currentResponse}
+              timestamp={new Date()}
+              isStreaming={true}
+            />
+          )}
+
+          {/* Show loading indicator when waiting */}
+          {isStreaming && !currentResponse && (
             <div className="flex gap-4">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-secondary">
@@ -139,13 +118,13 @@ export default function NovaPage() {
           onKeyDown={handleKeyDown}
           placeholder="Share your thoughts with Nova..."
           className="min-h-[80px] pr-12 resize-none"
-          disabled={isLoading}
+          disabled={isStreaming}
         />
         <Button
           type="submit"
           size="icon"
           className="absolute bottom-2 right-2"
-          disabled={!input.trim() || isLoading}
+          disabled={!input.trim() || isStreaming}
         >
           <Send className="h-4 w-4" />
         </Button>

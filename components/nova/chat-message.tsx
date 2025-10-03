@@ -11,9 +11,10 @@ interface ChatMessageProps {
     date: string
     excerpt: string
   }>
+  isStreaming?: boolean
 }
 
-export function ChatMessage({ role, content, timestamp, sources }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp, sources, isStreaming }: ChatMessageProps) {
   const isUser = role === "user"
 
   return (
@@ -22,7 +23,11 @@ export function ChatMessage({ role, content, timestamp, sources }: ChatMessagePr
         <AvatarFallback className={cn(
           isUser ? "bg-primary text-primary-foreground" : "bg-secondary"
         )}>
-          {isUser ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+          {isUser ? (
+            <User className="h-4 w-4" />
+          ) : (
+            <Sparkles className={cn("h-4 w-4", isStreaming && "animate-pulse")} />
+          )}
         </AvatarFallback>
       </Avatar>
 
@@ -31,7 +36,10 @@ export function ChatMessage({ role, content, timestamp, sources }: ChatMessagePr
           "prose prose-sm dark:prose-invert max-w-none",
           isUser && "text-right"
         )}>
-          <p className="whitespace-pre-wrap">{content}</p>
+          <p className="whitespace-pre-wrap">
+            {content}
+            {isStreaming && <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse" />}
+          </p>
         </div>
 
         {sources && sources.length > 0 && (
