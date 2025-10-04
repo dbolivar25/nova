@@ -35,6 +35,9 @@ interface SSEEventData {
   };
   message?: {
     content?: {
+      agentResponse?: {
+        response?: string;
+      };
       sources?: Array<{
         type: string;
         entryDate: string;
@@ -145,7 +148,10 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
 
       case 'content:delta':
         if (data.delta) {
-          currentResponseRef.current += data.delta;
+          // BAML sends backslash at end of delta to represent newlines
+          // Replace trailing backslash with actual newline
+          const processedDelta = data.delta.replace(/\\$/g, '\n');
+          currentResponseRef.current += processedDelta;
           setCurrentResponse(currentResponseRef.current);
         }
         break;
@@ -155,27 +161,26 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
         break;
 
       case 'content:complete':
-        // Debug: log the complete event data
-        console.log('[Nova Chat] content:complete event data:', JSON.stringify(data, null, 2));
-
         // Get final sources from the complete message data
         const finalSources =
           typeof data.message === 'object' && data.message?.content?.sources
             ? data.message.content.sources
             : [];
 
-        console.log('[Nova Chat] Extracted sources:', finalSources);
+        // Use the server's final response (has correct newlines) instead of accumulated deltas
+        const finalContent =
+          typeof data.message === 'object' && data.message?.content?.agentResponse?.response
+            ? data.message.content.agentResponse.response
+            : currentResponseRef.current;
 
         // Finalize the assistant message with complete sources
         const assistantMessage: NovaMessage = {
           id: currentMessageIdRef.current,
           role: 'assistant',
-          content: currentResponseRef.current,
+          content: finalContent,
           timestamp: new Date(),
           sources: finalSources.length > 0 ? finalSources : undefined,
         };
-
-        console.log('[Nova Chat] Final message with sources:', assistantMessage);
 
         setMessages((prev) => [...prev, assistantMessage]);
         setCurrentResponse('');

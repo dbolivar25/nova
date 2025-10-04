@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -13,7 +13,6 @@ const initialMessage = {
   id: "1",
   role: "assistant" as const,
   content: "Hello! I'm Nova, your AI companion for reflection and growth. I've been reading your journal entries and I'm here to help you explore your thoughts, identify patterns, and support your personal development journey.\n\nWhat would you like to talk about today?",
-  timestamp: new Date(),
 }
 
 export default function NovaPage() {
@@ -27,8 +26,11 @@ export default function NovaPage() {
     },
   })
 
-  // Add initial message if no messages yet
-  const displayMessages = messages.length === 0 ? [initialMessage] : messages
+  // Add initial message if no messages yet - memoized to prevent useEffect dependency changes
+  const displayMessages = useMemo(
+    () => (messages.length === 0 ? [initialMessage] : messages),
+    [messages]
+  )
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -74,7 +76,6 @@ export default function NovaPage() {
               key={message.id}
               role={message.role}
               content={message.content}
-              timestamp={message.timestamp}
               sources={'sources' in message ? message.sources : undefined}
             />
           ))}
@@ -84,7 +85,6 @@ export default function NovaPage() {
             <ChatMessage
               role="assistant"
               content={currentResponse}
-              timestamp={new Date()}
               isStreaming={true}
             />
           )}

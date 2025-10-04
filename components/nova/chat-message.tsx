@@ -17,7 +17,6 @@ interface Source {
 interface ChatMessageProps {
   role: "user" | "assistant"
   content: string
-  timestamp?: Date
   sources?: Source[]
   isStreaming?: boolean
 }
@@ -25,7 +24,6 @@ interface ChatMessageProps {
 export function ChatMessage({
   role,
   content,
-  timestamp,
   sources,
   isStreaming
 }: ChatMessageProps) {
@@ -94,7 +92,7 @@ export function ChatMessage({
             components={{
               // Custom paragraph styling
               p: ({ children }) => (
-                <p className="mb-4 last:mb-0">{children}</p>
+                <p className="mb-5 last:mb-0">{children}</p>
               ),
               // Custom link renderer for citations
               a: ({ href, children, ...props }) => {
@@ -125,9 +123,6 @@ export function ChatMessage({
           >
             {content}
           </ReactMarkdown>
-          {isStreaming && (
-            <span className="inline-block w-0.5 h-4 ml-1 bg-foreground/60 animate-pulse" />
-          )}
         </div>
 
         {/* Action Bar (Meetingflow style) */}
