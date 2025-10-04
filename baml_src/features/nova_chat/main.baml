@@ -13,7 +13,7 @@ function GenerateNovaResponse(
 
 {{ NovaResponseGuidance() }}
 
-{{ RenderUserContext(userContext) }}
+{{ RenderUserContext(userContext.userInfo) }}
 
 {{ RenderMessageHistory(messages) }}
 
