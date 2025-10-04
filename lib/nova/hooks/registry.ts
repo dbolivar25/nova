@@ -17,6 +17,11 @@ import type {
 
 export class HookRegistry {
   private hooks = new Map<string, Hook<unknown>[]>();
+  private state: HookState = {
+    blockContents: new Map(),
+    sources: [],
+    eventCount: 0,
+  };
 
   /**
    * Register a module of hooks
@@ -47,12 +52,8 @@ export class HookRegistry {
     // Sort by priority (lower = earlier)
     const sortedHooks = [...hooks].sort((a, b) => a.metadata.priority - b.metadata.priority);
 
-    // Shared state for this event execution
-    let state: HookState = {
-      blockContents: new Map(),
-      sources: [],
-      eventCount: 0,
-    };
+    // Increment event count
+    this.state.eventCount++;
 
     const metrics: HookMetrics = {
       startTime: Date.now(),
@@ -63,7 +64,7 @@ export class HookRegistry {
     };
 
     const updateState = (partial: Partial<HookState>) => {
-      state = { ...state, ...partial };
+      this.state = { ...this.state, ...partial };
     };
 
     // Group by parallel vs sequential
@@ -73,7 +74,7 @@ export class HookRegistry {
     const hookContext: HookContext<typeof event.data> = {
       ...context,
       event: event.data,
-      state,
+      state: this.state,
       metrics,
       updateState,
     };
@@ -81,7 +82,7 @@ export class HookRegistry {
     // Run sequential hooks in order
     for (const hook of sequentialHooks) {
       try {
-        await hook.handler({ ...hookContext, state, updateState });
+        await hook.handler({ ...hookContext, state: this.state, updateState });
       } catch (error) {
         console.error(`[HookRegistry] Error in sequential hook for ${event.type}:`, error);
       }
@@ -92,7 +93,7 @@ export class HookRegistry {
       await Promise.all(
         parallelHooks.map(async (hook) => {
           try {
-            await hook.handler({ ...hookContext, state, updateState });
+            await hook.handler({ ...hookContext, state: this.state, updateState });
           } catch (error) {
             console.error(`[HookRegistry] Error in parallel hook for ${event.type}:`, error);
           }
@@ -106,6 +107,17 @@ export class HookRegistry {
    */
   getRegisteredEvents(): string[] {
     return Array.from(this.hooks.keys());
+  }
+
+  /**
+   * Reset state for a new stream
+   */
+  resetState(): void {
+    this.state = {
+      blockContents: new Map(),
+      sources: [],
+      eventCount: 0,
+    };
   }
 
   /**

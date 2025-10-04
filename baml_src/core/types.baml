@@ -1,113 +1,127 @@
 // Core SDK Types - Universal components for Nova AI features
 
 // ============================================
-// Reference Types - Traceability without exposing IDs
+// Source References
 // ============================================
 
 class JournalEntryRef {
   type "JournalEntryRef"
-  entryDate string @description("Date of journal entry (YYYY-MM-DD)")
-  excerpt string @description("Brief excerpt from the entry (50-100 chars)")
-  mood string? @description("Mood tag if present")
+  entryDate string @description("Date (YYYY-MM-DD)")
+  excerpt string @description("Brief excerpt (50-100 chars)")
 }
 
 class WeeklyInsightRef {
   type "WeeklyInsightRef"
-  weekStartDate string @description("Start date of the week")
+  weekStartDate string @description("Week start date (YYYY-MM-DD)")
   insightType string @description("Type of insight")
-  summary string @description("Brief summary of the insight")
+  summary string @description("Brief summary")
 }
 
 type SourceRef = JournalEntryRef | WeeklyInsightRef
 
 // ============================================
-// Context Types - Rich Data for AI
+// Context Types
 // ============================================
 
 class PromptResponseContext {
-  promptText string @description("The prompt question")
-  responseText string @description("User's response")
-  category string @description("Prompt category (self-awareness, growth, etc.)")
+  promptText string
+  responseText string
+  category string
 }
 
 class JournalEntryContext {
   type "JournalEntryContext"
-  entryDate string @description("Date of entry (YYYY-MM-DD)")
-  freeformText string? @description("User's free-form writing")
-  mood string? @description("Emotional state")
-  wordCount int @description("Length of entry")
-  promptResponses PromptResponseContext[] @description("Responses to daily prompts")
-  daysAgo int @description("How many days ago this was written")
-}
-
-class PersonalityTraits {
-  communicationStyle string @description("How user expresses themselves")
-  reflectionDepth string @description("How deeply they self-reflect")
-  emotionalAwareness string @description("Level of emotional intelligence")
-  growthOrientation string @description("Attitude toward personal development")
+  entryDate string @description("Date (YYYY-MM-DD)")
+  freeformText string? @description("Free-form writing")
+  mood string? @description("Mood tag")
+  wordCount int
+  promptResponses PromptResponseContext[]
+  daysAgo int @description("Days ago from today")
 }
 
 class UserJournalContext {
   type "UserJournalContext"
-  userId string @description("User identifier")
-  email string @description("User email")
-  name string @description("User's display name")
+  userId string
+  email string
+  name string
 
-  // Journaling patterns
-  totalEntries int @description("Total journal entries written")
-  currentStreak int @description("Current consecutive day streak")
-  longestStreak int @description("Longest streak achieved")
-  averageWordCount int @description("Average words per entry")
+  totalEntries int
+  currentStreak int
+  longestStreak int
+  averageWordCount int
 
-  // Preferences from user_preferences
-  dailyReminderEnabled bool @description("Whether user wants reminders")
-  promptCount int @description("Number of daily prompts (1-5)")
-
-  // AI personalization (optional, future)
-  aiResponseStyle string? @description("Preferred response style (thoughtful, direct, empathetic)")
-  personalityAnalysis PersonalityTraits? @description("User's personality traits")
+  dailyReminderEnabled bool
+  promptCount int @description("Daily prompt count (1-5)")
 }
 
-// ============================================
-// Temporal Context - Time Awareness
-// ============================================
+class UserContext {
+  type "UserContext"
+  userInfo UserJournalContext @description("User's journaling stats and preferences")
+}
 
 class TemporalContext {
   type "TemporalContext"
-  currentTime string @description("Current time in ISO 8601 format")
-  timezone string @description("User's timezone")
-  dayOfWeek string @description("Day of the week")
-  weekNumber int @description("Week number of the year")
-  quarter string @description("Quarter like 'Q1 2025'")
+  currentTime string @description("ISO 8601 format")
+  timezone string
+  dayOfWeek string
+  weekNumber int
+  quarter string @description("e.g., 'Q4 2025'")
   timeOfDay string @description("morning, afternoon, evening, night")
 }
 
 // ============================================
-// Message System - Nova Chat
+// Message Types
 // ============================================
 
-class NovaUserContent {
-  type "NovaUserContent"
-  message string @description("User's message to Nova")
+class UserMessage {
+  type "UserMessage"
+  message string @description("The user's message to Nova")
 }
 
-class NovaAgentContent {
-  type "NovaAgentContent" @stream.done @stream.not_null
-  response string @description("Nova's thoughtful response")
-  sources SourceRef[] @description("Journal entries referenced")
-  confidence float? @description("Confidence in response (0-1)")
+class UserContent {
+  type "UserContent"
+  userMessage UserMessage
 }
 
-class NovaSystemContent {
-  type "NovaSystemContent"
-  journalContext JournalEntryContext[] @description("Relevant journal entries")
-  userContext UserJournalContext @description("User's journaling patterns")
+class AgentResponse {
+  type "AgentResponse" @stream.done @stream.not_null
+  response string @description("Nova's response with inline citations in format [1](@source-1), [2](@source-2), etc.")
 }
 
-type NovaMessageContent = NovaUserContent | NovaAgentContent | NovaSystemContent
+class AgentContent {
+  type "AgentContent" @stream.done @stream.not_null
+  agentResponse AgentResponse
+  sources SourceRef[] @description("Journal entries referenced. Order matches citation numbers.")
+}
 
-class NovaMessage {
+// ============================================
+// System Context
+// ============================================
+
+class JournalContext {
+  type "JournalContext"
+  entries JournalEntryContext[] @description("Relevant journal entries for this conversation turn")
+}
+
+class CompressedHistory {
+  type "CompressedHistory"
+  summary string @description("Compressed conversation history for context")
+}
+
+type ContextResult = JournalContext | CompressedHistory
+
+class SystemContent {
+  type "SystemContent"
+  contextResult ContextResult @description("Context provided by the system")
+}
+
+// ============================================
+// Message Content Union
+// ============================================
+
+type MessageContent = UserContent | AgentContent | SystemContent
+
+class Message {
   id string @description("Message ID")
-  content NovaMessageContent @description("Message content")
-  timestamp string @description("ISO 8601 timestamp")
+  content MessageContent
 }

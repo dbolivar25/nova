@@ -2,7 +2,7 @@
  * Core types for Nova AI agent system
  */
 
-import type { NovaAgentContent, NovaMessage } from '@/lib/baml_client/types';
+import type { AgentContent, Message, UserContext } from '@/lib/baml_client/types';
 
 // Re-export for use in hooks
 export type { SSEService } from '@/lib/middleware/sse-connection';
@@ -57,9 +57,8 @@ export interface NovaBamlContext {
 }
 
 export interface NovaContext {
-  messageHistory: NovaMessage[];
-  userContext: any; // UserJournalContext from BAML
-  journalContext: any[]; // JournalEntryContext[] from BAML
+  messages: Message[];
+  userContext: UserContext;
   temporalContext: any; // TemporalContext from BAML
   config: NovaAgentConfig;
   bamlContext: NovaBamlContext;
@@ -70,15 +69,14 @@ export interface NovaContext {
 // ============================================
 
 export interface NovaDependencies {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   streamNovaResponse: (
-    messages: NovaMessage[],
-    userContext: any,
-    journalContext: any[],
+    messages: Message[],
+    userContext: UserContext,
     temporalContext: any
-  ) => BamlStream<partial_types.NovaAgentContent, NovaAgentContent>;
+  ) => BamlStream<partial_types.AgentContent, AgentContent>;
   generateId: () => string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   getTemporalContext: (date: Date) => any;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -89,9 +87,9 @@ export interface NovaDependencies {
 
 export type NovaEvent =
   | { type: 'chat:started'; data: { collectorId: string } }
-  | { type: 'content:delta'; data: { actionId: ActionId; partial: Partial<NovaAgentContent> } }
+  | { type: 'content:delta'; data: { actionId: ActionId; partial: Partial<AgentContent> } }
   | { type: 'source:added'; data: { actionId: ActionId; source: unknown } }
-  | { type: 'chat:completed'; data: { actionId: ActionId; content: NovaAgentContent } }
+  | { type: 'chat:completed'; data: { actionId: ActionId; content: AgentContent } }
   | { type: 'retry:attempted'; data: { retry: number; error: Error } }
   | { type: 'rate_limit:retry'; data: { attempt: number; waitMs: number; error: Error } }
   | { type: 'chat:error'; data: { error: Error } }
@@ -136,9 +134,9 @@ export interface Hook<T = unknown> {
 // Map event types to their data types
 export type EventDataMap = {
   'chat:started': { collectorId: string };
-  'content:delta': { actionId: ActionId; partial: Partial<NovaAgentContent> };
+  'content:delta': { actionId: ActionId; partial: Partial<AgentContent> };
   'source:added': { actionId: ActionId; source: unknown };
-  'chat:completed': { actionId: ActionId; content: NovaAgentContent };
+  'chat:completed': { actionId: ActionId; content: AgentContent };
   'retry:attempted': { retry: number; error: Error };
   'rate_limit:retry': { attempt: number; waitMs: number; error: Error };
   'chat:error': { error: Error };

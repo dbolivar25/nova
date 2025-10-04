@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { b } from '@/lib/baml_client';
-import type { NovaMessage } from '@/lib/baml_client/types';
+import type { Message } from '@/lib/baml_client/types';
 import { setupSSE } from '@/lib/middleware/sse-connection';
 import { NovaStreamHandler } from '@/lib/nova/stream-handler';
 import { HookRegistry } from '@/lib/nova/hooks/registry';
@@ -85,29 +85,51 @@ export async function POST(req: NextRequest) {
         await NovaChatService.saveUserMessage(userId, message);
 
         // Get conversation history if requested
-        let messageHistory: NovaMessage[] = [];
+        let messages: Message[] = [];
         if (includeHistory) {
-          messageHistory = await NovaChatService.getConversationHistory(userId, 10);
+          messages = await NovaChatService.getConversationHistory(userId, 10);
         }
 
-        // Add current user message to history
-        messageHistory.push({
+        // Get journal context for this query
+        const journalContext = await NovaContextService.buildJournalContext(
+          userId,
+          message,
+          DEFAULT_NOVA_CONFIG.JOURNAL_CONTEXT_LIMIT
+        );
+
+        // Inject journal context as SystemContent
+        if (journalContext && journalContext.length > 0) {
+          messages.push({
+            id: generateUniqueId(),
+            content: {
+              type: 'SystemContent',
+              contextResult: {
+                type: 'JournalContext',
+                entries: journalContext,
+              },
+            },
+          });
+        }
+
+        // Add current user message
+        messages.push({
           id: generateUniqueId(),
           content: {
-            type: 'NovaUserContent',
-            message,
+            type: 'UserContent',
+            userMessage: {
+              type: 'UserMessage',
+              message,
+            },
           },
-          timestamp: new Date().toISOString(),
         });
 
-        // Build context
-        const { userContext, journalContext, temporalContext } =
-          await NovaContextService.buildChatContext(userId, userEmail);
+        // Build user context
+        const userContext = await NovaContextService.buildUserContext(userId, userEmail);
+        const temporalContext = NovaContextService.getTemporalContext(new Date());
 
         return {
-          messageHistory,
+          messages,
           userContext,
-          journalContext,
           temporalContext,
         };
       } catch (error) {
@@ -120,14 +142,12 @@ export async function POST(req: NextRequest) {
     (async () => {
       try {
         // Build context
-        const { messageHistory, userContext, journalContext, temporalContext } =
-          await buildContext();
+        const { messages, userContext, temporalContext } = await buildContext();
 
         // Create context for executor
         const context: NovaContext = {
-          messageHistory,
+          messages,
           userContext,
-          journalContext,
           temporalContext,
           config: DEFAULT_NOVA_CONFIG,
           bamlContext: {
@@ -137,8 +157,8 @@ export async function POST(req: NextRequest) {
 
         // Create dependencies
         const dependencies: NovaDependencies = {
-          streamNovaResponse: (msgs, uCtx, jCtx, tCtx) =>
-            b.stream.GenerateNovaResponse(msgs, uCtx, jCtx, tCtx),
+          streamNovaResponse: (msgs, uCtx, tCtx) =>
+            b.stream.GenerateNovaResponse(msgs, uCtx, tCtx),
           generateId: generateUniqueId,
           getTemporalContext: (date) => NovaContextService.getTemporalContext(date),
         };

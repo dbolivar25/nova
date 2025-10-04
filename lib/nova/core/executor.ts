@@ -6,7 +6,7 @@
  * All side effects are handled by the imperative shell through hooks.
  */
 
-import type { NovaAgentContent } from '@/lib/baml_client/types';
+import type { AgentContent, WeeklyInsightRef } from '@/lib/baml_client/types';
 import { classifyError, sleep, toError } from './executor-helpers';
 import type { NovaContext, NovaDependencies, NovaEvent } from './types';
 import { createActionId } from './types';
@@ -18,7 +18,7 @@ export async function* executeNovaChat(
   context: NovaContext,
   deps: NovaDependencies
 ): AsyncGenerator<NovaEvent> {
-  const { messageHistory, userContext, journalContext, temporalContext, config, bamlContext } = context;
+  const { messages, userContext, temporalContext, config, bamlContext } = context;
   const { streamNovaResponse, generateId } = deps;
 
   // Emit start event
@@ -28,7 +28,7 @@ export async function* executeNovaChat(
   };
 
   const actionId = createActionId(generateId());
-  let finalContent: NovaAgentContent | null = null;
+  let finalContent: AgentContent | null = null;
   let validationRetryCount = 0;
   let rateLimitRetryCount = 0;
 
@@ -39,11 +39,13 @@ export async function* executeNovaChat(
   for (let attempt = 0; attempt < maxTotalAttempts; attempt++) {
     try {
       const stream = streamNovaResponse(
-        messageHistory,
+        messages,
         userContext,
-        journalContext,
         temporalContext
       );
+
+      // Track emitted sources to avoid duplicates
+      const emittedSources = new Set<string>();
 
       // Stream partial results
       for await (const partial of stream) {
@@ -53,13 +55,25 @@ export async function* executeNovaChat(
           data: { actionId, partial },
         } as NovaEvent;
 
-        // Emit source events as they appear
+        // Emit only new sources (BAML accumulates sources over time)
         if (partial.sources && partial.sources.length > 0) {
           for (const source of partial.sources) {
-            yield {
-              type: 'source:added' as const,
-              data: { actionId, source },
-            } as NovaEvent;
+            // Create unique key based on source type
+            let sourceKey: string;
+            if (source.type === 'JournalEntryRef') {
+              sourceKey = `${source.type}:${source.entryDate}:${source.excerpt}`;
+            } else {
+              const insightRef = source as WeeklyInsightRef;
+              sourceKey = `${source.type}:${insightRef.weekStartDate}:${insightRef.insightType}`;
+            }
+
+            if (!emittedSources.has(sourceKey)) {
+              emittedSources.add(sourceKey);
+              yield {
+                type: 'source:added' as const,
+                data: { actionId, source },
+              } as NovaEvent;
+            }
           }
         }
       }

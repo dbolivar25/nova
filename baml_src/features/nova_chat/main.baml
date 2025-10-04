@@ -1,11 +1,10 @@
 // Nova Chat - Main BAML function for conversational AI
 
 function GenerateNovaResponse(
-  messages: NovaMessage[],
-  userContext: UserJournalContext,
-  journalContext: JournalEntryContext[],
+  messages: Message[],
+  userContext: UserContext,
   temporalContext: TemporalContext
-) -> NovaAgentContent {
+) -> AgentContent {
   client GPT5Mini
   prompt #"
 {{ NovaFoundationalPrinciples() }}
@@ -14,21 +13,16 @@ function GenerateNovaResponse(
 
 {{ NovaResponseGuidance() }}
 
-{{ RenderUserJournalContext(userContext) }}
+{{ RenderUserContext(userContext) }}
 
-{{ RenderJournalContext(journalContext) }}
-
-{{ RenderNovaMessageHistory(messages) }}
+{{ RenderMessageHistory(messages) }}
 
 {{ RenderTemporalContext(temporalContext) }}
 
 {{ ctx.output_format }}
 
-IMPORTANT: Your response MUST be valid JSON with all required fields (type, response, sources).
-Apply formatting (bold, line breaks) WITHIN the response field value, not to the JSON structure.
-Use "\n" for line breaks, not "\\n".
-
-For sources, include ONLY journal entries you actually referenced in your response.
-Each source needs: type="JournalEntryRef", entryDate, excerpt (50-100 chars), and mood if mentioned.
+IMPORTANT: Valid JSON with all required fields (type, agentResponse, sources).
+Use [1](@source-1), [2](@source-2) for inline citations matching sources array order.
+Journal entries are provided in SystemContent messages in conversation history.
   "#
 }

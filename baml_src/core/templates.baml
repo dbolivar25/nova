@@ -1,88 +1,95 @@
 // Core SDK Templates - Reusable rendering patterns
 
 // ============================================
-// Rendering Templates
+// Message Rendering Helpers
 // ============================================
 
-template_string RenderNovaMessageHistory(messages: NovaMessage[]) #"
+template_string RenderUserContent(content: UserContent, messageId: string) #"
+<user_message id="{{ messageId }}">
+  {{ content.userMessage.message }}
+</user_message>
+"#
+
+template_string RenderAgentContent(content: AgentContent, messageId: string) #"
+<nova_response id="{{ messageId }}">
+  {{ content.agentResponse.response }}
+</nova_response>
+"#
+
+template_string RenderSystemContent(content: SystemContent) #"
+{% if content.contextResult.type == "JournalContext" %}
+{{ RenderJournalContext(content.contextResult.entries) }}
+{% elif content.contextResult.type == "CompressedHistory" %}
+<compressed_history>
+  {{ content.contextResult.summary }}
+</compressed_history>
+{% endif %}
+"#
+
+template_string RenderMessageHistory(messages: Message[]) #"
 <conversation_history>
 {% for message in messages %}
-  {% if message.content.type == "NovaUserContent" %}
-  <user_message id="{{ message.id }}" timestamp="{{ message.timestamp }}">
-    {{ message.content.message }}
-  </user_message>
-  {% elif message.content.type == "NovaAgentContent" %}
-  <nova_response id="{{ message.id }}" timestamp="{{ message.timestamp }}">
-    {{ message.content.response }}
-    {% if message.content.sources|length > 0 %}
-    <sources>
-      {% for source in message.content.sources %}
-      - {{ source.entryDate }}: "{{ source.excerpt }}"
-      {% endfor %}
-    </sources>
-    {% endif %}
-  </nova_response>
+  {% if message.content.type == "UserContent" %}
+{{ RenderUserContent(message.content, message.id) }}
+  {% elif message.content.type == "AgentContent" %}
+{{ RenderAgentContent(message.content, message.id) }}
+  {% elif message.content.type == "SystemContent" %}
+{{ RenderSystemContent(message.content) }}
   {% endif %}
 {% endfor %}
 </conversation_history>
 "#
 
-template_string RenderJournalContext(entries: JournalEntryContext[]) #"
-<journal_context>
-  <recent_entries count="{{ entries|length }}">
-  {% for entry in entries %}
-    <entry date="{{ entry.entryDate }}" days_ago="{{ entry.daysAgo }}" mood="{{ entry.mood }}">
-      {% if entry.freeformText %}
-      <freeform>
-{{ entry.freeformText }}
-      </freeform>
-      {% endif %}
+// ============================================
+// Context Rendering Helpers
+// ============================================
 
-      {% if entry.promptResponses|length > 0 %}
-      <prompts>
-      {% for pr in entry.promptResponses %}
-        <prompt category="{{ pr.category }}">
-          <question>{{ pr.promptText }}</question>
-          <response>{{ pr.responseText }}</response>
-        </prompt>
-      {% endfor %}
-      </prompts>
-      {% endif %}
-    </entry>
-  {% endfor %}
-  </recent_entries>
-</journal_context>
-"#
-
-template_string RenderUserJournalContext(userContext: UserJournalContext) #"
+template_string RenderUserContext(userContext: UserContext) #"
 <user_context>
   <identity>
-    <name>{{ userContext.name }}</name>
-    <email>{{ userContext.email }}</email>
+    <name>{{ userContext.userInfo.name }}</name>
+    <email>{{ userContext.userInfo.email }}</email>
   </identity>
 
   <journaling_patterns>
-    <total_entries>{{ userContext.totalEntries }}</total_entries>
-    <current_streak>{{ userContext.currentStreak }} days</current_streak>
-    <longest_streak>{{ userContext.longestStreak }} days</longest_streak>
-    <average_word_count>{{ userContext.averageWordCount }} words</average_word_count>
+    <total_entries>{{ userContext.userInfo.totalEntries }}</total_entries>
+    <current_streak>{{ userContext.userInfo.currentStreak }} days</current_streak>
+    <longest_streak>{{ userContext.userInfo.longestStreak }} days</longest_streak>
+    <average_word_count>{{ userContext.userInfo.averageWordCount }} words</average_word_count>
   </journaling_patterns>
 
-  {% if userContext.personalityAnalysis %}
-  <personality>
-    <communication_style>{{ userContext.personalityAnalysis.communicationStyle }}</communication_style>
-    <reflection_depth>{{ userContext.personalityAnalysis.reflectionDepth }}</reflection_depth>
-    <emotional_awareness>{{ userContext.personalityAnalysis.emotionalAwareness }}</emotional_awareness>
-    <growth_orientation>{{ userContext.personalityAnalysis.growthOrientation }}</growth_orientation>
-  </personality>
-  {% endif %}
-
-  {% if userContext.aiResponseStyle %}
   <preferences>
-    <response_style>{{ userContext.aiResponseStyle }}</response_style>
+    <daily_reminder_enabled>{{ userContext.userInfo.dailyReminderEnabled }}</daily_reminder_enabled>
+    <prompt_count>{{ userContext.userInfo.promptCount }}</prompt_count>
   </preferences>
-  {% endif %}
 </user_context>
+"#
+
+template_string RenderJournalContext(entries: JournalEntryContext[]) #"
+<journal_context>
+  <recent_entries count="{{ entries|length }}">
+{% for entry in entries %}
+    <entry date="{{ entry.entryDate }}" days_ago="{{ entry.daysAgo }}" mood="{{ entry.mood }}">
+{% if entry.freeformText %}
+      <freeform>
+{{ entry.freeformText }}
+      </freeform>
+{% endif %}
+
+{% if entry.promptResponses|length > 0 %}
+      <prompts>
+{% for prompt in entry.promptResponses %}
+        <prompt category="{{ prompt.category }}">
+          <question>{{ prompt.promptText }}</question>
+          <response>{{ prompt.responseText }}</response>
+        </prompt>
+{% endfor %}
+      </prompts>
+{% endif %}
+    </entry>
+{% endfor %}
+  </recent_entries>
+</journal_context>
 "#
 
 template_string RenderTemporalContext(temporalContext: TemporalContext) #"

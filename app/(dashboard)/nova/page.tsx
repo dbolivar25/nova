@@ -75,11 +75,7 @@ export default function NovaPage() {
               role={message.role}
               content={message.content}
               timestamp={message.timestamp}
-              sources={'sources' in message && message.sources ? message.sources.map(s => ({
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                date: 'entryDate' in s ? s.entryDate : (s as any).date,
-                excerpt: s.excerpt
-              })) : undefined}
+              sources={'sources' in message ? message.sources : undefined}
             />
           ))}
 

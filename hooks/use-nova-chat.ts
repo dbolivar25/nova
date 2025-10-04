@@ -16,7 +16,6 @@ interface NovaMessage {
     type: string;
     entryDate: string;
     excerpt: string;
-    mood?: string;
   }>;
 }
 
@@ -25,14 +24,35 @@ interface UseNovaChatOptions {
   onComplete?: () => void;
 }
 
+interface SSEEventData {
+  streamId?: string;
+  delta?: string;
+  source?: {
+    type: string;
+    entryDate: string;
+    excerpt: string;
+    mood?: string;
+  };
+  message?: {
+    content?: {
+      sources?: Array<{
+        type: string;
+        entryDate: string;
+        excerpt: string;
+        mood?: string;
+      }>;
+    };
+  } | string;
+  code?: string;
+}
+
 export function useNovaChat(options: UseNovaChatOptions = {}) {
   const [messages, setMessages] = useState<NovaMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentResponse, setCurrentResponse] = useState('');
-  const [currentSources, setCurrentSources] = useState<NovaMessage['sources']>([]);
 
-  const eventSourceRef = useRef<EventSource | null>(null);
   const currentMessageIdRef = useRef<string>('');
+  const currentResponseRef = useRef<string>('');
 
   const sendMessage = useCallback(
     async (message: string, includeHistory = true) => {
@@ -49,7 +69,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
       setMessages((prev) => [...prev, userMessage]);
       setIsStreaming(true);
       setCurrentResponse('');
-      setCurrentSources([]);
+      currentResponseRef.current = '';
 
       try {
         // Open SSE connection via POST
@@ -117,7 +137,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
     [isStreaming, options]
   );
 
-  const handleSSEEvent = (eventType: string, data: any) => {
+  const handleSSEEvent = (eventType: string, data: SSEEventData) => {
     switch (eventType) {
       case 'stream:start':
         currentMessageIdRef.current = data.streamId || Date.now().toString();
@@ -125,29 +145,41 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
 
       case 'content:delta':
         if (data.delta) {
-          setCurrentResponse((prev) => prev + data.delta);
+          currentResponseRef.current += data.delta;
+          setCurrentResponse(currentResponseRef.current);
         }
         break;
 
       case 'source:added':
-        if (data.source) {
-          setCurrentSources((prev) => [...(prev || []), data.source]);
-        }
+        // Ignore partial sources during streaming - we'll get final sources in content:complete
         break;
 
       case 'content:complete':
-        // Finalize the assistant message
+        // Debug: log the complete event data
+        console.log('[Nova Chat] content:complete event data:', JSON.stringify(data, null, 2));
+
+        // Get final sources from the complete message data
+        const finalSources =
+          typeof data.message === 'object' && data.message?.content?.sources
+            ? data.message.content.sources
+            : [];
+
+        console.log('[Nova Chat] Extracted sources:', finalSources);
+
+        // Finalize the assistant message with complete sources
         const assistantMessage: NovaMessage = {
           id: currentMessageIdRef.current,
           role: 'assistant',
-          content: currentResponse,
+          content: currentResponseRef.current,
           timestamp: new Date(),
-          sources: (currentSources && currentSources.length > 0) ? currentSources : undefined,
+          sources: finalSources.length > 0 ? finalSources : undefined,
         };
+
+        console.log('[Nova Chat] Final message with sources:', assistantMessage);
 
         setMessages((prev) => [...prev, assistantMessage]);
         setCurrentResponse('');
-        setCurrentSources([]);
+        currentResponseRef.current = '';
         break;
 
       case 'stream:end':
@@ -156,9 +188,10 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
         break;
 
       case 'error':
-        toast.error(data.message || 'An error occurred');
+        const errorMessage = typeof data.message === 'string' ? data.message : 'An error occurred';
+        toast.error(errorMessage);
         setIsStreaming(false);
-        options.onError?.(new Error(data.message || 'Stream error'));
+        options.onError?.(new Error(errorMessage));
         break;
 
       default:
@@ -170,7 +203,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
   const clearMessages = useCallback(() => {
     setMessages([]);
     setCurrentResponse('');
-    setCurrentSources([]);
+    currentResponseRef.current = '';
   }, []);
 
   return {

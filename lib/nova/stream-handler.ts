@@ -34,6 +34,9 @@ export class NovaStreamHandler {
    * Handle an event stream from the executor
    */
   async handleStream(eventStream: AsyncGenerator<NovaEvent>): Promise<void> {
+    // Reset registry state for new stream
+    this.registry.resetState();
+
     // Set up timeout
     this.setupTimeout();
 
