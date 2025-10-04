@@ -16,7 +16,7 @@ function GenerateWeeklyInsights(
 <analysis_task>
 You are analyzing a week of journal entries to generate comprehensive weekly insights.
 
-{{ RenderUserJournalContext(userContext) }}
+{{ RenderUserContext(userContext) }}
 
 {{ RenderJournalContext(entries) }}
 
