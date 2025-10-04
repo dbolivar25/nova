@@ -4,7 +4,7 @@
  * Generates and manages weekly insights from journal entries
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { b } from '@/lib/baml_client';
 import { NovaContextService } from './nova-context-service';
 import type { WeeklyInsights } from '@/lib/baml_client/types';
@@ -107,7 +107,7 @@ export class InsightsService {
     userId: string,
     insights: WeeklyInsights
   ): Promise<void> {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServiceRoleClient();
 
     // Get user ID
     const { data: user } = await supabase
@@ -143,6 +143,7 @@ export class InsightsService {
 
     if (emotionalError) {
       console.error('Error storing emotional trends:', emotionalError);
+      throw new Error(`Failed to store emotional trends: ${emotionalError.message}`);
     }
 
     // Store key themes
@@ -162,6 +163,7 @@ export class InsightsService {
 
     if (themesError) {
       console.error('Error storing themes:', themesError);
+      throw new Error(`Failed to store key themes: ${themesError.message}`);
     }
 
     // Store growth moments
@@ -181,6 +183,7 @@ export class InsightsService {
 
     if (growthError) {
       console.error('Error storing growth moments:', growthError);
+      throw new Error(`Failed to store growth moments: ${growthError.message}`);
     }
 
     // Store patterns (week ahead suggestions)
@@ -201,7 +204,10 @@ export class InsightsService {
 
     if (patternsError) {
       console.error('Error storing patterns:', patternsError);
+      throw new Error(`Failed to store patterns: ${patternsError.message}`);
     }
+
+    console.log(`[Insights] Successfully stored all insights for user ${userId}, week ${insights.weekStartDate}`);
   }
 
   /**

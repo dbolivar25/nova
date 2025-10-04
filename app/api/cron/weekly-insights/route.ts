@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { InsightsService } from '@/lib/nova/services/insights-service';
 import { startOfWeek, subDays } from 'date-fns';
 
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServiceRoleClient();
 
     // Get all active users (journaled in past 2 weeks)
     const twoWeeksAgo = subDays(new Date(), 14);
