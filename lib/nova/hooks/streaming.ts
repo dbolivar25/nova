@@ -45,8 +45,8 @@ export function createStreamingHooks(
         const { actionId, partial } = ctx.event;
 
         // Only send deltas for actual response content
-        if (partial.response) {
-          const currentContent = partial.response;
+        if (partial.agentResponse?.response) {
+          const currentContent = partial.agentResponse.response;
           const previousContent = ctx.state.blockContents.get(actionId) || '';
 
           if (currentContent.length > previousContent.length) {

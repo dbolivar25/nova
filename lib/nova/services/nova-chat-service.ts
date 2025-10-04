@@ -5,7 +5,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import type { NovaMessage } from '@/lib/baml_client/types';
+import type { Message } from '@/lib/baml_client/types';
 
 export class NovaChatService {
   /**
@@ -47,12 +47,12 @@ export class NovaChatService {
 
   /**
    * Get conversation history
-   * Returns messages in BAML NovaMessage format
+   * Returns messages in BAML Message format
    */
   static async getConversationHistory(
     userId: string,
     limit: number = 20
-  ): Promise<NovaMessage[]> {
+  ): Promise<Message[]> {
     const supabase = await createServerSupabaseClient();
 
     // Get user ID from Clerk ID
@@ -82,19 +82,24 @@ export class NovaChatService {
       const content =
         msg.message_role === 'user'
           ? {
-              type: 'NovaUserContent' as const,
-              message: msg.message_content,
+              type: 'UserContent' as const,
+              userMessage: {
+                type: 'UserMessage' as const,
+                message: msg.message_content,
+              },
             }
           : {
-              type: 'NovaAgentContent' as const,
-              response: msg.message_content,
+              type: 'AgentContent' as const,
+              agentResponse: {
+                type: 'AgentResponse' as const,
+                response: msg.message_content,
+              },
               sources: [], // TODO: Parse from metadata if we store it
             };
 
       return {
         id: msg.id,
         content,
-        timestamp: msg.created_at || new Date().toISOString(),
       };
     });
   }

@@ -10,6 +10,7 @@ import type {
   PromptResponseContext,
   TemporalContext,
   UserJournalContext,
+  UserContext,
 } from '@/lib/baml_client/types';
 import { differenceInDays, format, getWeek, getQuarter } from 'date-fns';
 
@@ -91,10 +92,6 @@ export class NovaContextService {
 
       dailyReminderEnabled: preferences?.daily_reminder_enabled || false,
       promptCount: preferences?.prompt_count || 3,
-
-      // Optional fields - not implemented yet
-      aiResponseStyle: null,
-      personalityAnalysis: null,
     };
   }
 
@@ -191,6 +188,34 @@ export class NovaContextService {
       quarter: `Q${getQuarter(now)} ${format(now, 'yyyy')}`,
       timeOfDay,
     };
+  }
+
+  /**
+   * Build UserContext wrapper for BAML
+   */
+  static async buildUserContext(
+    userId: string,
+    userEmail: string
+  ): Promise<UserContext> {
+    const userInfo = await this.getUserJournalContext(userId, userEmail);
+
+    return {
+      type: 'UserContext',
+      userInfo,
+    };
+  }
+
+  /**
+   * Build journal context (alias for getRelevantEntries)
+   */
+  static async buildJournalContext(
+    userId: string,
+    message: string,
+    limit: number = 15
+  ): Promise<JournalEntryContext[]> {
+    // For now, just return recent entries
+    // In future, could use semantic search based on message
+    return this.getRelevantEntries(userId, limit);
   }
 
   /**

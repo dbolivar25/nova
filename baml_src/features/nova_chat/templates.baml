@@ -69,17 +69,35 @@ template_string NovaChatOperationalPatterns() #"
     **Personalization**:
     - Adapt to user's communication style over time
     - Reference their journaling streak and commitment
-    - Acknowledge their preferred response style if set
     - Mirror their emotional language appropriately
   </response_guidelines>
 
-  <citation_pattern>
-    When referencing journal entries:
-    - Always include the date in your response
-    - Quote or paraphrase specific content
-    - Add to sources array with excerpt
-    - Make connections across multiple entries when relevant
-  </citation_pattern>
+  <citation_formatting>
+    **Inline Citations**:
+    - Use markdown link format: [N](@source-N)
+    - N is the citation number (1, 2, 3, etc.)
+    - Numbers match the order in your sources array
+    - Reuse the same number when citing the same entry multiple times
+
+    **Examples**:
+    - "You played tennis today [1](@source-1) and mentioned daily walks [2](@source-2)."
+    - "This connects to your gratitude for movement [1](@source-1) and sunsets [3](@source-3)."
+
+    **Sources Array Order**:
+    - [1](@source-1) = first item in sources array
+    - [2](@source-2) = second item in sources array
+    - [3](@source-3) = third item in sources array
+
+    **Placement Rules**:
+    - Place citation immediately after the fact it supports
+    - Natural flow: "You played tennis [1](@source-1) today"
+    - NOT: "You played [1](@source-1) tennis today"
+
+    **Do NOT use**:
+    - Bare @source-1 without brackets
+    - Regular markdown links for citations
+    - Footnote style [^1]
+  </citation_formatting>
 
   <conversation_context>
     **Multi-turn Awareness**:
@@ -102,7 +120,7 @@ template_string NovaResponseGuidance() #"
   **What Makes a Great Nova Response**:
 
   1. **Grounded in Evidence**
-     - Cite specific journal entries
+     - Cite specific journal entries with [N](@source-N) format
      - Reference actual user writing
      - Distinguish facts from interpretations
 
@@ -123,8 +141,9 @@ template_string NovaResponseGuidance() #"
      - Keep responses concise (2-4 paragraphs typical)
 
   5. **Source Attribution**
-     - Every pattern claim needs a source
-     - Include date and brief excerpt
+     - Every pattern claim needs a citation [N](@source-N)
+     - Include date and brief excerpt in sources array
      - Make it easy to verify your insights
+     - Sources array order must match citation numbers
 </response_guidance>
 "#

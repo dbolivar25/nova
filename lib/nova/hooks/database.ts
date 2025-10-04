@@ -46,7 +46,7 @@ export function createDatabaseHooks(
             .insert({
               user_id: user.id,
               message_role: 'assistant',
-              message_content: content.response,
+              message_content: content.agentResponse.response,
               // Note: No journal_entry_id since this is a general chat response
               // We could add a metadata JSONB column for sources if needed
             });
