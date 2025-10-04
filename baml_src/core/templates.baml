@@ -44,23 +44,23 @@ template_string RenderMessageHistory(messages: Message[]) #"
 // Context Rendering Helpers
 // ============================================
 
-template_string RenderUserContext(userContext: UserContext) #"
+template_string RenderUserContext(userContext: UserJournalContext) #"
 <user_context>
   <identity>
-    <name>{{ userContext.userInfo.name }}</name>
-    <email>{{ userContext.userInfo.email }}</email>
+    <name>{{ userContext.name }}</name>
+    <email>{{ userContext.email }}</email>
   </identity>
 
   <journaling_patterns>
-    <total_entries>{{ userContext.userInfo.totalEntries }}</total_entries>
-    <current_streak>{{ userContext.userInfo.currentStreak }} days</current_streak>
-    <longest_streak>{{ userContext.userInfo.longestStreak }} days</longest_streak>
-    <average_word_count>{{ userContext.userInfo.averageWordCount }} words</average_word_count>
+    <total_entries>{{ userContext.totalEntries }}</total_entries>
+    <current_streak>{{ userContext.currentStreak }} days</current_streak>
+    <longest_streak>{{ userContext.longestStreak }} days</longest_streak>
+    <average_word_count>{{ userContext.averageWordCount }} words</average_word_count>
   </journaling_patterns>
 
   <preferences>
-    <daily_reminder_enabled>{{ userContext.userInfo.dailyReminderEnabled }}</daily_reminder_enabled>
-    <prompt_count>{{ userContext.userInfo.promptCount }}</prompt_count>
+    <daily_reminder_enabled>{{ userContext.dailyReminderEnabled }}</daily_reminder_enabled>
+    <prompt_count>{{ userContext.promptCount }}</prompt_count>
   </preferences>
 </user_context>
 "#
