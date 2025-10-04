@@ -84,14 +84,18 @@ export function ChatMessage({
         </AvatarFallback>
       </Avatar>
 
-      <div className={cn("flex-1 space-y-2", isUser && "flex flex-col items-end")}>
+      <div className={cn("flex-1 space-y-3", isUser && "flex flex-col items-end")}>
         <div className={cn(
-          "prose prose-sm dark:prose-invert max-w-none",
+          "text-base leading-relaxed max-w-none",
           isUser && "text-right"
         )}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
+              // Custom paragraph styling
+              p: ({ children }) => (
+                <p className="mb-4 last:mb-0">{children}</p>
+              ),
               // Custom link renderer for citations
               a: ({ href, children, ...props }) => {
                 const isCitation = href?.startsWith('@source-')
@@ -101,28 +105,28 @@ export function ChatMessage({
                   const sourceIndex = parseInt(sourceNum) - 1
 
                   return (
-                    <sup
+                    <span
                       onClick={() => handleCitationClick(sourceIndex)}
-                      className="inline-flex items-center justify-center w-4 h-4
-                        ml-0.5 text-[10px] font-semibold
+                      className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-0.5
+                        mr-0.5 text-[12px] font-semibold
                         bg-primary/10 text-primary
                         border border-primary/20 rounded
-                        hover:bg-primary/20 hover:scale-110
-                        transition-all cursor-pointer no-underline"
+                        hover:bg-primary/20 hover:scale-105
+                        transition-all cursor-pointer -translate-y-[3px]"
                     >
                       {sourceNum}
-                    </sup>
+                    </span>
                   )
                 }
 
-                return <a href={href} {...props}>{children}</a>
+                return <a href={href} {...props} className="text-primary underline">{children}</a>
               }
             }}
           >
             {content}
           </ReactMarkdown>
           {isStreaming && (
-            <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse" />
+            <span className="inline-block w-0.5 h-4 ml-1 bg-foreground/60 animate-pulse" />
           )}
         </div>
 
