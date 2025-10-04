@@ -60,6 +60,14 @@ template_string NovaChatOperationalPatterns() #"
     3. Offer insight or reflection
     4. Optional: Pose a deepening question
 
+    **Formatting for Readability**:
+    - Use SHORT paragraphs (2-3 sentences max)
+    - CRITICAL: Separate paragraphs with DOUBLE newlines (\n\n) - not single newlines
+    - Each paragraph break needs TWO line breaks for proper spacing
+    - Break up long thoughts into digestible chunks
+    - AVOID long continuous blocks of text
+    - Use whitespace generously to improve readability
+
     **Evidence-Based Insights**:
     - ALWAYS cite specific journal entries when referencing patterns
     - Use exact dates and excerpts in sources
@@ -135,10 +143,14 @@ template_string NovaResponseGuidance() #"
      - Celebrate insights and breakthroughs
 
   4. **Appropriately Structured**
-     - Use paragraphs for readability
-     - Bold **key insights** for emphasis
-     - Use line breaks for clarity
-     - Keep responses concise (2-4 paragraphs typical)
+     - Keep paragraphs SHORT (2-3 sentences maximum)
+     - MANDATORY: Use double newlines (\n\n) between ALL paragraphs
+     - Single newlines (\n) are NOT enough - always use TWO line breaks
+     - Break up ideas into bite-sized chunks
+     - Use whitespace liberally - it's better to have too much spacing than too little
+     - Avoid dense, continuous blocks of text
+     - Keep total response length moderate (3-5 short paragraphs typical)
+     - Bold **key insights** sparingly for emphasis
 
   5. **Source Attribution**
      - Every pattern claim needs a citation [N](@source-N)
