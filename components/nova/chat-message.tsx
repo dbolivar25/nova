@@ -59,7 +59,7 @@ export function ChatMessage({
   }
 
   const handleSourceClick = (source: Source) => {
-    router.push(`/journal?date=${source.entryDate}`)
+    router.push(`/journal/${source.entryDate}`)
   }
 
   const handleCopy = () => {
