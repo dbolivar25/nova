@@ -181,8 +181,10 @@ function NovaChatSidebarContent() {
 
   return (
     <>
-      <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <Sidebar side="right" variant="floating" collapsible="offcanvas" className="border-0">
+      {/* Fixed positioning wrapper to prevent affecting main layout */}
+      <div className="fixed inset-0 pointer-events-none z-50">
+        <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <Sidebar side="right" variant="floating" collapsible="offcanvas" className="border-0 pointer-events-auto">
           <SidebarHeader className="border-b border-border/20 p-3">
             <Button
               variant="default"
@@ -251,6 +253,7 @@ function NovaChatSidebarContent() {
           </SidebarContent>
         </Sidebar>
       </SidebarProvider>
+      </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
