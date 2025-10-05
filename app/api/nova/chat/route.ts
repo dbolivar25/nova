@@ -34,6 +34,8 @@ export const dynamic = 'force-dynamic';
 
 interface ChatRequest {
   message: string;
+  chatId?: string;
+  temporary?: boolean;
   includeHistory?: boolean;
 }
 
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const body: ChatRequest = await req.json();
-    const { message, includeHistory = true } = body;
+    const { message, chatId: requestChatId, temporary = false, includeHistory = true } = body;
 
     // Validate message
     if (!message || message.trim().length === 0) {
@@ -75,19 +77,39 @@ export async function POST(req: NextRequest) {
 
     // Create typed IDs
     const streamId = createStreamId(sse.streamId);
-    const chatId = createChatId(generateUniqueId()); // Generate unique chat ID
     const typedUserId = createUserId(userId);
 
     // Build message history asynchronously
     const buildContext = async () => {
       try {
-        // Save user message
-        await NovaChatService.saveUserMessage(userId, message);
+        // Get or create chat thread
+        const chat = await NovaChatService.getOrCreateChat({
+          chatId: requestChatId,
+          userId,
+          temporary,
+        });
+
+        const chatId = createChatId(chat.id);
+        const isNewChat = !requestChatId;
+
+        // Save user message to this chat
+        await NovaChatService.saveUserMessage({
+          chatId: chat.id,
+          userId,
+          message,
+        });
+
+        // Generate title for new chats (async, non-blocking)
+        if (isNewChat && !temporary) {
+          NovaChatService.generateChatTitle(chat.id, message).catch((error) =>
+            console.error('[Nova Chat] Failed to generate title:', error)
+          );
+        }
 
         // Get conversation history if requested
         let messages: Message[] = [];
         if (includeHistory) {
-          messages = await NovaChatService.getConversationHistory(userId, 10);
+          messages = await NovaChatService.getChatHistory(chat.id, userId, 10);
         }
 
         // Get journal context for this query
@@ -131,6 +153,7 @@ export async function POST(req: NextRequest) {
           messages,
           userContext,
           temporalContext,
+          chatId,
         };
       } catch (error) {
         console.error('[Nova Chat] Error building context:', error);
@@ -142,7 +165,7 @@ export async function POST(req: NextRequest) {
     (async () => {
       try {
         // Build context
-        const { messages, userContext, temporalContext } = await buildContext();
+        const { messages, userContext, temporalContext, chatId } = await buildContext();
 
         // Create context for executor
         const context: NovaContext = {

@@ -123,11 +123,15 @@ export async function GET(request: NextRequest) {
         .eq("user_id", user.id)
         .order("week_start_date", { ascending: false }),
 
-      // AI conversations
+      // AI conversations (nova chats)
       supabase
-        .from("ai_conversations")
-        .select("*")
+        .from("nova_chats")
+        .select(`
+          *,
+          messages:nova_messages(*)
+        `)
         .eq("user_id", user.id)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
     ]);
 

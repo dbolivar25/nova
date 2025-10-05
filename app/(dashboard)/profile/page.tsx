@@ -14,15 +14,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useUser } from "@clerk/nextjs"
-import { Download, Shield, Bell, Hash, Clock, FileJson, FileText } from "lucide-react"
+import { Download, Shield, Bell, Hash, Clock, FileJson, FileText, Palette } from "lucide-react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/layout/page-header"
 import { useUserPreferences } from "@/hooks/use-preferences"
+import { useTheme } from "next-themes"
 
 export default function ProfilePage() {
   const { user } = useUser()
   const { preferences, isLoading, updatePreferences } = useUserPreferences()
   const [isExporting, setIsExporting] = useState(false)
+  const { theme, setTheme } = useTheme()
 
   const handleExportData = async (format: 'json' | 'csv') => {
     setIsExporting(true)
@@ -204,6 +206,31 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
+                    <Palette className="h-4 w-4" />
+                    <Label htmlFor="appearance">Appearance</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Choose your preferred theme
+                  </p>
+                </div>
+                <Select
+                  value={theme}
+                  onValueChange={setTheme}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
                     <Bell className="h-4 w-4" />
                     <Label htmlFor="daily-reminder">Daily Reminders</Label>
                   </div>
@@ -211,10 +238,10 @@ export default function ProfilePage() {
                     Get reminded to journal each day
                   </p>
                 </div>
-                <Switch 
+                <Switch
                   id="daily-reminder"
                   checked={preferences?.daily_reminder_enabled || false}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     handlePreferenceChange("daily_reminder_enabled", checked)
                   }
                 />

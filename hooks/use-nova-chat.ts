@@ -4,7 +4,7 @@
  * React hook for streaming chat with Nova via Server-Sent Events
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 
 interface NovaMessage {
@@ -20,8 +20,10 @@ interface NovaMessage {
 }
 
 interface UseNovaChatOptions {
+  chatId?: string;
   onError?: (error: Error) => void;
   onComplete?: () => void;
+  onChatCreated?: (chatId: string) => void;
 }
 
 interface SSEEventData {
@@ -53,6 +55,8 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
   const [messages, setMessages] = useState<NovaMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentResponse, setCurrentResponse] = useState('');
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(options.chatId);
 
   const currentMessageIdRef = useRef<string>('');
   const currentResponseRef = useRef<string>('');
@@ -83,6 +87,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
           },
           body: JSON.stringify({
             message: message.trim(),
+            chatId: currentChatId,
             includeHistory,
           }),
         });
@@ -211,11 +216,69 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
     currentResponseRef.current = '';
   }, []);
 
+  const loadHistory = useCallback(async (chatId: string) => {
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch(`/api/nova/chats/${chatId}`);
+      if (!response.ok) {
+        throw new Error('Failed to load chat history');
+      }
+
+      const data = await response.json();
+
+      // Convert BAML messages to NovaMessage format
+      const convertedMessages: NovaMessage[] = data.messages.map((msg: any) => {
+        const content = msg.content;
+        if (content.type === 'UserContent') {
+          return {
+            id: msg.id,
+            role: 'user' as const,
+            content: content.userMessage.message,
+            timestamp: new Date(),
+          };
+        } else if (content.type === 'AgentContent') {
+          return {
+            id: msg.id,
+            role: 'assistant' as const,
+            content: content.agentResponse.response,
+            timestamp: new Date(),
+            sources: content.sources,
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      setMessages(convertedMessages);
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
+      toast.error('Failed to load chat history');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
+  // Load history when chatId changes
+  useEffect(() => {
+    if (currentChatId) {
+      loadHistory(currentChatId);
+    } else {
+      setMessages([]);
+    }
+  }, [currentChatId, loadHistory]);
+
+  // Update chatId when option changes
+  useEffect(() => {
+    setCurrentChatId(options.chatId);
+  }, [options.chatId]);
+
   return {
     messages,
     sendMessage,
     isStreaming,
     currentResponse,
     clearMessages,
+    isLoadingHistory,
+    currentChatId,
+    setCurrentChatId,
   };
 }
