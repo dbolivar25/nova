@@ -1,23 +1,45 @@
-import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Sparkles, PenLine, Brain, Shield } from "lucide-react";
+"use client";
 
-export default async function Home() {
-  const { userId } = await auth();
-  
-  if (userId) {
-    redirect("/dashboard");
-  }
+import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { PenLine, Brain, Shield } from "lucide-react";
+import Image from "next/image";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+
+export default function Home() {
+  const { userId } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (userId) {
+      router.push("/dashboard");
+    }
+  }, [userId, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
       <div className="container mx-auto px-4 py-16">
         <nav className="flex justify-between items-center mb-16">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">Nova</span>
+          <div className="flex items-center gap-3">
+            {mounted && (
+              <Image
+                src={resolvedTheme === 'dark' ? '/nova-logo-dark-mode.svg' : '/nova-logo.svg'}
+                alt="Nova Logo"
+                width={36}
+                height={36}
+                className="h-9 w-9"
+              />
+            )}
+            <span className="text-[26px] font-semibold leading-none text-primary">Nova</span>
           </div>
           <div className="flex gap-4">
             <Button variant="ghost" asChild>
