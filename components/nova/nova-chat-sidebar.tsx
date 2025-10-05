@@ -120,10 +120,10 @@ export function NovaChatSidebar({
       <Sidebar side="right" variant="floating" collapsible="offcanvas" className="top-14">
         <SidebarHeader className="border-b border-border/20 p-3">
           <Button
-            variant="default"
+            variant="ghost"
             size="sm"
             onClick={onNewChat}
-            className="w-full gap-2"
+            className="w-full gap-2 hover:bg-muted/30"
           >
             <MessageSquarePlus className="h-4 w-4" />
             <span>New Chat</span>
@@ -149,12 +149,12 @@ export function NovaChatSidebar({
                       isActive={currentChatId === chat.id}
                       onClick={() => onSelectChat(chat.id)}
                       className={cn(
-                        "w-full h-auto py-3 px-3 flex-col items-start gap-1",
-                        currentChatId === chat.id && "bg-accent"
+                        "w-full h-auto py-3 px-3 flex-col items-start gap-1 rounded-xl transition-all duration-200",
+                        currentChatId === chat.id && "bg-accent shadow-sm font-medium"
                       )}
                     >
                       <div className="flex items-center justify-between w-full gap-2">
-                        <span className="text-sm font-medium truncate flex-1">
+                        <span className="text-sm truncate flex-1">
                           {chat.title || 'Untitled Chat'}
                         </span>
                         <span className="text-xs text-muted-foreground shrink-0">

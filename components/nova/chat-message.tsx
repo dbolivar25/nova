@@ -211,15 +211,17 @@ export function ChatMessage({
 
           {/* Expanded sources */}
           {sources && showSources && (
-            <div className="mt-3 p-3 bg-muted/50 rounded-lg space-y-2">
+            <div className="mt-3 space-y-2">
               {sources.map((source, index) => (
                 <div
                   key={index}
                   ref={el => { sourceRefs.current[index] = el }}
                   onClick={() => handleSourceClick(source)}
                   className={cn(
-                    "flex items-start gap-2 p-2 rounded-md transition-all",
-                    "hover:bg-muted cursor-pointer group",
+                    "flex items-start gap-2 p-3 rounded-xl transition-all duration-150",
+                    "bg-muted/40 border border-border/30 shadow-sm",
+                    "hover:bg-muted/50 hover:border-border/40",
+                    "cursor-pointer group",
                     highlightedSource === index && "bg-primary/10 ring-2 ring-primary/20 animate-in fade-in"
                   )}
                 >
