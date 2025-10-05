@@ -117,7 +117,7 @@ export default function NovaPage() {
             </div>
 
             {/* Input area - elevated glass design */}
-            <div className="absolute inset-x-0 bottom-0 backdrop-blur-md bg-background/80">
+            <div className="absolute inset-x-0 bottom-0 pb-8 md:pb-0 backdrop-blur-md bg-background/80">
               <div className="max-w-4xl mx-auto px-6 py-4">
                 <form onSubmit={handleSubmit} className="relative flex items-end gap-2">
                   <div
