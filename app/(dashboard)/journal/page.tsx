@@ -37,7 +37,7 @@ export default function JournalPage() {
         const parsedDate = parseISO(dateParam)
         setSelectedDate(parsedDate)
         setCurrentMonth(parsedDate)
-      } catch (e) {
+      } catch {
         // Invalid date format, keep default
         console.error('Invalid date parameter:', dateParam)
       }

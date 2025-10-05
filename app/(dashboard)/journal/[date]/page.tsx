@@ -120,25 +120,23 @@ export default function JournalEntryPage() {
       </div>
 
       {/* Entry Stats */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{format(parseISO(date), "PPP")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>{wordCount} words • {readingTime} min read</span>
-            </div>
-            {entry.mood && (
-              <Badge variant="secondary">
-                {entry.mood}
-              </Badge>
-            )}
+      <div className="rounded-xl border bg-card p-4">
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>{format(parseISO(date), "PPP")}</span>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span>{wordCount} words • {readingTime} min read</span>
+          </div>
+          {entry.mood && (
+            <Badge variant="secondary">
+              {entry.mood}
+            </Badge>
+          )}
+        </div>
+      </div>
 
       {/* Prompt Responses */}
       {hasPromptResponses && (

@@ -107,7 +107,10 @@ export function AppSidebar() {
               const isActive =
                 pathname === item.url ||
                 (item.url === "/journal/today" &&
-                  pathname.startsWith("/journal/today"));
+                  pathname.startsWith("/journal/today")) ||
+                (item.url === "/journal" &&
+                  pathname.startsWith("/journal/") &&
+                  pathname !== "/journal/today");
 
               return (
                 <SidebarMenuItem key={item.title}>

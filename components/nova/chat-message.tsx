@@ -39,25 +39,6 @@ export function ChatMessage({
     }
   }, [sources])
 
-  const handleCitationClick = (sourceIndex: number) => {
-    // Auto-expand sources if collapsed
-    if (!showSources) {
-      setShowSources(true)
-    }
-
-    // Wait for expansion animation, then scroll
-    setTimeout(() => {
-      const sourceElement = sourceRefs.current[sourceIndex]
-      if (sourceElement) {
-        sourceElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-
-        // Highlight the source briefly
-        setHighlightedSource(sourceIndex)
-        setTimeout(() => setHighlightedSource(null), 2000)
-      }
-    }, showSources ? 0 : 150)
-  }
-
   const handleSourceClick = (source: Source) => {
     router.push(`/journal/${source.entryDate}`)
   }
