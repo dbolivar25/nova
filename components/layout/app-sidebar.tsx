@@ -67,7 +67,7 @@ export function AppSidebar() {
   const { user } = useUser();
   const { toggle } = useCommand();
   const [isMac, setIsMac] = useState(false);
-  const { theme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   // Detect if user is on Mac for proper keyboard shortcut display
