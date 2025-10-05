@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 import { MessageSquarePlus, Trash2, MessageSquare, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -25,7 +25,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useEffect } from "react"
 
 interface ChatThread {
   id: string
