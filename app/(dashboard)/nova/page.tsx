@@ -143,7 +143,7 @@ export default function NovaPage() {
                     type="submit"
                     size="icon"
                     className={cn(
-                      "h-10 w-10 rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform duration-150",
+                      "h-11 w-11 rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform duration-150",
                       "hover:scale-105 hover:shadow-md disabled:opacity-40"
                     )}
                     disabled={!input.trim() || isStreaming}
