@@ -27,7 +27,7 @@ export function ChatMessage({
   isStreaming
 }: ChatMessageProps) {
   const [showSources, setShowSources] = useState(false)
-  const [highlightedSource, setHighlightedSource] = useState<number | null>(null)
+  const [highlightedSource, _setHighlightedSource] = useState<number | null>(null)
   const router = useRouter()
   const sourceRefs = useRef<(HTMLDivElement | null)[]>([])
   const isUser = role === "user"
