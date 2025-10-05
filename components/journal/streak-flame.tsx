@@ -34,7 +34,7 @@ export function StreakFlame({
   
   // Get color based on streak length
   const getFlameColor = () => {
-    if (streak === 0) return "text-gray-400"
+    if (streak === 0) return "text-muted-foreground"
     if (streak < 3) return "text-orange-400"
     if (streak < 7) return "text-orange-500"
     if (streak < 14) return "text-orange-600"
@@ -83,7 +83,7 @@ export function StreakFlame({
         </div>
         {showNumber && (
           <div className="text-center">
-            <p className={cn("font-bold text-gray-500", textSizeClasses[size])}>0</p>
+            <p className={cn("font-bold text-muted-foreground", textSizeClasses[size])}>0</p>
             <p className="text-xs text-muted-foreground">Start your streak!</p>
           </div>
         )}
