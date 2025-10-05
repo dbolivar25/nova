@@ -26,6 +26,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useCommand } from "@/components/providers/command-provider";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import Image from "next/image";
 
 const navItems = [
   {
@@ -65,10 +67,13 @@ export function AppSidebar() {
   const { user } = useUser();
   const { toggle } = useCommand();
   const [isMac, setIsMac] = useState(false);
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   // Detect if user is on Mac for proper keyboard shortcut display
   useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+    setMounted(true);
   }, []);
 
   return (
@@ -77,16 +82,21 @@ export function AppSidebar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <motion.div
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary shadow-sm"
+              className="flex h-9 w-9 items-center justify-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Sparkles className="h-5 w-5" />
+              {mounted && (
+                <Image
+                  src={resolvedTheme === 'dark' ? '/nova-logo-dark-mode.svg' : '/nova-logo.svg'}
+                  alt="Nova Logo"
+                  width={36}
+                  height={36}
+                  className="h-9 w-9"
+                />
+              )}
             </motion.div>
-            <div className="flex flex-col">
-              <span className="text-lg font-semibold">Nova</span>
-              <span className="text-xs text-muted-foreground">AI Journal</span>
-            </div>
+            <span className="text-[26px] font-semibold leading-none text-primary">Nova</span>
           </div>
           <motion.button
             onClick={toggle}
