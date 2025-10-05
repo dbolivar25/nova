@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useRef, useEffect, useContext } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ChatMessage } from "@/components/nova/chat-message"
-import { NovaChatSidebarLayout, NovaChatContext } from "@/components/nova/nova-chat-sidebar-layout"
+import { useNovaChatContext } from "@/components/nova/nova-chat-sidebar-layout"
 import { NovaWelcome } from "@/components/nova/nova-welcome"
 import { Send, Sparkles } from "lucide-react"
 import { useNovaChat } from "@/hooks/use-nova-chat"
@@ -15,8 +15,7 @@ export default function NovaPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Get current chat ID from global context
-  const context = useContext(NovaChatContext)
-  const currentChatId = context?.currentChatId
+  const { currentChatId } = useNovaChatContext()
 
   const {
     messages,
@@ -61,8 +60,7 @@ export default function NovaPage() {
   const showWelcome = messages.length === 0 && !currentChatId && !isLoadingHistory
 
   return (
-    <NovaChatSidebarLayout.PageProvider>
-      <div className="relative h-[calc(100vh-3.5rem)]">
+    <div className="relative h-[calc(100vh-3.5rem)]">
         {showWelcome ? (
           <NovaWelcome
             onSendMessage={handleWelcomeMessage}
@@ -148,7 +146,6 @@ export default function NovaPage() {
             </div>
           </>
         )}
-      </div>
-    </NovaChatSidebarLayout.PageProvider>
+    </div>
   )
 }

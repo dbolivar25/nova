@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState } from "react"
 import { MessageSquarePlus, Trash2, MessageSquare, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -13,6 +13,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import {
   AlertDialog,
@@ -24,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useEffect } from "react"
 
 interface ChatThread {
   id: string
@@ -38,16 +40,13 @@ interface NovaChatContextType {
   setCurrentChatId: (id: string | undefined) => void
   onSelectChat: (chatId: string) => void
   onNewChat: () => void
-  sidebarOpen: boolean
-  setSidebarOpen: (open: boolean) => void
 }
 
 export const NovaChatContext = createContext<NovaChatContextType | null>(null)
 
-// Global provider at layout level
+// Global provider for chat state only (not sidebar state)
 function NovaChatSidebarGlobalProvider({ children }: { children: React.ReactNode }) {
   const [currentChatId, setCurrentChatId] = useState<string | undefined>()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const onSelectChat = (chatId: string) => {
     setCurrentChatId(chatId)
@@ -58,22 +57,13 @@ function NovaChatSidebarGlobalProvider({ children }: { children: React.ReactNode
   }
 
   return (
-    <NovaChatContext.Provider value={{ currentChatId, setCurrentChatId, onSelectChat, onNewChat, sidebarOpen, setSidebarOpen }}>
+    <NovaChatContext.Provider value={{ currentChatId, setCurrentChatId, onSelectChat, onNewChat }}>
       {children}
     </NovaChatContext.Provider>
   )
 }
 
-// Page-level provider - just passes through, context handles everything
-export function NovaChatSidebarPageProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return <>{children}</>
-}
-
-function useNovaChatContext() {
+export function useNovaChatContext() {
   const context = useContext(NovaChatContext)
   if (!context) {
     throw new Error("useNovaChatContext must be used within NovaChatSidebarGlobalProvider")
@@ -81,22 +71,36 @@ function useNovaChatContext() {
   return context
 }
 
-function NovaChatSidebarTrigger({
+// RIGHT sidebar provider - wraps trigger and sidebar
+function RightSidebarProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider defaultOpen={false}>
+      {children}
+    </SidebarProvider>
+  )
+}
+
+// Conditional wrapper - only provides RIGHT sidebar context on nova page
+function ConditionalRightProvider({ children, isNovaPage }: { children: React.ReactNode; isNovaPage: boolean }) {
+  if (isNovaPage) {
+    return <RightSidebarProvider>{children}</RightSidebarProvider>
+  }
+  return <>{children}</>
+}
+
+// RIGHT sidebar trigger button
+function RightSidebarTrigger({
   className,
-  onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { sidebarOpen, setSidebarOpen } = useNovaChatContext()
+  const { toggleSidebar } = useSidebar()
 
   return (
     <Button
       variant="ghost"
       size="icon"
       className={cn("size-7", className)}
-      onClick={(event) => {
-        onClick?.(event)
-        setSidebarOpen(!sidebarOpen)
-      }}
+      onClick={toggleSidebar}
       {...props}
     >
       <Menu />
@@ -105,8 +109,9 @@ function NovaChatSidebarTrigger({
   )
 }
 
-function NovaChatSidebarContent() {
-  const { currentChatId, onSelectChat, onNewChat, sidebarOpen, setSidebarOpen } = useNovaChatContext()
+// RIGHT sidebar content
+function RightSidebarContent() {
+  const { currentChatId, onSelectChat, onNewChat } = useNovaChatContext()
   const [chats, setChats] = useState<ChatThread[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -181,79 +186,74 @@ function NovaChatSidebarContent() {
 
   return (
     <>
-      {/* Fixed positioning wrapper to prevent affecting main layout */}
-      <div className="fixed inset-0 pointer-events-none z-50">
-        <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <Sidebar side="right" variant="floating" collapsible="offcanvas" className="border-0 pointer-events-auto">
-          <SidebarHeader className="border-b border-border/20 p-3">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={onNewChat}
-              className="w-full gap-2"
-            >
-              <MessageSquarePlus className="h-4 w-4" />
-              <span>New Chat</span>
-            </Button>
-          </SidebarHeader>
+      <Sidebar side="right" variant="floating" collapsible="offcanvas">
+        <SidebarHeader className="border-b border-border/20 p-3">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onNewChat}
+            className="w-full gap-2"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+            <span>New Chat</span>
+          </Button>
+        </SidebarHeader>
 
-          <SidebarContent className="p-2">
-            {isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : chats.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                No conversations yet
-              </div>
-            ) : (
-              <SidebarMenu className="gap-1">
-                {chats.map((chat) => (
-                  <SidebarMenuItem key={chat.id}>
-                    <div className="relative group">
-                      <SidebarMenuButton
-                        isActive={currentChatId === chat.id}
-                        onClick={() => onSelectChat(chat.id)}
-                        className={cn(
-                          "w-full h-auto py-3 px-3 flex-col items-start gap-1",
-                          currentChatId === chat.id && "bg-accent"
-                        )}
-                      >
-                        <div className="flex items-center w-full gap-2 pr-0 group-hover:pr-7 transition-[padding]">
-                          <span className="text-sm font-medium truncate flex-1">
-                            {chat.title || 'Untitled Chat'}
-                          </span>
-                          <span className="text-xs text-muted-foreground shrink-0 transition-transform">
-                            {formatDate(chat.updatedAt)}
-                          </span>
-                        </div>
-                        {chat.lastMessage && (
-                          <p className="text-xs text-muted-foreground truncate w-full text-left">
-                            {chat.lastMessage}
-                          </p>
-                        )}
-                      </SidebarMenuButton>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-3 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          confirmDelete(chat.id)
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            )}
-          </SidebarContent>
-        </Sidebar>
-      </SidebarProvider>
-      </div>
+        <SidebarContent className="p-2">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : chats.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              No conversations yet
+            </div>
+          ) : (
+            <SidebarMenu className="gap-1">
+              {chats.map((chat) => (
+                <SidebarMenuItem key={chat.id}>
+                  <div className="relative group">
+                    <SidebarMenuButton
+                      isActive={currentChatId === chat.id}
+                      onClick={() => onSelectChat(chat.id)}
+                      className={cn(
+                        "w-full h-auto py-3 px-3 flex-col items-start gap-1",
+                        currentChatId === chat.id && "bg-accent"
+                      )}
+                    >
+                      <div className="flex items-center w-full gap-2 pr-0 group-hover:pr-7 transition-[padding]">
+                        <span className="text-sm font-medium truncate flex-1">
+                          {chat.title || 'Untitled Chat'}
+                        </span>
+                        <span className="text-xs text-muted-foreground shrink-0 transition-transform">
+                          {formatDate(chat.updatedAt)}
+                        </span>
+                      </div>
+                      {chat.lastMessage && (
+                        <p className="text-xs text-muted-foreground truncate w-full text-left">
+                          {chat.lastMessage}
+                        </p>
+                      )}
+                    </SidebarMenuButton>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-3 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        confirmDelete(chat.id)
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          )}
+        </SidebarContent>
+      </Sidebar>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -283,33 +283,16 @@ function NovaChatSidebarContent() {
   )
 }
 
-// Wrapper to add spacing when sidebar is open
-function NovaChatSidebarInsetWrapper({
-  children,
-  isNovaPage
-}: {
-  children: React.ReactNode
-  isNovaPage: boolean
-}) {
-  const context = useContext(NovaChatContext)
-  if (!isNovaPage) return <>{children}</>
-
-  const sidebarOpen = context?.sidebarOpen || false
-
-  return (
-    <div className={cn(
-      "flex-1 transition-[margin] duration-200 ease-linear",
-      sidebarOpen && "mr-64" // 16rem
-    )}>
-      {children}
-    </div>
-  )
+// Helper to capture LEFT sidebar toggle and pass it to children
+function WithLeftSidebarToggle({ children }: { children: (toggle: () => void) => React.ReactNode }) {
+  const { toggleSidebar } = useSidebar()
+  return <>{children(toggleSidebar)}</>
 }
 
 export const NovaChatSidebarLayout = {
   GlobalProvider: NovaChatSidebarGlobalProvider,
-  PageProvider: NovaChatSidebarPageProvider,
-  InsetWrapper: NovaChatSidebarInsetWrapper,
-  Trigger: NovaChatSidebarTrigger,
-  Sidebar: NovaChatSidebarContent,
+  RightProvider: ConditionalRightProvider,
+  WithLeftToggle: WithLeftSidebarToggle,
+  RightTrigger: RightSidebarTrigger,
+  RightSidebar: RightSidebarContent,
 }
