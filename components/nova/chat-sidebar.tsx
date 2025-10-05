@@ -29,7 +29,6 @@ interface ChatSidebarProps {
   currentChatId?: string
   onSelectChat: (chatId: string) => void
   onNewChat: () => void
-  onClose?: () => void
   className?: string
 }
 
@@ -37,7 +36,6 @@ export function ChatSidebar({
   currentChatId,
   onSelectChat,
   onNewChat,
-  onClose,
   className,
 }: ChatSidebarProps) {
   const [chats, setChats] = useState<ChatThread[]>([])

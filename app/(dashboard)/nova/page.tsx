@@ -27,8 +27,6 @@ export default function NovaPage() {
     isStreaming,
     currentResponse,
     isLoadingHistory,
-    currentChatId: hookChatId,
-    setCurrentChatId: setHookChatId,
   } = useNovaChat({
     chatId: currentChatId,
     onComplete: () => {
@@ -70,17 +68,18 @@ export default function NovaPage() {
 
   return (
     <NovaChatSidebarLayout.PageProvider>
-      {showWelcome ? (
-        <NovaWelcome
-          onSendMessage={handleWelcomeMessage}
-          isStreaming={isStreaming}
-        />
-      ) : (
-        <>
-          <ScrollArea
-            ref={scrollAreaRef}
-            className="flex-1 px-4 mb-4"
-          >
+      <div className="flex h-full min-h-0 flex-col">
+        {showWelcome ? (
+          <NovaWelcome
+            onSendMessage={handleWelcomeMessage}
+            isStreaming={isStreaming}
+          />
+        ) : (
+          <>
+            <ScrollArea
+              ref={scrollAreaRef}
+              className="flex-1 min-h-0 px-4 mb-4"
+            >
                 <div className="space-y-6 pb-4 max-w-4xl mx-auto">
                   {isLoadingHistory ? (
                     <div className="flex items-center justify-center py-12">
@@ -122,35 +121,36 @@ export default function NovaPage() {
                             <div className="h-2 w-32 bg-muted animate-pulse rounded" />
                           </div>
                         </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </ScrollArea>
+                    )}
+                  </>
+                )}
+              </div>
+            </ScrollArea>
 
-              <div className="px-4 pb-4">
-                <form onSubmit={handleSubmit} className="relative max-w-4xl mx-auto">
-                  <Textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Continue the conversation..."
-                    className="min-h-[80px] pr-12 resize-none"
-                    disabled={isStreaming}
-                  />
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className="absolute bottom-2 right-2"
-                    disabled={!input.trim() || isStreaming}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </form>
-          </div>
-        </>
-      )}
+            <div className="px-4 pb-4">
+              <form onSubmit={handleSubmit} className="relative max-w-4xl mx-auto">
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Continue the conversation..."
+                  className="min-h-[80px] pr-12 resize-none"
+                  disabled={isStreaming}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="absolute bottom-2 right-2"
+                  disabled={!input.trim() || isStreaming}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          </>
+        )}
+      </div>
     </NovaChatSidebarLayout.PageProvider>
   )
 }

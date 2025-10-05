@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
-import { MessageSquarePlus, Trash2, MessageSquare, Loader2, Menu, PanelRightIcon } from "lucide-react"
+import { MessageSquarePlus, Trash2, MessageSquare, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import {
   AlertDialog,
@@ -289,9 +288,9 @@ function NovaChatSidebarInsetWrapper({
   children: React.ReactNode
   isNovaPage: boolean
 }) {
+  const context = useContext(NovaChatContext)
   if (!isNovaPage) return <>{children}</>
 
-  const context = useContext(NovaChatContext)
   const sidebarOpen = context?.sidebarOpen || false
 
   return (

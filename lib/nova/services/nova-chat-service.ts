@@ -29,6 +29,24 @@ interface NovaMessage {
   created_at: string;
 }
 
+interface ChatPreviewMessage {
+  content: Json | null;
+  created_at: string | null;
+}
+
+interface ChatListRow {
+  id: string;
+  title: string | null;
+  updated_at: string | null;
+  created_at: string | null;
+  messages: ChatPreviewMessage[] | null;
+}
+
+interface StoredMessageContent {
+  userMessage?: { message?: string };
+  agentResponse?: { response?: string };
+}
+
 export class NovaChatService {
   /**
    * Get or create a chat thread
@@ -242,7 +260,7 @@ export class NovaChatService {
     // Reverse to chronological order and convert to BAML Message format
     return messages.reverse().map((msg) => ({
       id: msg.id,
-      content: msg.content as any, // BAML MessageContent type
+      content: msg.content as unknown as Message['content'],
     }));
   }
 
@@ -284,16 +302,17 @@ export class NovaChatService {
       .is('deleted_at', null)
       .eq('temporary', false)
       .order('updated_at', { ascending: false })
-      .limit(limit);
+      .limit(limit)
+      .returns<ChatListRow[]>();
 
     if (!chats) {
       return [];
     }
 
     return chats.map((chat) => {
-      const messages = (chat.messages as any[]) || [];
+      const messages = Array.isArray(chat.messages) ? chat.messages : [];
       const lastMsg = messages[messages.length - 1];
-      const lastMsgContent = lastMsg?.content as any;
+      const lastMsgContent = lastMsg?.content as StoredMessageContent | null;
 
       let lastMessage = '';
       if (lastMsgContent?.userMessage?.message) {

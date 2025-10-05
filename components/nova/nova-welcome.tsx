@@ -39,7 +39,7 @@ export function NovaWelcome({ onSendMessage, isStreaming }: NovaWelcomeProps) {
       <div className="flex flex-col items-center mb-12 text-center">
         <h2 className="text-3xl font-semibold mb-3">Welcome to Nova</h2>
         <p className="text-muted-foreground">
-          I'm here to help you. Ask me anything about your journal, feelings, or reflection.
+          I&rsquo;m here to help you. Ask me anything about your journal, feelings, or reflection.
         </p>
       </div>
 
