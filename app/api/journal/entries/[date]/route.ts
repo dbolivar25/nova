@@ -230,7 +230,7 @@ export async function PUT(
     // Use updated prompt_responses if provided, otherwise use existing
     const finalPromptResponses = prompt_responses || existingEntry.prompt_responses
     if (finalPromptResponses) {
-      finalPromptResponses.forEach((response: { response_text: string }) => {
+      finalPromptResponses.forEach((response: { response_text: string | null }) => {
         if (response.response_text) {
           word_count += response.response_text.trim().split(/\s+/).filter((word) => word.length > 0).length
         }

@@ -2,15 +2,14 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { format, parseISO } from "date-fns"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PageHeader } from "@/components/layout/page-header"
 import { useJournalEntryByDate } from "@/hooks/use-journal"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Clock, MessageSquare, Edit } from "lucide-react"
+import { ArrowLeft, MessageSquare, Edit } from "lucide-react"
 
 export default function JournalEntryPage() {
   const params = useParams()
@@ -28,10 +27,10 @@ export default function JournalEntryPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <PageHeader 
-          title="Error Loading Entry"
-          subtitle="Something went wrong"
-        />
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold">Error Loading Entry</h1>
+          <p className="text-sm text-muted-foreground">Something went wrong</p>
+        </div>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
@@ -50,19 +49,15 @@ export default function JournalEntryPage() {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-10 w-96" />
+          <Skeleton className="h-4 w-40" />
         </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </CardContent>
-        </Card>
+        <div className="space-y-5">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
       </div>
     )
   }
@@ -70,10 +65,10 @@ export default function JournalEntryPage() {
   if (!entry) {
     return (
       <div className="space-y-6">
-        <PageHeader 
-          title="No Entry Found"
-          subtitle={format(parseISO(date), "EEEE, MMMM d, yyyy")}
-        />
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold">No Entry Found</h1>
+          <p className="text-sm text-muted-foreground">{format(parseISO(date), "EEEE, MMMM d, yyyy")}</p>
+        </div>
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground mb-4">
@@ -124,12 +119,20 @@ export default function JournalEntryPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <PageHeader 
-          title={format(parseISO(date), "EEEE, MMMM d, yyyy")}
-          subtitle="Journal Entry"
-          className="mb-0"
-        />
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2 flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold">{format(parseISO(date), "EEEE, MMMM d, yyyy")}</h1>
+            {entry.mood && (
+              <Badge variant="secondary" className="capitalize">
+                {entry.mood}
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {wordCount} words • {readingTime} min read
+          </p>
+        </div>
         {date === format(new Date(), "yyyy-MM-dd") && (
           <Button variant="outline" asChild>
             <Link href="/journal/today">
@@ -140,59 +143,37 @@ export default function JournalEntryPage() {
         )}
       </div>
 
-      {/* Entry Stats */}
-      <div className="rounded-xl border bg-card p-4">
-        <div className="flex flex-wrap items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{format(parseISO(date), "PPP")}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span>{wordCount} words • {readingTime} min read</span>
-          </div>
-          {entry.mood && (
-            <Badge variant="secondary">
-              {entry.mood}
-            </Badge>
-          )}
-        </div>
-      </div>
-
       {/* Prompt Responses */}
       {hasPromptResponses && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <h2 className="text-xl font-semibold">Reflection Prompts</h2>
-          {entry.prompt_responses!.map((response) => (
-            <Card key={response.id}>
-              <CardHeader>
-                <CardTitle className="text-base font-medium text-muted-foreground">
+          <div className="space-y-6">
+            {entry.prompt_responses!.map((response, index) => (
+              <div key={response.id} className="space-y-2">
+                <p className="text-lg font-medium text-foreground/70">
                   {response.prompt?.prompt_text || "Prompt"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-wrap">
+                </p>
+                <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground">
                   {response.response_text || <span className="text-muted-foreground italic">No response</span>}
                 </p>
-              </CardContent>
-            </Card>
-          ))}
+                {index < entry.prompt_responses!.length - 1 && (
+                  <Separator className="mt-6" />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Freeform Entry */}
       {entry.freeform_text && (
         <>
-          {hasPromptResponses && <Separator className="my-8" />}
+          {hasPromptResponses && <Separator className="my-6" />}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Open Reflection</h2>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="whitespace-pre-wrap">
-                  {entry.freeform_text}
-                </p>
-              </CardContent>
-            </Card>
+            <p className="whitespace-pre-wrap text-base leading-relaxed">
+              {entry.freeform_text}
+            </p>
           </div>
         </>
       )}
