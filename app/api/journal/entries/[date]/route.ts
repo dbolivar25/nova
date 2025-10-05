@@ -155,10 +155,18 @@ export async function PUT(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if entry exists
+    // Check if entry exists and get current data
     const { data: existingEntry, error: fetchError } = await supabase
       .from("journal_entries")
-      .select("id")
+      .select(`
+        id,
+        freeform_text,
+        prompt_responses (
+          id,
+          prompt_id,
+          response_text
+        )
+      `)
       .eq("user_id", user.id)
       .eq("entry_date", date)
       .single();
@@ -170,32 +178,13 @@ export async function PUT(
       );
     }
 
-    // Calculate word count if freeform_text is provided
+    // Build updates object
     const updates: Record<string, unknown> = {};
     if (freeform_text !== undefined) {
       updates.freeform_text = freeform_text;
-      updates.word_count = freeform_text
-        ? freeform_text.split(/\s+/).filter((word) => word.length > 0).length
-        : 0;
     }
     if (mood !== undefined) {
       updates.mood = mood;
-    }
-
-    // Update the journal entry
-    const { data: updatedEntry, error: updateError } = await supabase
-      .from("journal_entries")
-      .update(updates)
-      .eq("id", existingEntry.id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error("Error updating journal entry:", updateError);
-      return NextResponse.json(
-        { error: "Failed to update entry" },
-        { status: 500 }
-      );
     }
 
     // Handle prompt responses if provided
@@ -227,6 +216,43 @@ export async function PUT(
           });
         }
       }
+    }
+
+    // Calculate total word count from ALL text (freeform + prompt responses)
+    let word_count = 0
+
+    // Use updated freeform_text if provided, otherwise use existing
+    const finalFreeformText = freeform_text !== undefined ? freeform_text : existingEntry.freeform_text
+    if (finalFreeformText) {
+      word_count += finalFreeformText.trim().split(/\s+/).filter((word) => word.length > 0).length
+    }
+
+    // Use updated prompt_responses if provided, otherwise use existing
+    const finalPromptResponses = prompt_responses || existingEntry.prompt_responses
+    if (finalPromptResponses) {
+      finalPromptResponses.forEach((response: { response_text: string }) => {
+        if (response.response_text) {
+          word_count += response.response_text.trim().split(/\s+/).filter((word) => word.length > 0).length
+        }
+      })
+    }
+
+    updates.word_count = word_count
+
+    // Update the journal entry
+    const { data: updatedEntry, error: updateError } = await supabase
+      .from("journal_entries")
+      .update(updates)
+      .eq("id", existingEntry.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error updating journal entry:", updateError);
+      return NextResponse.json(
+        { error: "Failed to update entry" },
+        { status: 500 }
+      );
     }
 
     // Fetch the complete updated entry

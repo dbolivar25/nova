@@ -218,10 +218,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Calculate word count
-    const word_count = freeform_text
-      ? freeform_text.split(/\s+/).filter((word) => word.length > 0).length
-      : 0;
+    // Calculate word count from ALL text (freeform + prompt responses)
+    let word_count = 0
+
+    // Count words in freeform text
+    if (freeform_text) {
+      word_count += freeform_text.trim().split(/\s+/).filter((word) => word.length > 0).length
+    }
+
+    // Count words in prompt responses
+    if (prompt_responses) {
+      prompt_responses.forEach((response) => {
+        if (response.response_text) {
+          word_count += response.response_text.trim().split(/\s+/).filter((word) => word.length > 0).length
+        }
+      })
+    }
 
     // Use upsert to handle the race condition
     const { data: entry, error: entryError } = await supabase
