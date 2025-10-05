@@ -96,7 +96,28 @@ export default function JournalEntryPage() {
     )
   }
 
-  const wordCount = entry.word_count || 0
+  // Calculate actual word count from content
+  const calculateWordCount = () => {
+    let count = 0
+
+    // Count words in prompt responses
+    if (entry.prompt_responses) {
+      entry.prompt_responses.forEach(response => {
+        if (response.response_text) {
+          count += response.response_text.trim().split(/\s+/).filter(word => word.length > 0).length
+        }
+      })
+    }
+
+    // Count words in freeform text
+    if (entry.freeform_text) {
+      count += entry.freeform_text.trim().split(/\s+/).filter(word => word.length > 0).length
+    }
+
+    return count
+  }
+
+  const wordCount = calculateWordCount()
   const readingTime = Math.max(1, Math.ceil(wordCount / 200))
   const hasPromptResponses = entry.prompt_responses && entry.prompt_responses.length > 0
 
