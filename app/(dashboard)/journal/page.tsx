@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format, isSameDay, startOfMonth, endOfMonth, parseISO } from "date-fns"
@@ -13,7 +13,6 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useJournalEntries, useJournalStats } from "@/hooks/use-journal"
 import type { JournalEntry } from "@/lib/types/journal"
-import { useSearchParams } from "next/navigation"
 
 interface CalendarEntry {
   date: Date
@@ -24,25 +23,8 @@ interface CalendarEntry {
 }
 
 export default function JournalPage() {
-  const searchParams = useSearchParams()
-  const dateParam = searchParams.get('date')
-
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [currentMonth, setCurrentMonth] = useState(new Date())
-
-  // Handle date parameter from URL (e.g., from Nova source clicks)
-  useEffect(() => {
-    if (dateParam) {
-      try {
-        const parsedDate = parseISO(dateParam)
-        setSelectedDate(parsedDate)
-        setCurrentMonth(parsedDate)
-      } catch {
-        // Invalid date format, keep default
-        console.error('Invalid date parameter:', dateParam)
-      }
-    }
-  }, [dateParam])
 
   // Fetch entries for the current month
   const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd")
