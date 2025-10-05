@@ -8,6 +8,7 @@ import { useNovaChatContext } from "@/components/nova/nova-chat-sidebar-layout"
 import { NovaWelcome } from "@/components/nova/nova-welcome"
 import { Send, Sparkles } from "lucide-react"
 import { useNovaChat } from "@/hooks/use-nova-chat"
+import { cn } from "@/lib/utils"
 
 export default function NovaPage() {
   const [input, setInput] = useState("")
@@ -115,28 +116,36 @@ export default function NovaPage() {
               </div>
             </div>
 
-            {/* Input area - cleaner, more minimal */}
-            <div className="absolute inset-x-0 bottom-0 bg-background/95 backdrop-blur">
-              <div className="max-w-4xl mx-auto px-6 py-3">
-                <form onSubmit={handleSubmit} className="relative">
-                  <Textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type your message here..."
-                    className="min-h-[52px] max-h-[200px] pr-12 resize-none
-                      border-muted-foreground/20 focus:border-muted-foreground/30
-                      rounded-xl transition-colors"
-                    disabled={isStreaming}
-                    rows={1}
-                  />
+            {/* Input area - elevated glass design */}
+            <div className="absolute inset-x-0 bottom-0 backdrop-blur-md bg-background/80">
+              <div className="max-w-4xl mx-auto px-6 py-4">
+                <form onSubmit={handleSubmit} className="relative flex items-end gap-2">
+                  <div
+                    className={cn(
+                      "flex-1 rounded-2xl transition-all duration-200",
+                      "bg-muted/40 border border-border/30 shadow-sm",
+                      "focus-within:bg-muted/60 focus-within:shadow-md focus-within:border-border/50"
+                    )}
+                  >
+                    <Textarea
+                      ref={textareaRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Send a thought to Nova..."
+                      className="min-h-[48px] max-h-[200px] resize-none border-0 bg-transparent px-4 py-3 text-base placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:outline-none"
+                      disabled={isStreaming}
+                      rows={1}
+                    />
+                  </div>
+
                   <Button
                     type="submit"
                     size="icon"
-                    variant="ghost"
-                    className="absolute bottom-1.5 right-1.5 h-8 w-8 rounded-lg
-                      hover:bg-muted transition-colors"
+                    className={cn(
+                      "h-10 w-10 rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform duration-150",
+                      "hover:scale-105 hover:shadow-md disabled:opacity-40"
+                    )}
                     disabled={!input.trim() || isStreaming}
                   >
                     <Send className="h-4 w-4" />
