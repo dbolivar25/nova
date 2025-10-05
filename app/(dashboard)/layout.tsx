@@ -33,7 +33,7 @@ export default function DashboardLayout({
                   {isNovaPage && <NovaChatSidebarLayout.Trigger className="-mr-1" />}
                 </header>
                 <main className="flex-1 flex flex-col">
-                  <div className="flex-1 p-6">{children}</div>
+                  <div className={`flex-1 ${isNovaPage ? '' : 'p-6'}`}>{children}</div>
                 </main>
               </SidebarInset>
             </NovaChatSidebarLayout.InsetWrapper>

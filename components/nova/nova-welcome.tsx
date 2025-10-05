@@ -1,20 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Send } from "lucide-react"
 
 interface NovaWelcomeProps {
   onSendMessage: (message: string) => void
   isStreaming: boolean
 }
-
-const SUGGESTIONS = [
-  { label: "Feelings", prompt: "How am I feeling this week?" },
-  { label: "Patterns", prompt: "What patterns do you see in my entries?" },
-  { label: "Reflection", prompt: "Help me reflect on today" },
-]
 
 export function NovaWelcome({ onSendMessage, isStreaming }: NovaWelcomeProps) {
   const [input, setInput] = useState("")
@@ -28,58 +22,54 @@ export function NovaWelcome({ onSendMessage, isStreaming }: NovaWelcomeProps) {
     onSendMessage(message)
   }
 
-  const handleSuggestionClick = (prompt: string) => {
-    if (isStreaming) return
-    onSendMessage(prompt)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e as unknown as React.FormEvent)
+    }
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-3xl mx-auto w-full">
-      {/* Welcome header */}
-      <div className="flex flex-col items-center mb-12 text-center">
-        <h2 className="text-3xl font-semibold mb-3">Welcome to Nova</h2>
-        <p className="text-muted-foreground">
-          I&rsquo;m here to help you. Ask me anything about your journal, feelings, or reflection.
-        </p>
-      </div>
-
-      {/* Search/input section */}
-      <div className="w-full space-y-6">
-        <form onSubmit={handleSubmit} className="w-full relative">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask or search for anything from your journal..."
-            className="h-14 text-base pr-12"
-            disabled={isStreaming}
-            autoFocus
-          />
-          <Button
-            type="submit"
-            size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10"
-            disabled={!input.trim() || isStreaming}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-
-        {/* Suggestion buttons */}
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          {SUGGESTIONS.map((suggestion, index) => (
-            <Button
-              key={index}
-              onClick={() => handleSuggestionClick(suggestion.prompt)}
-              disabled={isStreaming}
-              variant="outline"
-              size="lg"
-              className="rounded-full px-6"
-            >
-              {suggestion.label}
-            </Button>
-          ))}
+    <>
+      {/* Welcome content - centered with more space */}
+      <div className="absolute inset-0 flex items-center justify-center pb-32">
+        <div className="text-center">
+          <h1 className="text-4xl font-light mb-3">Welcome to Nova</h1>
+          <p className="text-muted-foreground text-lg font-light">
+            How can I help you today?
+          </p>
         </div>
       </div>
-    </div>
+
+      {/* Input area - same as chat view */}
+      <div className="absolute inset-x-0 bottom-0 bg-background/95 backdrop-blur">
+        <div className="max-w-4xl mx-auto px-6 py-3">
+          <form onSubmit={handleSubmit} className="relative">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message here..."
+              className="min-h-[52px] max-h-[200px] pr-12 resize-none
+                border-muted-foreground/20 focus:border-muted-foreground/30
+                rounded-xl transition-colors"
+              disabled={isStreaming}
+              autoFocus
+              rows={1}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              variant="ghost"
+              className="absolute bottom-1.5 right-1.5 h-8 w-8 rounded-lg
+                hover:bg-muted transition-colors"
+              disabled={!input.trim() || isStreaming}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        </div>
+      </div>
+    </>
   )
 }
