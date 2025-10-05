@@ -135,7 +135,12 @@ export function ChatMessage({
 
                     return (
                       <span
-                        onClick={() => handleCitationClick(sourceIndex)}
+                        onClick={() => {
+                          const source = sources?.[sourceIndex]
+                          if (source) {
+                            handleSourceClick(source)
+                          }
+                        }}
                         className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-0.5
                           mr-0.5 text-[12px] font-semibold
                           bg-primary/10 text-primary
