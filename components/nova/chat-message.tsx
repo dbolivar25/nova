@@ -27,7 +27,6 @@ export function ChatMessage({
   isStreaming
 }: ChatMessageProps) {
   const [showSources, setShowSources] = useState(false)
-  const [highlightedSource, _setHighlightedSource] = useState<number | null>(null)
   const router = useRouter()
   const sourceRefs = useRef<(HTMLDivElement | null)[]>([])
   const isUser = role === "user"
@@ -208,7 +207,6 @@ export function ChatMessage({
                     "bg-muted/40 border border-border/30 shadow-sm",
                     "hover:bg-muted/50 hover:border-border/40",
                     "cursor-pointer group",
-                    highlightedSource === index && "bg-primary/10 ring-2 ring-primary/20 animate-in fade-in"
                   )}
                 >
                   <span className="flex-shrink-0 w-4 h-4 flex items-center
