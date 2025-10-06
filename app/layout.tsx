@@ -15,21 +15,21 @@ export const metadata: Metadata = {
     "A minimalist journaling app with AI-powered insights for personal growth and reflection",
   icons: {
     icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png?v=2", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png?v=2", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico?v=2", sizes: "any" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png?v=2", sizes: "180x180", type: "image/png" },
     ],
     other: [
       {
         rel: "android-chrome-192x192",
-        url: "/android-chrome-192x192.png",
+        url: "/android-chrome-192x192.png?v=2",
       },
       {
         rel: "android-chrome-512x512",
-        url: "/android-chrome-512x512.png",
+        url: "/android-chrome-512x512.png?v=2",
       },
     ],
   },
