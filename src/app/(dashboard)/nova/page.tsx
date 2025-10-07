@@ -16,7 +16,7 @@ export default function NovaPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Get current chat ID from global context
-  const { currentChatId } = useNovaChatContext()
+  const { currentChatId, setCurrentChatId: setContextChatId, refreshChats } = useNovaChatContext()
 
   const {
     messages,
@@ -28,6 +28,11 @@ export default function NovaPage() {
     chatId: currentChatId,
     onComplete: () => {
       textareaRef.current?.focus()
+      void refreshChats({ silent: true })
+    },
+    onChatCreated: (chatId) => {
+      setContextChatId(chatId)
+      void refreshChats({ silent: true })
     },
   })
 

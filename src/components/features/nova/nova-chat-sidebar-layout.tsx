@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { MessageSquarePlus, Trash2, MessageSquare, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/shared/lib/utils"
@@ -39,6 +39,10 @@ interface NovaChatContextType {
   setCurrentChatId: (id: string | undefined) => void
   onSelectChat: (chatId: string) => void
   onNewChat: () => void
+  chats: ChatThread[]
+  isLoadingChats: boolean
+  refreshChats: (options?: { silent?: boolean }) => Promise<void>
+  removeChatFromList: (chatId: string) => void
 }
 
 export const NovaChatContext = createContext<NovaChatContextType | null>(null)
@@ -46,6 +50,43 @@ export const NovaChatContext = createContext<NovaChatContextType | null>(null)
 // Global provider for chat state only (not sidebar state)
 function NovaChatSidebarGlobalProvider({ children }: { children: React.ReactNode }) {
   const [currentChatId, setCurrentChatId] = useState<string | undefined>()
+  const [chats, setChats] = useState<ChatThread[]>([])
+  const [isLoadingChats, setIsLoadingChats] = useState(true)
+
+  const refreshChats = useCallback(async ({ silent }: { silent?: boolean } = {}) => {
+    if (!silent) {
+      setIsLoadingChats(true)
+    }
+
+    try {
+      const response = await fetch('/api/nova/chats')
+      if (!response.ok) {
+        if (response.status === 404) {
+          setChats([])
+          return
+        }
+        throw new Error('Failed to load chats')
+      }
+
+      const data = await response.json()
+      setChats(data.chats || [])
+    } catch (error) {
+      console.error('Failed to load chats:', error)
+      toast.error('Failed to load chat history')
+    } finally {
+      if (!silent) {
+        setIsLoadingChats(false)
+      }
+    }
+  }, [])
+
+  const removeChatFromList = useCallback((chatId: string) => {
+    setChats((prev) => prev.filter((chat) => chat.id !== chatId))
+  }, [])
+
+  useEffect(() => {
+    refreshChats()
+  }, [refreshChats])
 
   const onSelectChat = (chatId: string) => {
     setCurrentChatId(chatId)
@@ -56,7 +97,18 @@ function NovaChatSidebarGlobalProvider({ children }: { children: React.ReactNode
   }
 
   return (
-    <NovaChatContext.Provider value={{ currentChatId, setCurrentChatId, onSelectChat, onNewChat }}>
+    <NovaChatContext.Provider
+      value={{
+        currentChatId,
+        setCurrentChatId,
+        onSelectChat,
+        onNewChat,
+        chats,
+        isLoadingChats,
+        refreshChats,
+        removeChatFromList,
+      }}
+    >
       {children}
     </NovaChatContext.Provider>
   )
@@ -110,36 +162,17 @@ function RightSidebarTrigger({
 
 // RIGHT sidebar content
 function RightSidebarContent() {
-  const { currentChatId, onSelectChat, onNewChat } = useNovaChatContext()
-  const [chats, setChats] = useState<ChatThread[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const {
+    currentChatId,
+    onSelectChat,
+    onNewChat,
+    chats,
+    isLoadingChats,
+    refreshChats,
+    removeChatFromList,
+  } = useNovaChatContext()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [chatToDelete, setChatToDelete] = useState<string | null>(null)
-
-  useEffect(() => {
-    loadChats()
-  }, [])
-
-  const loadChats = async () => {
-    try {
-      const response = await fetch('/api/nova/chats')
-      if (!response.ok) {
-        if (response.status === 404) {
-          setChats([])
-          return
-        }
-        throw new Error('Failed to load chats')
-      }
-
-      const data = await response.json()
-      setChats(data.chats || [])
-    } catch (error) {
-      console.error('Failed to load chats:', error)
-      toast.error('Failed to load chat history')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleDeleteChat = async (chatId: string) => {
     try {
@@ -149,7 +182,8 @@ function RightSidebarContent() {
 
       if (!response.ok) throw new Error('Failed to delete chat')
 
-      setChats(prev => prev.filter(c => c.id !== chatId))
+      removeChatFromList(chatId)
+      void refreshChats({ silent: true })
 
       if (chatId === currentChatId) {
         onNewChat()
@@ -199,7 +233,7 @@ function RightSidebarContent() {
         </SidebarHeader>
 
         <SidebarContent className="p-2">
-          {isLoading ? (
+          {isLoadingChats ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>

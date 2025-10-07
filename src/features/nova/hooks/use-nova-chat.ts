@@ -61,13 +61,15 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
 
   const currentMessageIdRef = useRef<string>('');
   const currentResponseRef = useRef<string>('');
+  const skipNextHistoryLoadRef = useRef(false);
+  const pendingCreatedChatIdRef = useRef<string | null>(null);
 
   const { onError, onComplete, onChatCreated } = options;
 
   const handleSSEEvent = useCallback(
     (eventType: string, data: SSEEventData) => {
       switch (eventType) {
-        case 'stream:start':
+        case 'stream:start': {
           currentMessageIdRef.current = data.streamId || Date.now().toString();
 
           if (data.chatId) {
@@ -77,11 +79,16 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
                 return prev;
               }
 
-              onChatCreated?.(newChatId);
+              if (!prev) {
+                skipNextHistoryLoadRef.current = true;
+              }
+
+              pendingCreatedChatIdRef.current = newChatId;
               return newChatId;
             });
           }
           break;
+        }
 
         case 'content:delta':
           if (data.delta) {
@@ -286,11 +293,26 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
   // Load history when chatId changes
   useEffect(() => {
     if (currentChatId) {
+      if (skipNextHistoryLoadRef.current) {
+        skipNextHistoryLoadRef.current = false;
+        return;
+      }
+
       loadHistory(currentChatId);
     } else {
       setMessages([]);
+      setCurrentResponse('');
+      currentResponseRef.current = '';
+      setIsLoadingHistory(false);
     }
   }, [currentChatId, loadHistory]);
+
+  useEffect(() => {
+    if (pendingCreatedChatIdRef.current && currentChatId === pendingCreatedChatIdRef.current) {
+      pendingCreatedChatIdRef.current = null;
+      onChatCreated?.(currentChatId);
+    }
+  }, [currentChatId, onChatCreated]);
 
   // Update chatId when option changes
   useEffect(() => {
