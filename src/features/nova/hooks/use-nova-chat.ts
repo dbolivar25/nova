@@ -63,6 +63,69 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
 
   const { onError, onComplete } = options;
 
+  const handleSSEEvent = useCallback(
+    (eventType: string, data: SSEEventData) => {
+      switch (eventType) {
+        case 'stream:start':
+          currentMessageIdRef.current = data.streamId || Date.now().toString();
+          break;
+
+        case 'content:delta':
+          if (data.delta) {
+            const processedDelta = data.delta.replace(/\\$/g, '\n');
+            currentResponseRef.current += processedDelta;
+            setCurrentResponse(currentResponseRef.current);
+          }
+          break;
+
+        case 'source:added':
+          break;
+
+        case 'content:complete':
+          const finalSources =
+            typeof data.message === 'object' && data.message?.content?.sources
+              ? data.message.content.sources
+              : [];
+
+          const finalContent =
+            typeof data.message === 'object' && data.message?.content?.agentResponse?.response
+              ? data.message.content.agentResponse.response
+              : currentResponseRef.current;
+
+          const assistantMessage: NovaMessage = {
+            id: currentMessageIdRef.current,
+            role: 'assistant',
+            content: finalContent,
+            timestamp: new Date(),
+            sources: finalSources.length > 0 ? finalSources : undefined,
+          };
+
+          setMessages((prev) => [...prev, assistantMessage]);
+          setCurrentResponse('');
+          currentResponseRef.current = '';
+          break;
+
+        case 'stream:end':
+          setIsStreaming(false);
+          onComplete?.();
+          break;
+
+        case 'error':
+          {
+            const errorMessage = typeof data.message === 'string' ? data.message : 'An error occurred';
+            toast.error(errorMessage);
+            setIsStreaming(false);
+            onError?.(new Error(errorMessage));
+          }
+          break;
+
+        default:
+          break;
+      }
+    },
+    [onComplete, onError]
+  );
+
   const sendMessage = useCallback(
     async (message: string, includeHistory = true) => {
       if (!message.trim() || isStreaming) return;
@@ -145,69 +208,6 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
       }
     },
     [currentChatId, handleSSEEvent, isStreaming, onError]
-  );
-
-  const handleSSEEvent = useCallback(
-    (eventType: string, data: SSEEventData) => {
-      switch (eventType) {
-        case 'stream:start':
-          currentMessageIdRef.current = data.streamId || Date.now().toString();
-          break;
-
-        case 'content:delta':
-          if (data.delta) {
-            const processedDelta = data.delta.replace(/\\$/g, '\n');
-            currentResponseRef.current += processedDelta;
-            setCurrentResponse(currentResponseRef.current);
-          }
-          break;
-
-        case 'source:added':
-          break;
-
-        case 'content:complete':
-          const finalSources =
-            typeof data.message === 'object' && data.message?.content?.sources
-              ? data.message.content.sources
-              : [];
-
-          const finalContent =
-            typeof data.message === 'object' && data.message?.content?.agentResponse?.response
-              ? data.message.content.agentResponse.response
-              : currentResponseRef.current;
-
-          const assistantMessage: NovaMessage = {
-            id: currentMessageIdRef.current,
-            role: 'assistant',
-            content: finalContent,
-            timestamp: new Date(),
-            sources: finalSources.length > 0 ? finalSources : undefined,
-          };
-
-          setMessages((prev) => [...prev, assistantMessage]);
-          setCurrentResponse('');
-          currentResponseRef.current = '';
-          break;
-
-        case 'stream:end':
-          setIsStreaming(false);
-          onComplete?.();
-          break;
-
-        case 'error':
-          {
-            const errorMessage = typeof data.message === 'string' ? data.message : 'An error occurred';
-            toast.error(errorMessage);
-            setIsStreaming(false);
-            onError?.(new Error(errorMessage));
-          }
-          break;
-
-        default:
-          break;
-      }
-    },
-    [onComplete, onError]
   );
 
   const clearMessages = useCallback(() => {
