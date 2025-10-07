@@ -5,6 +5,8 @@
  */
 
 import { createServerSupabaseClient } from '@/shared/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/shared/lib/supabase/types';
 import type {
   JournalEntryContext,
   PromptResponseContext,
@@ -20,12 +22,14 @@ export class NovaContextService {
    */
   static async getUserJournalContext(
     userId: string,
-    userEmail: string
+    userEmail: string,
+    supabase?: SupabaseClient<Database>
   ): Promise<UserJournalContext> {
-    const supabase = await createServerSupabaseClient();
+    const client =
+      supabase ?? (await createServerSupabaseClient());
 
     // Get user from database
-    const { data: user } = await supabase
+    const { data: user } = await client
       .from('users')
       .select('id, first_name, last_name')
       .eq('clerk_id', userId)
@@ -36,14 +40,14 @@ export class NovaContextService {
     }
 
     // Get user preferences
-    const { data: preferences } = await supabase
+    const { data: preferences } = await client
       .from('user_preferences')
       .select('daily_reminder_enabled, prompt_count')
       .eq('user_id', user.id)
       .single();
 
     // Get basic stats from entries
-    const { data: entries } = await supabase
+    const { data: entries } = await client
       .from('journal_entries')
       .select('id, word_count, entry_date')
       .eq('user_id', user.id)
@@ -100,12 +104,14 @@ export class NovaContextService {
    */
   static async getRelevantEntries(
     userId: string,
-    limit: number = 15
+    limit: number = 15,
+    supabase?: SupabaseClient<Database>
   ): Promise<JournalEntryContext[]> {
-    const supabase = await createServerSupabaseClient();
+    const client =
+      supabase ?? (await createServerSupabaseClient());
 
     // Get user ID from Clerk ID
-    const { data: user } = await supabase
+    const { data: user } = await client
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
@@ -116,7 +122,7 @@ export class NovaContextService {
     }
 
     // Get recent entries with prompt responses
-    const { data: entries } = await supabase
+    const { data: entries } = await client
       .from('journal_entries')
       .select(`
         *,
@@ -195,9 +201,10 @@ export class NovaContextService {
    */
   static async buildUserContext(
     userId: string,
-    userEmail: string
+    userEmail: string,
+    supabase?: SupabaseClient<Database>
   ): Promise<UserContext> {
-    const userInfo = await this.getUserJournalContext(userId, userEmail);
+    const userInfo = await this.getUserJournalContext(userId, userEmail, supabase);
 
     return {
       type: 'UserContext',
@@ -211,20 +218,25 @@ export class NovaContextService {
   static async buildJournalContext(
     userId: string,
     message: string,
-    limit: number = 15
+    limit: number = 15,
+    supabase?: SupabaseClient<Database>
   ): Promise<JournalEntryContext[]> {
     // For now, just return recent entries
     // In future, could use semantic search based on message
-    return this.getRelevantEntries(userId, limit);
+    return this.getRelevantEntries(userId, limit, supabase);
   }
 
   /**
    * Build complete context for BAML chat function
    */
-  static async buildChatContext(userId: string, userEmail: string) {
+  static async buildChatContext(
+    userId: string,
+    userEmail: string,
+    supabase?: SupabaseClient<Database>
+  ) {
     const [userContext, journalContext] = await Promise.all([
-      this.getUserJournalContext(userId, userEmail),
-      this.getRelevantEntries(userId, 15),
+      this.getUserJournalContext(userId, userEmail, supabase),
+      this.getRelevantEntries(userId, 15, supabase),
     ]);
 
     const temporalContext = this.getTemporalContext();

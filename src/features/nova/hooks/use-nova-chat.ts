@@ -28,6 +28,7 @@ interface UseNovaChatOptions {
 
 interface SSEEventData {
   streamId?: string;
+  chatId?: string;
   delta?: string;
   source?: {
     type: string;
@@ -61,13 +62,25 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
   const currentMessageIdRef = useRef<string>('');
   const currentResponseRef = useRef<string>('');
 
-  const { onError, onComplete } = options;
+  const { onError, onComplete, onChatCreated } = options;
 
   const handleSSEEvent = useCallback(
     (eventType: string, data: SSEEventData) => {
       switch (eventType) {
         case 'stream:start':
           currentMessageIdRef.current = data.streamId || Date.now().toString();
+
+          if (data.chatId) {
+            const newChatId = data.chatId;
+            setCurrentChatId((prev) => {
+              if (prev === newChatId) {
+                return prev;
+              }
+
+              onChatCreated?.(newChatId);
+              return newChatId;
+            });
+          }
           break;
 
         case 'content:delta':
@@ -123,7 +136,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
           break;
       }
     },
-    [onComplete, onError]
+    [onChatCreated, onComplete, onError]
   );
 
   const sendMessage = useCallback(

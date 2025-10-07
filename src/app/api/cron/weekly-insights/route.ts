@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
         // Check if already generated
         const exists = await InsightsService.hasInsightsForWeek(
           userId,
-          lastWeekStart
+          lastWeekStart,
+          { supabase }
         );
 
         if (exists) {
@@ -70,7 +71,8 @@ export async function POST(req: NextRequest) {
         const insights = await InsightsService.generateWeeklyInsights(
           userId,
           userEmail,
-          lastWeekStart
+          lastWeekStart,
+          { supabase }
         );
 
         // Store insights

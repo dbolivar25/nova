@@ -10,6 +10,7 @@ import { NovaContextService } from './nova-context-service';
 import type { WeeklyInsights } from '@/integrations/baml_client/types';
 import type { Database, Json } from '@/shared/lib/supabase/types';
 import { startOfWeek, endOfWeek, format } from 'date-fns';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 type WeeklyInsightInsert = Database['public']['Tables']['weekly_insights']['Insert'];
 type WeeklyInsightType = WeeklyInsightInsert['insight_type'];
@@ -65,15 +66,26 @@ const toPatternsContent = (
 });
 
 export class InsightsService {
+  private static async resolveClient(
+    supabase?: SupabaseClient<Database>
+  ): Promise<SupabaseClient<Database>> {
+    if (supabase) {
+      return supabase;
+    }
+
+    return createServerSupabaseClient();
+  }
+
   /**
    * Generate weekly insights for a user
    */
   static async generateWeeklyInsights(
     userId: string,
     userEmail: string,
-    weekStart?: Date
+    weekStart?: Date,
+    options?: { supabase?: SupabaseClient<Database> }
   ): Promise<WeeklyInsights> {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await this.resolveClient(options?.supabase);
 
     // Default to current week if not specified
     const targetWeekStart = weekStart || startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
@@ -119,7 +131,11 @@ export class InsightsService {
     }
 
     // Build context for BAML
-    const userContext = await NovaContextService.getUserJournalContext(userId, userEmail);
+    const userContext = await NovaContextService.getUserJournalContext(
+      userId,
+      userEmail,
+      supabase
+    );
     const temporalContext = NovaContextService.getTemporalContext();
 
     // Convert entries to JournalEntryContext format
@@ -332,9 +348,10 @@ export class InsightsService {
    */
   static async hasInsightsForWeek(
     userId: string,
-    weekStart: Date
+    weekStart: Date,
+    options?: { supabase?: SupabaseClient<Database> }
   ): Promise<boolean> {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await this.resolveClient(options?.supabase);
 
     const { data: user } = await supabase
       .from('users')
