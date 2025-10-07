@@ -13,16 +13,40 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "baseUrl": ".",
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"],
+      "@/app/*": ["./src/app/*"],
+      "@/components": ["./src/components"],
+      "@/components/*": ["./src/components/*"],
+      "@/features": ["./src/features"],
+      "@/features/*": ["./src/features/*"],
+      "@/shared": ["./src/shared"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/integrations": ["./src/integrations"],
+      "@/integrations/*": ["./src/integrations/*"],
+      "@/test": ["./src/test"],
+      "@/test/*": ["./src/test/*"]
     },
     "types": ["vitest/globals"]
   },
-  "include": ["next-env.d.ts", "vitest-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"]
+  "include": [
+    "next-env.d.ts",
+    "vitest-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
 }
