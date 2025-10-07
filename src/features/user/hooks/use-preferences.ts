@@ -1,4 +1,4 @@
-import useSWR from "swr";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetcher } from "@/shared/lib/api/client";
 
@@ -9,32 +9,19 @@ export interface UserPreferences {
 }
 
 export function useUserPreferences() {
-  const { data, error, isLoading, mutate } = useSWR<{ preferences: UserPreferences }>(
-    "/api/user/preferences",
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
+  const queryClient = useQueryClient();
+  const queryKey = ["user", "preferences"] as const;
 
-  const updatePreferences = async (updates: Partial<UserPreferences>) => {
-    try {
-      // Optimistically update the UI
-      mutate(
-        (current) => {
-          if (!current) return current;
-          return {
-            ...current,
-            preferences: {
-              ...current.preferences,
-              ...updates,
-            },
-          };
-        },
-        false
-      );
+  const preferencesQuery = useQuery<{ preferences: UserPreferences }>({
+    queryKey,
+    queryFn: () => fetcher("/api/user/preferences"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 1,
+  });
 
+  const mutation = useMutation({
+    mutationFn: async (updates: Partial<UserPreferences>) => {
       const response = await fetch("/api/user/preferences", {
         method: "PUT",
         headers: {
@@ -48,26 +35,47 @@ export function useUserPreferences() {
       }
 
       const result = await response.json();
-      
-      // Update with the actual server response
-      mutate({ preferences: result.preferences });
-      
-      toast.success("Preferences updated");
-      return result.preferences;
-    } catch (error) {
-      // Revert on error
-      mutate();
+      return result.preferences as UserPreferences;
+    },
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<{ preferences: UserPreferences }>(queryKey);
+
+      if (previous) {
+        queryClient.setQueryData<{ preferences: UserPreferences }>(queryKey, {
+          preferences: {
+            ...previous.preferences,
+            ...updates,
+          },
+        });
+      }
+
+      return { previous };
+    },
+    onError: (error, _updates, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKey, context.previous);
+      }
       console.error("Error updating preferences:", error);
       toast.error("Failed to update preferences");
-      throw error;
-    }
-  };
+    },
+    onSuccess: (preferences) => {
+      queryClient.setQueryData(queryKey, { preferences });
+      toast.success("Preferences updated");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const updatePreferences = (updates: Partial<UserPreferences>) => mutation.mutateAsync(updates);
 
   return {
-    preferences: data?.preferences,
-    isLoading,
-    error,
+    preferences: preferencesQuery.data?.preferences,
+    isLoading: preferencesQuery.isLoading,
+    error: preferencesQuery.error,
     updatePreferences,
-    mutate,
+    refetch: preferencesQuery.refetch,
+    isUpdating: mutation.isPending,
   };
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shared/ui/card"
 import { Badge } from "@/components/shared/ui/badge"
 import { Button } from "@/components/shared/ui/button"
@@ -8,65 +8,33 @@ import { Skeleton } from "@/components/shared/ui/skeleton"
 import { TrendingUp, Brain, Heart, Target, RefreshCw } from "lucide-react"
 import { PageHeader } from "@/components/shared/layout/page-header"
 import { toast } from "sonner"
-import type { WeeklyInsights } from "@/integrations/baml_client/types"
+import { useWeeklyInsights, useGenerateWeeklyInsights } from "@/features/insights/hooks/use-weekly-insights"
 
 export default function InsightsPage() {
-  const [insights, setInsights] = useState<WeeklyInsights | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isGenerating, setIsGenerating] = useState(false)
+  const {
+    data: insights,
+    isLoading,
+    error,
+  } = useWeeklyInsights()
+  const generateMutation = useGenerateWeeklyInsights()
+  const isGenerating = generateMutation.isPending
 
   useEffect(() => {
-    fetchInsights()
-  }, [])
-
-  const fetchInsights = async () => {
-    try {
-      const response = await fetch('/api/insights/latest')
-
-      if (response.status === 404) {
-        // No insights yet
-        setInsights(null)
-        return
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch insights')
-      }
-
-      const data = await response.json()
-      setInsights(data.insights)
-    } catch (error) {
+    if (error) {
       console.error('Error fetching insights:', error)
       toast.error('Failed to load insights')
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [error])
 
-  const generateInsights = async () => {
-    setIsGenerating(true)
+  const handleGenerateInsights = async () => {
     try {
-      const response = await fetch('/api/insights/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ force: true }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to generate insights')
+      const generated = await generateMutation.mutateAsync({ force: true })
+      if (generated) {
+        toast.success('Insights generated successfully!')
       }
-
-      const data = await response.json()
-      setInsights(data.insights)
-      toast.success('Insights generated successfully!')
-    } catch (error) {
-      console.error('Error generating insights:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to generate insights')
-    } finally {
-      setIsGenerating(false)
+    } catch (err) {
+      console.error('Error generating insights:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to generate insights')
     }
   }
 
@@ -117,7 +85,7 @@ export default function InsightsPage() {
               Nova will analyze your journal entries to identify emotional patterns, recurring themes,
               growth moments, and provide personalized guidance for the week ahead.
             </p>
-            <Button onClick={generateInsights} disabled={isGenerating}>
+            <Button onClick={handleGenerateInsights} disabled={isGenerating}>
               {isGenerating ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -143,7 +111,7 @@ export default function InsightsPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={generateInsights}
+          onClick={handleGenerateInsights}
           disabled={isGenerating}
         >
           {isGenerating ? (

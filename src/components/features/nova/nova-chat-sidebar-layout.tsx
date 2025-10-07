@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react"
 import { MessageSquarePlus, Trash2, MessageSquare, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/shared/lib/utils"
@@ -27,6 +27,7 @@ import {
 } from "@/components/shared/ui/alert-dialog"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { novaChatHistoryQueryKey, novaChatListQueryKey } from "@/features/nova/hooks/nova-chat-query-keys"
+import { fetchChatHistory, NOVA_HISTORY_CACHE_TIME, NOVA_HISTORY_STALE_TIME } from "@/features/nova/hooks/use-nova-chat"
 
 interface ChatThread {
   id: string
@@ -68,8 +69,31 @@ function NovaChatSidebarGlobalProvider({ children }: { children: React.ReactNode
     }
   }, [chatListQuery.error])
 
-  const chats: ChatThread[] = chatListQuery.data ?? []
+  const chats: ChatThread[] = useMemo(() => chatListQuery.data ?? [], [chatListQuery.data])
   const isLoadingChats = chatListQuery.isPending && !chatListQuery.data
+
+  useEffect(() => {
+    if (!chats.length) return
+
+    const candidateIds = new Set<string>()
+    chats.slice(0, 3).forEach((chat) => {
+      if (chat?.id) {
+        candidateIds.add(chat.id)
+      }
+    })
+    if (currentChatId) {
+      candidateIds.add(currentChatId)
+    }
+
+    candidateIds.forEach((chatId) => {
+      void queryClient.prefetchQuery({
+        queryKey: novaChatHistoryQueryKey(chatId),
+        queryFn: () => fetchChatHistory(chatId),
+        staleTime: NOVA_HISTORY_STALE_TIME,
+        gcTime: NOVA_HISTORY_CACHE_TIME,
+      })
+    })
+  }, [chats, currentChatId, queryClient])
 
   const refreshChats = useCallback(
     async ({ silent }: { silent?: boolean } = {}) => {

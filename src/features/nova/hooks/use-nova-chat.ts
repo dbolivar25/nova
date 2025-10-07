@@ -54,8 +54,8 @@ interface SSEEventData {
   code?: string;
 }
 
-const HISTORY_STALE_TIME = 5 * 60 * 1000;
-const HISTORY_CACHE_TIME = 30 * 60 * 1000;
+export const NOVA_HISTORY_STALE_TIME = 5 * 60 * 1000;
+export const NOVA_HISTORY_CACHE_TIME = 30 * 60 * 1000;
 
 type SerializedMessage =
   | {
@@ -281,8 +281,8 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
         const history = await queryClient.fetchQuery({
           queryKey: novaChatHistoryQueryKey(chatId),
           queryFn: () => fetchChatHistory(chatId),
-          staleTime: HISTORY_STALE_TIME,
-          gcTime: HISTORY_CACHE_TIME,
+          staleTime: NOVA_HISTORY_STALE_TIME,
+          gcTime: NOVA_HISTORY_CACHE_TIME,
         });
 
         setMessages(history);
@@ -361,7 +361,7 @@ function transformMessages(serialized: SerializedMessage[]): NovaMessage[] {
   }, []);
 }
 
-async function fetchChatHistory(chatId: string): Promise<NovaMessage[]> {
+export async function fetchChatHistory(chatId: string): Promise<NovaMessage[]> {
   const response = await fetch(`/api/nova/chats/${chatId}`);
 
   if (!response.ok) {

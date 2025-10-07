@@ -37,7 +37,7 @@ export default function TodayPage() {
   const { entry, isLoading: isLoadingEntry, getOrCreateEntry } = useTodaysJournalEntry()
   const { data: prompts = [], isLoading: isLoadingPrompts } = useTodaysPrompts()
   const todayDate = format(today, "yyyy-MM-dd")
-  const { trigger: updateEntry } = useUpdateJournalEntry(todayDate)
+  const updateEntryMutation = useUpdateJournalEntry(todayDate)
 
   // Load existing entry data
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function TodayPage() {
         responseText: promptResponses[prompt.id] || ""
       }))
 
-      await updateEntry({
+      await updateEntryMutation.mutateAsync({
         freeformText: freeformEntry,
         promptResponses: promptResponsesData
       })
@@ -105,7 +105,7 @@ export default function TodayPage() {
         setIsManualSaving(false)
       }
     }
-  }, [entry, prompts, promptResponses, freeformEntry, updateEntry])
+  }, [entry, prompts, promptResponses, freeformEntry, updateEntryMutation])
 
   // Calculate progress and stats
   const completedPrompts = Object.values(promptResponses).filter(r => r.trim().length > 20).length

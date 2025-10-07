@@ -1,7 +1,5 @@
-import useSWR, { mutate } from "swr";
-import useSWRMutation from "swr/mutation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { handleAPIError } from "@/shared/lib/api/client";
 import {
   getJournalEntries,
   getJournalEntry,
@@ -20,6 +18,15 @@ import type {
   CreateJournalEntryInput,
   UpdateJournalEntryInput,
 } from "@/features/journal/types/journal";
+import {
+  journalEntriesKey,
+  journalEntryByDateKey,
+  journalEntryKey,
+  journalInsightsKey,
+  journalPromptsKey,
+  journalSearchKey,
+  journalStatsKey,
+} from "@/features/journal/hooks/journal-query-keys";
 
 // Hook to fetch all journal entries
 export function useJournalEntries(
@@ -28,136 +35,141 @@ export function useJournalEntries(
   startDate?: string,
   endDate?: string
 ) {
-  const key = [`/journal/entries`, limit, offset, startDate, endDate];
-  
-  return useSWR(key, () => getJournalEntries(limit, offset, startDate, endDate), {
-    onError: handleAPIError,
+  const queryKey = journalEntriesKey({ limit, offset, startDate, endDate });
+
+  return useQuery({
+    queryKey,
+    queryFn: () => getJournalEntries(limit, offset, startDate, endDate),
+    placeholderData: (previous) => previous,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
 
 // Hook to fetch a single journal entry
 export function useJournalEntry(id: string | null) {
-  return useSWR(
-    id ? `/journal/entries/${id}` : null,
-    () => getJournalEntry(id!),
-    {
-      onError: handleAPIError,
-    }
-  );
+  return useQuery({
+    queryKey: journalEntryKey(id ?? '__noop__'),
+    queryFn: () => getJournalEntry(id!),
+    enabled: Boolean(id),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 }
 
 // Hook to fetch journal entry by date
 export function useJournalEntryByDate(date: Date | string) {
   const dateStr = typeof date === "string" ? date : format(date, "yyyy-MM-dd");
-  
-  return useSWR(
-    `/journal/entries/date/${dateStr}`,
-    () => getJournalEntryByDate(dateStr),
-    {
-      onError: handleAPIError,
-    }
-  );
+
+  return useQuery({
+    queryKey: journalEntryByDateKey(dateStr),
+    queryFn: () => getJournalEntryByDate(dateStr),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 }
 
 // Hook to fetch today's prompts
 export function useTodaysPrompts() {
-  return useSWR<JournalPrompt[]>("/journal/prompts/today", getTodaysPrompts, {
-    onError: handleAPIError,
+  return useQuery<JournalPrompt[]>({
+    queryKey: journalPromptsKey,
+    queryFn: getTodaysPrompts,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
 
 // Hook to fetch journal stats
 export function useJournalStats() {
-  return useSWR<JournalStats>("/journal/stats", getJournalStats, {
-    onError: handleAPIError,
+  return useQuery<JournalStats>({
+    queryKey: journalStatsKey,
+    queryFn: getJournalStats,
+    staleTime: 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
 
 // Hook to fetch journal insights
 export function useJournalInsights() {
-  return useSWR<JournalInsights>("/journal/insights", getJournalInsights, {
-    onError: handleAPIError,
+  return useQuery<JournalInsights>({
+    queryKey: journalInsightsKey,
+    queryFn: getJournalInsights,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
 
 // Hook to create a journal entry
 export function useCreateJournalEntry() {
-  return useSWRMutation(
-    "/journal/entries",
-    async (_key: string, { arg }: { arg: CreateJournalEntryInput }) => {
-      const entry = await createJournalEntry(arg);
-      
-      // Invalidate related caches
-      mutate((key) => Array.isArray(key) && key[0] === "/journal/entries");
-      mutate(`/journal/entries/date/${arg.entryDate}`);
-      mutate("/journal/stats");
-      
-      return entry;
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateJournalEntryInput) => createJournalEntry(input),
+    onSuccess: (entry, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['journal', 'entries'] });
+      if (variables.entryDate) {
+        queryClient.setQueryData(journalEntryByDateKey(variables.entryDate), entry);
+      }
+      queryClient.invalidateQueries({ queryKey: journalStatsKey });
+      queryClient.invalidateQueries({ queryKey: journalInsightsKey });
     },
-    {
-      onError: handleAPIError,
-    }
-  );
+  });
 }
 
 // Hook to update a journal entry by date
 export function useUpdateJournalEntry(date: string) {
-  return useSWRMutation(
-    `/journal/entries/date/${date}`,
-    async (_key: string, { arg }: { arg: UpdateJournalEntryInput }) => {
-      const entry = await updateJournalEntry(date, arg);
-      
-      // Invalidate related caches
-      mutate((key) => Array.isArray(key) && key[0] === "/journal/entries");
-      mutate(`/journal/entries/date/${date}`);
-      mutate("/journal/stats");
-      
-      return entry;
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateJournalEntryInput) => updateJournalEntry(date, input),
+    onSuccess: (entry) => {
+      queryClient.invalidateQueries({ queryKey: ['journal', 'entries'] });
+      queryClient.setQueryData(journalEntryByDateKey(date), entry);
+      queryClient.invalidateQueries({ queryKey: journalStatsKey });
+      queryClient.invalidateQueries({ queryKey: journalInsightsKey });
     },
-    {
-      onError: handleAPIError,
-    }
-  );
+  });
 }
 
 // Hook to delete a journal entry
 export function useDeleteJournalEntry() {
-  return useSWRMutation(
-    "/journal/entries",
-    async (_key: string, { arg: id }: { arg: string }) => {
-      await deleteJournalEntry(id);
-      
-      // Invalidate related caches
-      mutate((key) => Array.isArray(key) && key[0] === "/journal/entries");
-      mutate(`/journal/entries/${id}`);
-      mutate("/journal/stats");
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteJournalEntry(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['journal', 'entries'] });
+      queryClient.removeQueries({ queryKey: journalEntryKey(id) });
+      queryClient.invalidateQueries({ queryKey: journalStatsKey });
+      queryClient.invalidateQueries({ queryKey: journalInsightsKey });
     },
-    {
-      onError: handleAPIError,
-    }
-  );
+  });
 }
 
 // Helper hook to get or create today's entry
 export function useTodaysJournalEntry() {
   const today = format(new Date(), "yyyy-MM-dd");
+  const queryClient = useQueryClient();
   const { data: entry, error, isLoading } = useJournalEntryByDate(today);
-  const { trigger: createEntry, isMutating: isCreating } = useCreateJournalEntry();
+  const createEntryMutation = useCreateJournalEntry();
   
   const getOrCreateEntry = async () => {
     if (entry) return entry;
-    
-    return createEntry({
+
+    const newEntry = await createEntryMutation.mutateAsync({
       entryDate: today,
       freeformText: "",
       promptResponses: [],
     });
+
+    queryClient.setQueryData(journalEntryByDateKey(today), newEntry);
+    return newEntry;
   };
   
   return {
     entry,
     error,
-    isLoading: isLoading || isCreating,
+    isLoading: isLoading || createEntryMutation.isPending,
     getOrCreateEntry,
   };
 }
@@ -169,30 +181,22 @@ export function useJournalSearch(
   onThisDay?: boolean,
   limit: number = 50
 ) {
-  const searchKey = [
-    '/journal/search',
-    search,
-    mood,
-    onThisDay,
-    limit
-  ];
-  
-  return useSWR(
-    searchKey,
-    async () => {
+  const queryKey = journalSearchKey({ search, mood, onThisDay, limit });
+
+  return useQuery({
+    queryKey,
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (mood && mood !== 'all') params.append('mood', mood);
       if (onThisDay) params.append('onThisDay', 'true');
       params.append('limit', String(limit));
-      
+
       const response = await fetch(`/api/journal/entries?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to search');
       return response.json();
     },
-    {
-      onError: handleAPIError,
-      keepPreviousData: true,
-    }
-  );
+    enabled: Boolean(search || mood || onThisDay),
+    placeholderData: (previous) => previous,
+  });
 }

@@ -1,7 +1,7 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { SWRConfig } from 'swr'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useJournalEntries, useTodaysPrompts, useTodaysJournalEntry } from '../use-journal'
 import * as journalApi from '@/features/journal/api/journal'
 
@@ -14,13 +14,20 @@ vi.mock('@/features/journal/api/journal', () => ({
   calculateWordCount: vi.fn(),
 }))
 
-// Wrapper to provide SWR context
-const wrapper = ({ children }: { children: React.ReactNode }) => {
-  return React.createElement(
-    SWRConfig,
-    { value: { dedupingInterval: 0, provider: () => new Map() } },
-    children
-  );
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
+
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
+
+  return { wrapper: Wrapper, queryClient }
 }
 
 describe('Journal Hooks', () => {
@@ -33,6 +40,7 @@ describe('Journal Hooks', () => {
       const mockData = { entries: [{ id: '1' }], total: 1 }
       vi.mocked(journalApi.getJournalEntries).mockResolvedValue(mockData)
 
+      const { wrapper } = createWrapper()
       const { result } = renderHook(() => useJournalEntries(), { wrapper })
 
       await waitFor(() => {
@@ -47,6 +55,7 @@ describe('Journal Hooks', () => {
       const mockData = { entries: [], total: 0 }
       vi.mocked(journalApi.getJournalEntries).mockResolvedValue(mockData)
 
+      const { wrapper } = createWrapper()
       const { result } = renderHook(() => useJournalEntries(10, 20), { wrapper })
 
       await waitFor(() => {
@@ -65,6 +74,7 @@ describe('Journal Hooks', () => {
       ]
       vi.mocked(journalApi.getTodaysPrompts).mockResolvedValue(mockPrompts)
 
+      const { wrapper } = createWrapper()
       const { result } = renderHook(() => useTodaysPrompts(), { wrapper })
 
       await waitFor(() => {
@@ -79,6 +89,7 @@ describe('Journal Hooks', () => {
       const mockEntry = { id: '1', entry_date: '2024-01-01' }
       vi.mocked(journalApi.getJournalEntryByDate).mockResolvedValue(mockEntry)
 
+      const { wrapper } = createWrapper()
       const { result } = renderHook(() => useTodaysJournalEntry(), { wrapper })
 
       await waitFor(() => {
@@ -92,6 +103,7 @@ describe('Journal Hooks', () => {
       const newEntry = { id: '1', entry_date: '2024-01-01' }
       vi.mocked(journalApi.createJournalEntry).mockResolvedValue(newEntry)
 
+      const { wrapper } = createWrapper()
       const { result } = renderHook(() => useTodaysJournalEntry(), { wrapper })
 
       await waitFor(() => {
@@ -102,7 +114,7 @@ describe('Journal Hooks', () => {
       await waitFor(async () => {
         createdEntry = await result.current.getOrCreateEntry()
       })
-      
+
       expect(createdEntry).toEqual(newEntry)
     })
   })

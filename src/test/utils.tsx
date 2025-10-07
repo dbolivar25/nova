@@ -1,15 +1,33 @@
 import React from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { ThemeProvider } from 'next-themes'
-import { SWRConfig } from 'swr'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // All providers that wrap the app
 function AllTheProviders({ children }: { children: React.ReactNode }) {
+  const queryClientRef = React.useRef<QueryClient | null>(null)
+
+  if (!queryClientRef.current) {
+    queryClientRef.current = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+  }
+
+  const client = queryClientRef.current
+
+  if (!client) {
+    throw new Error('QueryClient not initialized')
+  }
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <SWRConfig value={{ dedupingInterval: 0, provider: () => new Map() }}>
+      <QueryClientProvider client={client}>
         {children}
-      </SWRConfig>
+      </QueryClientProvider>
     </ThemeProvider>
   )
 }
