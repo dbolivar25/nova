@@ -45,3 +45,4 @@ next-env.d.ts
 
 # baml generated client (regenerated on build)
 /lib/baml_client/
+/src/integrations/baml_client/

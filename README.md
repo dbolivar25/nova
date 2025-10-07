@@ -66,6 +66,15 @@ Nova operates in two modes:
   preferences, patterns, and growth
 
 ## Technical Architecture
+## Project Structure
+
+- `src/app` – Next.js App Router routes, layouts, and API handlers.
+- `src/components` – UI building blocks grouped into `shared/` primitives and `features/` composites.
+- `src/features` – Domain logic (journal, nova assistant, user) containing hooks, services, and types.
+- `src/shared` – Cross-cutting utilities, API helpers, Supabase clients, and reusable hooks.
+- `src/integrations` – External SDKs and generated clients (e.g., BAML).
+- `src/test` – Vitest setup and shared testing helpers.
+
 
 ### Frontend
 
