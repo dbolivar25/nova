@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from "react"
 import { MessageSquarePlus, Trash2, MessageSquare, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/shared/lib/utils"
@@ -54,6 +54,7 @@ export const NovaChatContext = createContext<NovaChatContextType | null>(null)
 function NovaChatSidebarGlobalProvider({ children }: { children: React.ReactNode }) {
   const [currentChatId, setCurrentChatId] = useState<string | undefined>()
   const queryClient = useQueryClient()
+  const prefetchedChatsRef = useRef<Set<string>>(new Set())
 
   const chatListQuery = useQuery<ChatThread[]>({
     queryKey: novaChatListQueryKey,
@@ -76,22 +77,45 @@ function NovaChatSidebarGlobalProvider({ children }: { children: React.ReactNode
     if (!chats.length) return
 
     const candidateIds = new Set<string>()
+
     chats.slice(0, 3).forEach((chat) => {
       if (chat?.id) {
         candidateIds.add(chat.id)
       }
     })
+
     if (currentChatId) {
       candidateIds.add(currentChatId)
     }
 
     candidateIds.forEach((chatId) => {
-      void queryClient.prefetchQuery({
-        queryKey: novaChatHistoryQueryKey(chatId),
-        queryFn: () => fetchChatHistory(chatId),
-        staleTime: NOVA_HISTORY_STALE_TIME,
-        gcTime: NOVA_HISTORY_CACHE_TIME,
-      })
+      if (!chatId) return
+
+      const cacheKey = novaChatHistoryQueryKey(chatId)
+      const cachedHistory = queryClient.getQueryData(cacheKey)
+
+      if (cachedHistory) {
+        prefetchedChatsRef.current.add(chatId)
+        return
+      }
+
+      if (prefetchedChatsRef.current.has(chatId)) {
+        return
+      }
+
+      prefetchedChatsRef.current.add(chatId)
+
+      void queryClient
+        .prefetchQuery({
+          queryKey: cacheKey,
+          queryFn: () => fetchChatHistory(chatId),
+          staleTime: NOVA_HISTORY_STALE_TIME,
+          gcTime: NOVA_HISTORY_CACHE_TIME,
+        })
+        .catch((error) => {
+          console.error('Failed to prefetch chat history:', error)
+          prefetchedChatsRef.current.delete(chatId)
+        })
     })
   }, [chats, currentChatId, queryClient])
 
