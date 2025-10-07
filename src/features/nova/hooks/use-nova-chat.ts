@@ -5,7 +5,9 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { novaChatHistoryQueryKey, novaChatListQueryKey } from '@/features/nova/hooks/nova-chat-query-keys';
 
 interface NovaMessage {
   id: string;
@@ -52,6 +54,23 @@ interface SSEEventData {
   code?: string;
 }
 
+const HISTORY_STALE_TIME = 5 * 60 * 1000;
+const HISTORY_CACHE_TIME = 30 * 60 * 1000;
+
+type SerializedMessage =
+  | {
+      id: string;
+      content: { type: 'UserContent'; userMessage: { message: string } };
+    }
+  | {
+      id: string;
+      content: {
+        type: 'AgentContent';
+        agentResponse: { response: string };
+        sources?: NovaMessage['sources'];
+      };
+    };
+
 export function useNovaChat(options: UseNovaChatOptions = {}) {
   const [messages, setMessages] = useState<NovaMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -59,6 +78,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(options.chatId);
 
+  const queryClient = useQueryClient();
   const currentMessageIdRef = useRef<string>('');
   const currentResponseRef = useRef<string>('');
   const skipNextHistoryLoadRef = useRef(false);
@@ -127,6 +147,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
 
         case 'stream:end':
           setIsStreaming(false);
+          void queryClient.invalidateQueries({ queryKey: novaChatListQueryKey });
           onComplete?.();
           break;
 
@@ -143,7 +164,7 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
           break;
       }
     },
-    [onChatCreated, onComplete, onError]
+    [onComplete, onError, queryClient]
   );
 
   const sendMessage = useCallback(
@@ -234,78 +255,58 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
     setMessages([]);
     setCurrentResponse('');
     currentResponseRef.current = '';
-  }, []);
 
-  const loadHistory = useCallback(async (chatId: string) => {
-    setIsLoadingHistory(true);
-    try {
-      const response = await fetch(`/api/nova/chats/${chatId}`);
-      if (!response.ok) {
-        throw new Error('Failed to load chat history');
+    if (currentChatId) {
+      queryClient.setQueryData(novaChatHistoryQueryKey(currentChatId), []);
+    }
+  }, [currentChatId, queryClient]);
+
+  const hydrateHistory = useCallback(
+    async (chatId: string) => {
+      if (skipNextHistoryLoadRef.current) {
+        skipNextHistoryLoadRef.current = false;
+        setIsLoadingHistory(false);
+        return;
       }
 
-      const data = await response.json();
+      const cachedHistory = queryClient.getQueryData<NovaMessage[]>(novaChatHistoryQueryKey(chatId));
+      if (cachedHistory) {
+        setMessages(cachedHistory);
+        setIsLoadingHistory(false);
+        return;
+      }
 
-      // Convert BAML messages to NovaMessage format
-      type SerializedMessage =
-        | {
-            id: string;
-            content: { type: 'UserContent'; userMessage: { message: string } };
-          }
-        | {
-            id: string;
-            content: {
-              type: 'AgentContent';
-              agentResponse: { response: string };
-              sources?: NovaMessage['sources'];
-            };
-          };
+      setIsLoadingHistory(true);
+      try {
+        const history = await queryClient.fetchQuery({
+          queryKey: novaChatHistoryQueryKey(chatId),
+          queryFn: () => fetchChatHistory(chatId),
+          staleTime: HISTORY_STALE_TIME,
+          gcTime: HISTORY_CACHE_TIME,
+        });
 
-      const convertedMessages = (data.messages as SerializedMessage[]).reduce<NovaMessage[]>((acc, msg) => {
-        if (msg.content.type === 'UserContent') {
-          acc.push({
-            id: msg.id,
-            role: 'user',
-            content: msg.content.userMessage.message,
-            timestamp: new Date(),
-          });
-        } else if (msg.content.type === 'AgentContent') {
-          acc.push({
-            id: msg.id,
-            role: 'assistant',
-            content: msg.content.agentResponse.response,
-            timestamp: new Date(),
-            sources: msg.content.sources,
-          });
-        }
-        return acc;
-      }, []);
-
-      setMessages(convertedMessages);
-    } catch (error) {
-      console.error('Failed to load chat history:', error);
-      toast.error('Failed to load chat history');
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  }, []);
+        setMessages(history);
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+        toast.error('Failed to load chat history');
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    },
+    [queryClient],
+  );
 
   // Load history when chatId changes
   useEffect(() => {
     if (currentChatId) {
-      if (skipNextHistoryLoadRef.current) {
-        skipNextHistoryLoadRef.current = false;
-        return;
-      }
-
-      loadHistory(currentChatId);
+      void hydrateHistory(currentChatId);
     } else {
       setMessages([]);
       setCurrentResponse('');
       currentResponseRef.current = '';
       setIsLoadingHistory(false);
     }
-  }, [currentChatId, loadHistory]);
+  }, [currentChatId, hydrateHistory]);
 
   useEffect(() => {
     if (pendingCreatedChatIdRef.current && currentChatId === pendingCreatedChatIdRef.current) {
@@ -313,6 +314,12 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
       onChatCreated?.(currentChatId);
     }
   }, [currentChatId, onChatCreated]);
+
+  useEffect(() => {
+    if (!currentChatId) return;
+
+    queryClient.setQueryData<NovaMessage[]>(novaChatHistoryQueryKey(currentChatId), messages);
+  }, [currentChatId, messages, queryClient]);
 
   // Update chatId when option changes
   useEffect(() => {
@@ -329,4 +336,39 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
     currentChatId,
     setCurrentChatId,
   };
+}
+
+function transformMessages(serialized: SerializedMessage[]): NovaMessage[] {
+  return serialized.reduce<NovaMessage[]>((acc, msg) => {
+    if (msg.content.type === 'UserContent') {
+      acc.push({
+        id: msg.id,
+        role: 'user',
+        content: msg.content.userMessage.message,
+        timestamp: new Date(),
+      });
+    } else if (msg.content.type === 'AgentContent') {
+      acc.push({
+        id: msg.id,
+        role: 'assistant',
+        content: msg.content.agentResponse.response,
+        timestamp: new Date(),
+        sources: msg.content.sources,
+      });
+    }
+
+    return acc;
+  }, []);
+}
+
+async function fetchChatHistory(chatId: string): Promise<NovaMessage[]> {
+  const response = await fetch(`/api/nova/chats/${chatId}`);
+
+  if (!response.ok) {
+    throw new Error('Failed to load chat history');
+  }
+
+  const data = await response.json();
+  const serializedMessages = (data.messages ?? []) as SerializedMessage[];
+  return transformMessages(serializedMessages);
 }

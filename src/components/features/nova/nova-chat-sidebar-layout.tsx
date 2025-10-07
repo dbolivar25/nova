@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { MessageSquarePlus, Trash2, MessageSquare, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/shared/lib/utils"
@@ -25,6 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/shared/ui/alert-dialog"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { novaChatHistoryQueryKey, novaChatListQueryKey } from "@/features/nova/hooks/nova-chat-query-keys"
 
 interface ChatThread {
   id: string
@@ -50,43 +52,51 @@ export const NovaChatContext = createContext<NovaChatContextType | null>(null)
 // Global provider for chat state only (not sidebar state)
 function NovaChatSidebarGlobalProvider({ children }: { children: React.ReactNode }) {
   const [currentChatId, setCurrentChatId] = useState<string | undefined>()
-  const [chats, setChats] = useState<ChatThread[]>([])
-  const [isLoadingChats, setIsLoadingChats] = useState(true)
+  const queryClient = useQueryClient()
 
-  const refreshChats = useCallback(async ({ silent }: { silent?: boolean } = {}) => {
-    if (!silent) {
-      setIsLoadingChats(true)
-    }
-
-    try {
-      const response = await fetch('/api/nova/chats')
-      if (!response.ok) {
-        if (response.status === 404) {
-          setChats([])
-          return
-        }
-        throw new Error('Failed to load chats')
-      }
-
-      const data = await response.json()
-      setChats(data.chats || [])
-    } catch (error) {
-      console.error('Failed to load chats:', error)
-      toast.error('Failed to load chat history')
-    } finally {
-      if (!silent) {
-        setIsLoadingChats(false)
-      }
-    }
-  }, [])
-
-  const removeChatFromList = useCallback((chatId: string) => {
-    setChats((prev) => prev.filter((chat) => chat.id !== chatId))
-  }, [])
+  const chatListQuery = useQuery<ChatThread[]>({
+    queryKey: novaChatListQueryKey,
+    queryFn: fetchChats,
+    staleTime: 60_000,
+    gcTime: 30 * 60_000,
+  })
 
   useEffect(() => {
-    refreshChats()
-  }, [refreshChats])
+    if (chatListQuery.error) {
+      console.error('Failed to load chats:', chatListQuery.error)
+      toast.error('Failed to load chat history')
+    }
+  }, [chatListQuery.error])
+
+  const chats: ChatThread[] = chatListQuery.data ?? []
+  const isLoadingChats = chatListQuery.isPending && !chatListQuery.data
+
+  const refreshChats = useCallback(
+    async ({ silent }: { silent?: boolean } = {}) => {
+      if (silent) {
+        try {
+          await queryClient.prefetchQuery({ queryKey: novaChatListQueryKey, queryFn: fetchChats })
+        } catch (error) {
+          console.error('Failed to refresh chats:', error)
+        }
+        return
+      }
+
+      await queryClient.invalidateQueries({ queryKey: novaChatListQueryKey })
+    },
+    [queryClient],
+  )
+
+  const removeChatFromList = useCallback(
+    (chatId: string) => {
+      queryClient.setQueryData<ChatThread[]>(novaChatListQueryKey, (prev) => {
+        if (!prev) return prev
+        return prev.filter((chat) => chat.id !== chatId)
+      })
+      queryClient.removeQueries({ queryKey: novaChatHistoryQueryKey(chatId) })
+    },
+    [queryClient],
+  )
 
   const onSelectChat = (chatId: string) => {
     setCurrentChatId(chatId)
@@ -328,4 +338,19 @@ export const NovaChatSidebarLayout = {
   WithLeftToggle: WithLeftSidebarToggle,
   RightTrigger: RightSidebarTrigger,
   RightSidebar: RightSidebarContent,
+}
+
+async function fetchChats(): Promise<ChatThread[]> {
+  const response = await fetch('/api/nova/chats')
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      return []
+    }
+
+    throw new Error('Failed to load chats')
+  }
+
+  const data = await response.json()
+  return data.chats || []
 }
