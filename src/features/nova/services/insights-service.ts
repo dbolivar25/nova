@@ -8,8 +8,61 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/shared/li
 import { b } from '@/integrations/baml_client';
 import { NovaContextService } from './nova-context-service';
 import type { WeeklyInsights } from '@/integrations/baml_client/types';
-import type { Json } from '@/shared/lib/supabase/types';
+import type { Database, Json } from '@/shared/lib/supabase/types';
 import { startOfWeek, endOfWeek, format } from 'date-fns';
+
+type WeeklyInsightInsert = Database['public']['Tables']['weekly_insights']['Insert'];
+type WeeklyInsightType = WeeklyInsightInsert['insight_type'];
+
+const toEmotionalTrendsContent = (
+  trends: WeeklyInsights['emotionalTrends']
+): Json => ({
+  overallMood: trends.overallMood,
+  summary: trends.summary,
+  dominantEmotions: [...trends.dominantEmotions],
+  keyMoments: trends.keyMoments.map((moment): Record<string, Json> => ({
+    date: moment.date,
+    emotion: moment.emotion,
+    context: moment.context,
+    excerpt: moment.excerpt,
+  })),
+});
+
+const toKeyThemesContent = (themes: WeeklyInsights['keyThemes']): Json => ({
+  themes: themes.map((theme): Record<string, Json> => ({
+    name: theme.name,
+    description: theme.description,
+    frequency: theme.frequency,
+    significance: theme.significance,
+    evidence: theme.evidence.map((item): Record<string, Json> => ({
+      date: item.date,
+      excerpt: item.excerpt,
+    })),
+  })),
+});
+
+const toGrowthMomentsContent = (
+  moments: WeeklyInsights['growthMoments']
+): Json => ({
+  moments: moments.map((moment): Record<string, Json> => ({
+    date: moment.date,
+    title: moment.title,
+    quote: moment.quote,
+    significance: moment.significance,
+  })),
+});
+
+const toPatternsContent = (
+  suggestions: WeeklyInsights['weekAheadSuggestions'],
+  novaObservation: WeeklyInsights['novaObservation']
+): Json => ({
+  suggestions: suggestions.map((suggestion): Record<string, Json> => ({
+    focusArea: suggestion.focusArea,
+    rationale: suggestion.rationale,
+    guidance: suggestion.guidance,
+  })),
+  novaObservation,
+});
 
 export class InsightsService {
   /**
@@ -124,23 +177,29 @@ export class InsightsService {
     // Store each insight type separately or as a combined JSON
     // For now, we'll store the complete insights object
 
+    const toWeeklyInsightRow = (
+      insightType: WeeklyInsightType,
+      insightContent: Json
+    ): WeeklyInsightInsert => ({
+      user_id: user.id,
+      week_start_date: insights.weekStartDate,
+      week_end_date: insights.weekEndDate,
+      insight_type: insightType,
+      insight_content: insightContent,
+    });
+
     // Store emotional trends (cast to Json for Supabase)
     const { error: emotionalError } = await supabase
       .from('weekly_insights')
-      .upsert({
-        user_id: user.id,
-        week_start_date: insights.weekStartDate,
-        week_end_date: insights.weekEndDate,
-        insight_type: 'emotional_trends' as const,
-        insight_content: ({
-          overallMood: insights.emotionalTrends.overallMood,
-          summary: insights.emotionalTrends.summary,
-          dominantEmotions: insights.emotionalTrends.dominantEmotions,
-          keyMoments: insights.emotionalTrends.keyMoments,
-        } satisfies Json),
-      }, {
-        onConflict: 'user_id,week_start_date,insight_type',
-      });
+      .upsert(
+        toWeeklyInsightRow(
+          'emotional_trends',
+          toEmotionalTrendsContent(insights.emotionalTrends)
+        ),
+        {
+          onConflict: 'user_id,week_start_date,insight_type',
+        }
+      );
 
     if (emotionalError) {
       console.error('Error storing emotional trends:', emotionalError);
@@ -150,17 +209,12 @@ export class InsightsService {
     // Store key themes
     const { error: themesError } = await supabase
       .from('weekly_insights')
-      .upsert({
-        user_id: user.id,
-        week_start_date: insights.weekStartDate,
-        week_end_date: insights.weekEndDate,
-        insight_type: 'key_themes' as const,
-        insight_content: ({
-          themes: insights.keyThemes,
-        } satisfies Json),
-      }, {
-        onConflict: 'user_id,week_start_date,insight_type',
-      });
+      .upsert(
+        toWeeklyInsightRow('key_themes', toKeyThemesContent(insights.keyThemes)),
+        {
+          onConflict: 'user_id,week_start_date,insight_type',
+        }
+      );
 
     if (themesError) {
       console.error('Error storing themes:', themesError);
@@ -170,17 +224,12 @@ export class InsightsService {
     // Store growth moments
     const { error: growthError } = await supabase
       .from('weekly_insights')
-      .upsert({
-        user_id: user.id,
-        week_start_date: insights.weekStartDate,
-        week_end_date: insights.weekEndDate,
-        insight_type: 'growth_moments' as const,
-        insight_content: ({
-          moments: insights.growthMoments,
-        } satisfies Json),
-      }, {
-        onConflict: 'user_id,week_start_date,insight_type',
-      });
+      .upsert(
+        toWeeklyInsightRow('growth_moments', toGrowthMomentsContent(insights.growthMoments)),
+        {
+          onConflict: 'user_id,week_start_date,insight_type',
+        }
+      );
 
     if (growthError) {
       console.error('Error storing growth moments:', growthError);
@@ -190,18 +239,15 @@ export class InsightsService {
     // Store patterns (week ahead suggestions)
     const { error: patternsError } = await supabase
       .from('weekly_insights')
-      .upsert({
-        user_id: user.id,
-        week_start_date: insights.weekStartDate,
-        week_end_date: insights.weekEndDate,
-        insight_type: 'patterns' as const,
-        insight_content: ({
-          suggestions: insights.weekAheadSuggestions,
-          novaObservation: insights.novaObservation,
-        } satisfies Json),
-      }, {
-        onConflict: 'user_id,week_start_date,insight_type',
-      });
+      .upsert(
+        toWeeklyInsightRow(
+          'patterns',
+          toPatternsContent(insights.weekAheadSuggestions, insights.novaObservation)
+        ),
+        {
+          onConflict: 'user_id,week_start_date,insight_type',
+        }
+      );
 
     if (patternsError) {
       console.error('Error storing patterns:', patternsError);
