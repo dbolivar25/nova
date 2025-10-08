@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Providers } from "./providers";
@@ -44,6 +45,25 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body className={`${inter.variable} font-sans antialiased`}>
+          <div
+            id="nova-splash"
+            aria-hidden="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-white opacity-100 transition-opacity duration-500"
+          >
+            <div className="flex flex-col items-center gap-6">
+              <Image
+                src="/nova-logo.svg"
+                alt="Nova"
+                width={96}
+                height={96}
+                priority
+                className="h-24 w-24"
+              />
+              <p className="text-sm font-medium tracking-[0.3em] text-slate-500">
+                JOURNALING REIMAGINED
+              </p>
+            </div>
+          </div>
           <Providers>{children}</Providers>
         </body>
       </html>
