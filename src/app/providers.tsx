@@ -24,6 +24,92 @@ export function Providers({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const styleRecoveryStorageKey = "nova:reloaded-for-missing-styles";
+
+    const hasTailwindStylesApplied = () => {
+      const probe = document.createElement("div");
+      probe.className = "hidden";
+      document.body.appendChild(probe);
+      const isHidden = window.getComputedStyle(probe).display === "none";
+      probe.remove();
+      return isHidden;
+    };
+
+    const resetRecoveryFlag = () => {
+      try {
+        sessionStorage.removeItem(styleRecoveryStorageKey);
+      } catch (error) {
+        console.error("Failed to clear style recovery flag", error);
+      }
+    };
+
+    const markRecoveryAttempt = () => {
+      try {
+        const hasAttempted = sessionStorage.getItem(styleRecoveryStorageKey);
+
+        if (hasAttempted) {
+          return true;
+        }
+
+        sessionStorage.setItem(styleRecoveryStorageKey, "1");
+      } catch (error) {
+        console.error("Failed to persist style recovery attempt", error);
+      }
+
+      return false;
+    };
+
+    const recoverFromMissingStyles = () => {
+      if (hasTailwindStylesApplied()) {
+        resetRecoveryFlag();
+        return;
+      }
+
+      const shouldSkipReload = markRecoveryAttempt();
+
+      if (shouldSkipReload) {
+        return;
+      }
+
+      window.location.reload();
+    };
+
+    const scheduleRecoveryCheck = () => {
+      window.setTimeout(recoverFromMissingStyles, 50);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      scheduleRecoveryCheck();
+    };
+
+    const handlePageShow = (event: Event) => {
+      const pageEvent = event as PageTransitionEvent;
+
+      if (pageEvent.persisted) {
+        scheduleRecoveryCheck();
+      }
+    };
+
+    scheduleRecoveryCheck();
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
     const splash = document.getElementById("nova-splash");
 
     if (!splash) {
