@@ -33,17 +33,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
     splash.classList.remove("opacity-100");
     splash.classList.add("opacity-0");
 
-    function cleanup() {
-      splash.removeEventListener("transitionend", handleTransitionEnd);
-      window.clearTimeout(fallbackTimeout);
-    }
+    let fallbackTimeout: number;
 
-    function handleTransitionEnd() {
+    const handleTransitionEnd = () => {
       cleanup();
       splash.remove();
-    }
+    };
 
-    const fallbackTimeout = window.setTimeout(() => {
+    const cleanup = () => {
+      splash.removeEventListener("transitionend", handleTransitionEnd);
+      window.clearTimeout(fallbackTimeout);
+    };
+
+    fallbackTimeout = window.setTimeout(() => {
       cleanup();
       splash.remove();
     }, 700);
