@@ -18,6 +18,61 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       })
   );
+  const splashRef = React.useRef<HTMLElement | null>(null);
+  const hideSplashCleanupRef = React.useRef<(() => void) | null>(null);
+  const hideSplashAnimationFrameRef = React.useRef<number | null>(null);
+
+  const getSplash = React.useCallback(() => {
+    if (typeof document === "undefined") {
+      return null;
+    }
+
+    if (splashRef.current) {
+      return splashRef.current;
+    }
+
+    const splashElement = document.getElementById("nova-splash");
+
+    if (splashElement instanceof HTMLElement) {
+      if (!splashElement.dataset.originalDisplay) {
+        splashElement.dataset.originalDisplay = splashElement.style.display || "";
+      }
+
+      splashRef.current = splashElement;
+    }
+
+    return splashRef.current;
+  }, []);
+
+  const showSplashScreen = React.useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const splash = getSplash();
+
+    if (!splash) {
+      return;
+    }
+
+    if (hideSplashAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(hideSplashAnimationFrameRef.current);
+      hideSplashAnimationFrameRef.current = null;
+    }
+
+    hideSplashCleanupRef.current?.();
+    hideSplashCleanupRef.current = null;
+
+    const originalDisplay = splash.dataset.originalDisplay ?? "";
+    splash.style.display = originalDisplay;
+    splash.classList.remove("pointer-events-none");
+
+    // Force reflow so the transition can re-run if the splash was hidden.
+    void splash.offsetWidth;
+
+    splash.classList.remove("opacity-0");
+    splash.classList.add("opacity-100");
+  }, [getSplash]);
 
   React.useEffect(() => {
     if (typeof document === "undefined") {
@@ -71,6 +126,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      showSplashScreen();
       window.location.reload();
     };
 
@@ -103,35 +159,59 @@ export function Providers({ children }: { children: React.ReactNode }) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pageshow", handlePageShow);
     };
-  }, []);
+  }, [showSplashScreen]);
 
   React.useEffect(() => {
     if (typeof document === "undefined") {
       return;
     }
 
-    const splash = document.getElementById("nova-splash");
+    const splash = getSplash();
 
     if (!splash) {
       return;
     }
 
-    splash.classList.remove("opacity-100");
-    splash.classList.add("opacity-0");
+    let isHidden = false;
 
-    const removeSplash = () => {
-      splash.remove();
+    const finalizeHide = () => {
+      if (isHidden) {
+        return;
+      }
+
+      isHidden = true;
+      splash.classList.add("pointer-events-none");
+      splash.style.display = "none";
     };
 
-    splash.addEventListener("transitionend", removeSplash, { once: true });
+    hideSplashAnimationFrameRef.current = window.requestAnimationFrame(() => {
+      splash.classList.remove("opacity-100");
+      splash.classList.add("opacity-0");
+    });
 
-    const fallbackTimeout = window.setTimeout(removeSplash, 700);
+    const handleTransitionEnd = () => {
+      finalizeHide();
+    };
 
-    return () => {
-      splash.removeEventListener("transitionend", removeSplash);
+    splash.addEventListener("transitionend", handleTransitionEnd, { once: true });
+
+    const fallbackTimeout = window.setTimeout(finalizeHide, 700);
+
+    hideSplashCleanupRef.current = () => {
+      splash.removeEventListener("transitionend", handleTransitionEnd);
       window.clearTimeout(fallbackTimeout);
     };
-  }, []);
+
+    return () => {
+      if (hideSplashAnimationFrameRef.current !== null) {
+        cancelAnimationFrame(hideSplashAnimationFrameRef.current);
+        hideSplashAnimationFrameRef.current = null;
+      }
+
+      hideSplashCleanupRef.current?.();
+      hideSplashCleanupRef.current = null;
+    };
+  }, [getSplash]);
 
   return (
     <QueryClientProvider client={queryClient}>
