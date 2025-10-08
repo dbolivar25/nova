@@ -74,12 +74,64 @@ export function Providers({ children }: { children: React.ReactNode }) {
     splash.classList.add("opacity-100");
   }, [getSplash]);
 
+  const hideSplashScreen = React.useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const splash = getSplash();
+
+    if (!splash) {
+      return;
+    }
+
+    if (hideSplashAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(hideSplashAnimationFrameRef.current);
+      hideSplashAnimationFrameRef.current = null;
+    }
+
+    hideSplashCleanupRef.current?.();
+    hideSplashCleanupRef.current = null;
+
+    let isHidden = false;
+
+    const finalizeHide = () => {
+      if (isHidden) {
+        return;
+      }
+
+      isHidden = true;
+      splash.classList.add("pointer-events-none");
+      splash.style.display = "none";
+    };
+
+    hideSplashAnimationFrameRef.current = window.requestAnimationFrame(() => {
+      splash.classList.remove("opacity-100");
+      splash.classList.add("opacity-0");
+    });
+
+    const handleTransitionEnd = () => {
+      finalizeHide();
+    };
+
+    splash.addEventListener("transitionend", handleTransitionEnd, { once: true });
+
+    const fallbackTimeout = window.setTimeout(finalizeHide, 700);
+
+    hideSplashCleanupRef.current = () => {
+      splash.removeEventListener("transitionend", handleTransitionEnd);
+      window.clearTimeout(fallbackTimeout);
+    };
+  }, [getSplash]);
+
   React.useEffect(() => {
     if (typeof document === "undefined") {
       return;
     }
 
     const styleRecoveryStorageKey = "nova:reloaded-for-missing-styles";
+    let isRecovering = false;
+    let isDisposed = false;
 
     const hasTailwindStylesApplied = () => {
       const probe = document.createElement("div");
@@ -114,7 +166,91 @@ export function Providers({ children }: { children: React.ReactNode }) {
       return false;
     };
 
-    const recoverFromMissingStyles = () => {
+    const withCacheBuster = (href: string, cacheBuster: string) => {
+      try {
+        const url = new URL(href, window.location.href);
+        url.searchParams.set("nova-style-reload", cacheBuster);
+        return url.toString();
+      } catch (error) {
+        console.error("Failed to build cache-busted stylesheet URL", error);
+        return href;
+      }
+    };
+
+    const reloadStylesheets = async () => {
+      const linkElements = Array.from(
+        document.querySelectorAll<HTMLLinkElement>(
+          'link[rel="stylesheet"][data-n-p], link[rel="stylesheet"][data-precedence]'
+        )
+      );
+      const styleElements = Array.from(
+        document.querySelectorAll<HTMLStyleElement>('style[data-n-href]')
+      );
+
+      if (linkElements.length === 0 && styleElements.length === 0) {
+        return false;
+      }
+
+      const cacheBuster = Date.now().toString();
+
+      const linkReloads = linkElements.map(
+        (link) =>
+          new Promise<void>((resolve) => {
+            const originalHref =
+              link.dataset.novaOriginalHref ?? link.getAttribute("href") ?? link.href;
+            link.dataset.novaOriginalHref = originalHref;
+
+            const replacement = link.cloneNode(true) as HTMLLinkElement;
+            replacement.dataset.novaOriginalHref = originalHref;
+            replacement.href = withCacheBuster(originalHref, cacheBuster);
+            replacement.onload = () => resolve();
+            replacement.onerror = () => resolve();
+
+            link.replaceWith(replacement);
+          })
+      );
+
+      const styleReloads = styleElements.map((style) => {
+        const href = style.dataset.nHref;
+
+        if (!href) {
+          return Promise.resolve();
+        }
+
+        return fetch(withCacheBuster(href, cacheBuster), { cache: "reload" })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`Failed to reload stylesheet ${href}`);
+            }
+
+            return response.text();
+          })
+          .then((cssText) => {
+            style.textContent = cssText;
+          })
+          .catch((error) => {
+            console.error("Failed to refresh inline stylesheet", error);
+          });
+      });
+
+      await Promise.all([...linkReloads, ...styleReloads]);
+
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        if (hasTailwindStylesApplied()) {
+          return true;
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, 100));
+      }
+
+      return hasTailwindStylesApplied();
+    };
+
+    const recoverFromMissingStyles = async () => {
+      if (isRecovering) {
+        return;
+      }
+
       if (hasTailwindStylesApplied()) {
         resetRecoveryFlag();
         return;
@@ -126,12 +262,32 @@ export function Providers({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      isRecovering = true;
       showSplashScreen();
-      window.location.reload();
+
+      try {
+        const recovered = await reloadStylesheets();
+
+        if (isDisposed) {
+          return;
+        }
+
+        if (recovered) {
+          resetRecoveryFlag();
+          hideSplashScreen();
+          return;
+        }
+
+        window.location.reload();
+      } finally {
+        isRecovering = false;
+      }
     };
 
     const scheduleRecoveryCheck = () => {
-      window.setTimeout(recoverFromMissingStyles, 50);
+      window.setTimeout(() => {
+        void recoverFromMissingStyles();
+      }, 50);
     };
 
     const handleVisibilityChange = () => {
@@ -156,51 +312,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
     window.addEventListener("pageshow", handlePageShow);
 
     return () => {
+      isDisposed = true;
+      isRecovering = false;
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pageshow", handlePageShow);
     };
-  }, [showSplashScreen]);
+  }, [hideSplashScreen, showSplashScreen]);
 
   React.useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const splash = getSplash();
-
-    if (!splash) {
-      return;
-    }
-
-    let isHidden = false;
-
-    const finalizeHide = () => {
-      if (isHidden) {
-        return;
-      }
-
-      isHidden = true;
-      splash.classList.add("pointer-events-none");
-      splash.style.display = "none";
-    };
-
-    hideSplashAnimationFrameRef.current = window.requestAnimationFrame(() => {
-      splash.classList.remove("opacity-100");
-      splash.classList.add("opacity-0");
-    });
-
-    const handleTransitionEnd = () => {
-      finalizeHide();
-    };
-
-    splash.addEventListener("transitionend", handleTransitionEnd, { once: true });
-
-    const fallbackTimeout = window.setTimeout(finalizeHide, 700);
-
-    hideSplashCleanupRef.current = () => {
-      splash.removeEventListener("transitionend", handleTransitionEnd);
-      window.clearTimeout(fallbackTimeout);
-    };
+    hideSplashScreen();
 
     return () => {
       if (hideSplashAnimationFrameRef.current !== null) {
@@ -211,7 +331,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       hideSplashCleanupRef.current?.();
       hideSplashCleanupRef.current = null;
     };
-  }, [getSplash]);
+  }, [hideSplashScreen]);
 
   return (
     <QueryClientProvider client={queryClient}>
