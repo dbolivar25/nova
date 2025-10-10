@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createServerSupabaseClient } from "@/shared/lib/supabase/server";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, subDays } from "date-fns";
 import type { JournalStats } from "@/features/journal/types/journal";
 
 // GET /api/journal/stats - Get journal statistics for the user
@@ -45,6 +45,9 @@ export async function GET() {
     const totalWordCount = entries?.reduce((sum, entry) => sum + (entry.word_count || 0), 0) || 0;
     const averageWordCount = totalEntries > 0 ? Math.round(totalWordCount / totalEntries) : 0;
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     // Calculate current streak and streak start date
     let currentStreak = 0;
     let streakStartDate: string | undefined;
@@ -53,8 +56,6 @@ export async function GET() {
     if (entries && entries.length > 0) {
       lastEntryDate = entries[0].entry_date;
       currentStreak = 1;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
       
       // Check if most recent entry is within the allowed window
       // Allow streak to continue if:
@@ -139,10 +140,30 @@ export async function GET() {
       return acc;
     }, {} as Record<typeof allMoods[number], number>);
 
+    // Build timelines for the last 90 days (chronological order)
+    const timelineCutoff = subDays(today, 89); // inclusive of today
+    const recentEntries = (entries ?? []).filter((entry) => {
+      const entryDate = new Date(entry.entry_date);
+      entryDate.setHours(0, 0, 0, 0);
+      return entryDate >= timelineCutoff;
+    });
+
+    const wordCountHistory = recentEntries
+      .map((entry) => ({
+        date: entry.entry_date,
+        wordCount: entry.word_count || 0,
+      }))
+      .reverse();
+
+    const moodTimeline = recentEntries
+      .map((entry) => ({
+        date: entry.entry_date,
+        mood: entry.mood ?? null,
+      }))
+      .reverse();
+
     // Calculate streak history for last 30 days
     const streakHistory: { date: string; hasEntry: boolean }[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     
     for (let i = 29; i >= 0; i--) {
       const date = new Date(today);
@@ -175,6 +196,8 @@ export async function GET() {
       lastEntryDate,
       streakHistory,
       milestones,
+      wordCountHistory,
+      moodTimeline,
     };
 
     return NextResponse.json(stats);

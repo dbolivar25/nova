@@ -175,7 +175,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
     },
     {
       icon: TrendingUp,
-      label: "View Analytics",
+      label: "View Pulse",
       action: () => {
         router.push("/analytics");
         onOpenChange(false);
@@ -454,4 +454,3 @@ function EntryItem(
     </CommandItem>
   );
 }
-

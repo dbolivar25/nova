@@ -200,3 +200,8 @@ export function useJournalSearch(
     placeholderData: (previous) => previous,
   });
 }
+
+// Hook to fetch "On This Day" entries
+export function useOnThisDayEntries(limit = 5) {
+  return useJournalSearch(undefined, undefined, true, limit);
+}

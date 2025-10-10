@@ -22,6 +22,8 @@ export interface JournalStats {
   lastEntryDate?: string;
   streakHistory?: { date: string; hasEntry: boolean }[];
   milestones?: { days: number; achieved: boolean; achievedDate?: string }[];
+  wordCountHistory?: { date: string; wordCount: number }[];
+  moodTimeline?: { date: string; mood: Mood | null }[];
 }
 
 export interface JournalInsights {

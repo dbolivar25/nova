@@ -8,6 +8,7 @@ import {
   PenLine,
   History,
   Search,
+  BarChart3,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/shared/lib/utils";
@@ -54,6 +55,11 @@ const navItems = [
     title: "Weekly Insights",
     url: "/insights",
     icon: ChartBar,
+  },
+  {
+    title: "Pulse",
+    url: "/analytics",
+    icon: BarChart3,
   },
   {
     title: "Settings",
@@ -173,4 +179,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-

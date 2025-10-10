@@ -181,6 +181,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     },
     {
       icon: ChartBar,
+      label: "Open Pulse",
+      shortcut: "G P",
+      action: () => {
+        router.push("/analytics");
+        onOpenChange(false);
+        setSearch("");
+      },
+    },
+    {
+      icon: ChartBar,
       label: "Weekly Insights",
       shortcut: "G I",
       action: () => {
