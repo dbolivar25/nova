@@ -19,6 +19,49 @@ export function useCommand() {
   return context;
 }
 
+const TEXT_INPUT_TYPES = new Set([
+  "email",
+  "number",
+  "password",
+  "search",
+  "tel",
+  "text",
+  "url",
+  "date",
+  "datetime-local",
+  "month",
+  "time",
+  "week",
+]);
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  if (target instanceof HTMLTextAreaElement) {
+    return true;
+  }
+
+  if (target instanceof HTMLInputElement) {
+    const type = target.type ? target.type.toLowerCase() : "text";
+    return !type || TEXT_INPUT_TYPES.has(type);
+  }
+
+  if (target instanceof HTMLSelectElement) {
+    return true;
+  }
+
+  const editableAncestor = target.closest("[contenteditable]");
+  return editableAncestor instanceof HTMLElement
+    ? editableAncestor.isContentEditable
+    : false;
+}
+
 export function CommandProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
@@ -30,6 +73,15 @@ export function CommandProvider({ children }: { children: React.ReactNode }) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setOpen((prev) => !prev);
+        return;
+      }
+
+      const typingTarget = isEditableTarget(e.target);
+      const shouldIgnore =
+        typingTarget && !e.metaKey && !e.ctrlKey && !e.altKey && e.key !== "Escape";
+
+      if (shouldIgnore) {
+        return;
       }
 
       // Additional shortcuts when command palette is closed
@@ -37,6 +89,19 @@ export function CommandProvider({ children }: { children: React.ReactNode }) {
         // G + D = Go to Dashboard
         if (e.key === "g" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
           const listener = (e2: KeyboardEvent) => {
+            const typingTargetInner = isEditableTarget(e2.target);
+            const shouldIgnoreInner =
+              typingTargetInner &&
+              !e2.metaKey &&
+              !e2.ctrlKey &&
+              !e2.altKey &&
+              e2.key !== "Escape";
+
+            if (shouldIgnoreInner) {
+              document.removeEventListener("keydown", listener);
+              return;
+            }
+
             if (e2.key === "d") {
               e2.preventDefault();
               window.location.href = "/dashboard";
