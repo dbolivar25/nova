@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+v8-compile-cache-*/
 
 # debug
 npm-debug.log*

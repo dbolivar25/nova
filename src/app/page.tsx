@@ -6,8 +6,35 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/shared/ui/button";
 import { PenLine, Brain, Shield } from "lucide-react";
 import Image from "next/image";
+import Script from "next/script";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import {
+  siteDescription,
+  siteName,
+  siteOgImage,
+  siteUrl,
+} from "@/shared/lib/site-metadata";
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: siteName,
+  url: siteUrl,
+  description: siteDescription,
+  image: siteOgImage,
+  applicationCategory: "LifestyleApplication",
+  operatingSystem: "Web",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  potentialAction: {
+    "@type": "RegisterAction",
+    target: `${siteUrl}/sign-up`,
+  },
+};
 
 export default function Home() {
   const { userId } = useAuth();
@@ -27,6 +54,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+      <Script
+        id="nova-homepage-structured-data"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <div className="container mx-auto px-4 py-16">
         <nav className="flex justify-between items-center mb-16">
           <div className="flex items-center gap-3">
