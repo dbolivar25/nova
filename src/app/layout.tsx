@@ -2,6 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import {
+  siteDescription,
+  siteKeywords,
+  siteName,
+  siteOgImage,
+  siteTwitterHandle,
+  siteUrl,
+} from "@/shared/lib/site-metadata";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -11,9 +19,51 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Nova - AI Personal Journal",
-  description:
-    "A minimalist journaling app with AI-powered insights for personal growth and reflection",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Nova - AI Personal Journal",
+    template: "%s | Nova",
+  },
+  description: siteDescription,
+  keywords: siteKeywords,
+  authors: [{ name: siteName }],
+  creator: siteName,
+  publisher: siteName,
+  category: "Productivity",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    title: "Nova - AI Personal Journal",
+    description: siteDescription,
+    siteName,
+    images: [
+      {
+        url: siteOgImage,
+        width: 1200,
+        height: 630,
+        alt: "Nova journaling application preview",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    creator: siteTwitterHandle,
+    site: siteTwitterHandle,
+    title: "Nova - AI Personal Journal",
+    description: siteDescription,
+    images: [siteOgImage],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   icons: {
     icon: [
       { url: "/favicon-16x16.png?v=2", sizes: "16x16", type: "image/png" },
