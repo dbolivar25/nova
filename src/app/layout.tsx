@@ -30,13 +30,9 @@ export const metadata: Metadata = {
   creator: siteName,
   publisher: siteName,
   category: "Productivity",
-  alternates: {
-    canonical: siteUrl,
-  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: siteUrl,
     title: "Nova - AI Personal Journal",
     description: siteDescription,
     siteName,

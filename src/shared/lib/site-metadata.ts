@@ -1,55 +1,65 @@
 const FALLBACK_SITE_URL = "https://www.nova-plus.app";
 const FALLBACK_URL = new URL(FALLBACK_SITE_URL);
-const CANONICAL_HOSTNAME = FALLBACK_URL.hostname;
-const CANONICAL_ROOT_HOSTNAME = CANONICAL_HOSTNAME.replace(/^www\./, "");
-const CANONICAL_HOST_ROOTS = new Set([
-  CANONICAL_ROOT_HOSTNAME,
-  "nova-journal.app",
-]);
+const FALLBACK_HOST_ROOT = FALLBACK_URL.hostname.replace(/^www\./, "");
 
-function normalizeUrl(url: string | undefined) {
-  if (!url) {
-    return FALLBACK_SITE_URL;
+function parseUrl(value: string | undefined) {
+  if (!value) {
+    return null;
   }
 
-  const trimmed = url.trim();
+  const trimmed = value.trim();
 
   if (!trimmed) {
-    return FALLBACK_SITE_URL;
+    return null;
   }
 
   const hasProtocol = /^https?:\/\//i.test(trimmed);
-  const withProtocol = hasProtocol ? trimmed : `https://${trimmed}`;
+  const candidate = hasProtocol ? trimmed : `https://${trimmed}`;
 
   try {
-    const normalized = new URL(withProtocol);
-    const hostnameRoot = normalized.hostname.replace(/^www\./, "");
-
-    if (CANONICAL_HOST_ROOTS.has(hostnameRoot)) {
-      normalized.hostname = CANONICAL_HOSTNAME;
-    }
-
-    normalized.protocol = "https:";
-
-    const base = normalized.origin;
-
-    if (normalized.pathname === "/") {
-      return base;
-    }
-
-    const cleanedPath = normalized.pathname.replace(/\/$/, "");
-    const search = normalized.search ?? "";
-    const hash = normalized.hash ?? "";
-
-    return `${base}${cleanedPath}${search}${hash}`;
+    return new URL(candidate);
   } catch {
-    return FALLBACK_SITE_URL;
+    return null;
   }
 }
 
-export const siteUrl = normalizeUrl(
-  process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VERCEL_URL,
-);
+function canonicalizeUrl(url: URL) {
+  const normalized = new URL(url.toString());
+  const hostnameRoot = normalized.hostname.replace(/^www\./, "");
+
+  if (hostnameRoot === FALLBACK_HOST_ROOT) {
+    normalized.hostname = FALLBACK_URL.hostname;
+  }
+
+  normalized.protocol = "https:";
+
+  const origin = normalized.origin;
+  const pathname =
+    normalized.pathname === "/" ? "" : normalized.pathname.replace(/\/$/, "");
+
+  return `${origin}${pathname}${normalized.search}${normalized.hash}`;
+}
+
+function resolveSiteUrl() {
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL,
+    process.env.NEXT_PUBLIC_VERCEL_URL,
+    process.env.VERCEL_URL,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = parseUrl(candidate);
+
+    if (parsed) {
+      return canonicalizeUrl(parsed);
+    }
+  }
+
+  return canonicalizeUrl(FALLBACK_URL);
+}
+
+export const siteUrl = resolveSiteUrl();
 
 export const siteName = "Nova";
 
