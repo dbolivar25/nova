@@ -20,6 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SIDEBAR_MOBILE_POPOVER_EXEMPT_CLASS,
 } from "@/components/shared/ui/sidebar";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -156,7 +157,13 @@ export function AppSidebar() {
             appearance={{
               elements: {
                 avatarBox: "h-9 w-9",
-                userButtonPopoverCard: "shadow-xl",
+                userButtonPopover: cn(
+                  "relative z-[70]",
+                  SIDEBAR_MOBILE_POPOVER_EXEMPT_CLASS,
+                ),
+                userButtonPopoverCard: "relative z-[70] shadow-xl",
+                userButtonPopoverMain: "relative z-[70]",
+                userButtonPopoverFooter: "relative z-[70]",
               },
             }}
           />
