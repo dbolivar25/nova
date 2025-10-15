@@ -10,6 +10,10 @@ import { cn } from "@/shared/lib/utils"
 import { Button } from "@/components/shared/ui/button"
 import { Input } from "@/components/shared/ui/input"
 import { Separator } from "@/components/shared/ui/separator"
+import type {
+  InteractionOutsideEvent,
+  PointerDownOutsideEvent,
+} from "@radix-ui/react-dismissable-layer"
 import {
   Sheet,
   SheetContent,
@@ -164,6 +168,31 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const handlePreventClose = React.useCallback((target: EventTarget | null) => {
+    if (!(target instanceof Element)) {
+      return false
+    }
+
+    return Boolean(target.closest(".prevent-mobile-sheet-close"))
+  }, [])
+
+  const handlePointerDownOutside = React.useCallback(
+    (event: PointerDownOutsideEvent) => {
+      if (handlePreventClose(event.detail.originalEvent.target)) {
+        event.preventDefault()
+      }
+    },
+    [handlePreventClose]
+  )
+
+  const handleInteractOutside = React.useCallback(
+    (event: InteractionOutsideEvent) => {
+      if (handlePreventClose(event.detail.originalEvent.target)) {
+        event.preventDefault()
+      }
+    },
+    [handlePreventClose]
+  )
 
   if (collapsible === "none") {
     return (
@@ -194,6 +223,8 @@ function Sidebar({
             } as React.CSSProperties
           }
           side={side}
+          onPointerDownOutside={handlePointerDownOutside}
+          onInteractOutside={handleInteractOutside}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>

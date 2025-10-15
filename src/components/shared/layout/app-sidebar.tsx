@@ -156,7 +156,9 @@ export function AppSidebar() {
             appearance={{
               elements: {
                 avatarBox: "h-9 w-9",
-                userButtonPopoverCard: "shadow-xl",
+                userButtonPopover: "prevent-mobile-sheet-close",
+                userButtonPopoverCard: "shadow-xl prevent-mobile-sheet-close",
+                userButtonPopoverFooter: "prevent-mobile-sheet-close",
               },
             }}
           />
