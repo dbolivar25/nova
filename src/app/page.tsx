@@ -42,7 +42,7 @@ const structuredData = {
 } as const;
 
 export default async function Home() {
-  const { userId } = auth();
+  const { userId } = await auth();
 
   if (userId) {
     redirect("/dashboard");
