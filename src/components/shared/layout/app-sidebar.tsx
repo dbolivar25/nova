@@ -156,7 +156,10 @@ export function AppSidebar() {
             appearance={{
               elements: {
                 avatarBox: "h-9 w-9",
-                userButtonPopoverCard: "shadow-xl",
+                userButtonPopover: "relative z-[70]",
+                userButtonPopoverCard: "relative z-[70] shadow-xl",
+                userButtonPopoverMain: "relative z-[70]",
+                userButtonPopoverFooter: "relative z-[70]",
               },
             }}
           />
