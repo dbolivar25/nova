@@ -31,6 +31,8 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+export const SIDEBAR_MOBILE_POPOVER_EXEMPT_CLASS =
+  "sidebar-mobile-interaction-exempt"
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -181,8 +183,36 @@ function Sidebar({
   }
 
   if (isMobile) {
+    const preventMobileDismiss = (
+      event: Parameters<
+        NonNullable<React.ComponentProps<typeof SheetContent>["onInteractOutside"]>
+      >[0]
+    ) => {
+      const originalEvent = (event as CustomEvent<{ originalEvent?: Event }>).detail
+        ?.originalEvent
+      const target =
+        (originalEvent as Event | undefined)?.target ??
+        (originalEvent as Event | undefined)?.composedPath?.()[0] ??
+        event.target
+
+      if (!(target instanceof HTMLElement)) {
+        return
+      }
+
+      if (target.closest(`.${SIDEBAR_MOBILE_POPOVER_EXEMPT_CLASS}`)) {
+        event.preventDefault()
+      }
+    }
+
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      <Sheet
+        // Keep the sheet non-modal on mobile so portaled popovers like the Clerk
+        // user menu remain interactive above the sidebar scrim.
+        open={openMobile}
+        onOpenChange={setOpenMobile}
+        modal={false}
+        {...props}
+      >
         <SheetContent
           data-sidebar="sidebar"
           data-slot="sidebar"
@@ -194,6 +224,8 @@ function Sidebar({
             } as React.CSSProperties
           }
           side={side}
+          onPointerDownOutside={preventMobileDismiss}
+          onInteractOutside={preventMobileDismiss}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>
