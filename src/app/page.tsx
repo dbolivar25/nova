@@ -265,15 +265,15 @@ export default async function Home() {
                 invites you back gently.
               </p>
               <div className="border-l-2 border-primary/40 pl-4 text-sm leading-6 text-muted-foreground">
-                "I read last month&apos;s notes before bed and realized how far I have
-                come. Little reminders like that keep me showing up."
+                &ldquo;I read last month&apos;s notes before bed and realized how far I
+                have come. Little reminders like that keep me showing up.&rdquo;
               </div>
             </div>
             <div className="grid gap-10 sm:grid-cols-2">
               {testimonials.map((testimonial) => (
                 <figure key={testimonial.name} className="space-y-4">
                   <blockquote className="text-base leading-relaxed text-muted-foreground">
-                    "{testimonial.quote}"
+                    &ldquo;{testimonial.quote}&rdquo;
                   </blockquote>
                   <figcaption className="text-sm font-medium text-foreground">
                     {testimonial.name}
