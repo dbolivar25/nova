@@ -156,3 +156,11 @@
     @apply transition-colors duration-200;
   }
 }
+
+@layer utilities {
+  @keyframes caret-block {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+}
+

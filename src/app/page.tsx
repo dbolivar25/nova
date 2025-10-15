@@ -184,9 +184,9 @@ export default async function Home() {
                   and I finally paused before diving back into work
                   <span
                     aria-hidden="true"
-                    className="relative ml-1 inline-block h-6 align-text-bottom"
+                    className="relative ml-[2px] inline-block h-6 w-[8px] align-text-bottom"
                   >
-                    <span className="absolute bottom-0 top-[8px] ml-auto w-px animate-pulse bg-primary/70" />
+                    <span className="absolute inset-x-0 bottom-0 top-[8px] bg-primary opacity-0 [animation:caret-block_1.1s_steps(2,start)_infinite]" />
                   </span>
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
