@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import {
@@ -10,6 +9,7 @@ import {
   siteTwitterHandle,
   siteUrl,
 } from "@/shared/lib/site-metadata";
+import { Splash } from "./splash";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -53,17 +53,6 @@ export const metadata: Metadata = {
     description: siteDescription,
     images: [siteOgImage],
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
-  },
   icons: {
     icon: [
       { url: "/favicon-16x16.png?v=2", sizes: "16x16", type: "image/png" },
@@ -95,25 +84,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body className={`${inter.variable} font-sans antialiased`}>
-          <div
-            id="nova-splash"
-            aria-hidden="true"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-white opacity-100 transition-opacity duration-500"
-          >
-            <div className="flex flex-col items-center gap-6">
-              <Image
-                src="/nova-logo.svg"
-                alt="Nova"
-                width={96}
-                height={96}
-                priority
-                className="h-24 w-24"
-              />
-              <p className="text-sm font-medium tracking-[0.3em] text-slate-500">
-                JOURNALING REIMAGINED
-              </p>
-            </div>
-          </div>
+          <Splash />
           <Providers>{children}</Providers>
         </body>
       </html>

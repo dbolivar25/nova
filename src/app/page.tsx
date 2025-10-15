@@ -19,9 +19,20 @@ export const metadata: Metadata = {
   openGraph: {
     url: siteUrl,
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
 };
 
-const structuredData = {
+const webApplicationJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: siteName,
@@ -41,6 +52,18 @@ const structuredData = {
   },
 } as const;
 
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  url: siteUrl,
+  name: siteName,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${siteUrl}/search?q={query}`,
+    "query-input": "required name=query",
+  },
+} as const;
+
 export default async function Home() {
   const { userId } = await auth();
 
@@ -53,7 +76,9 @@ export default async function Home() {
       <script
         id="nova-homepage-structured-data"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([webApplicationJsonLd, websiteJsonLd]),
+        }}
       />
       <div className="container mx-auto px-4 py-16">
         <nav className="flex justify-between items-center mb-16">
