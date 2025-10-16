@@ -156,7 +156,7 @@ export function AppSidebar() {
             appearance={{
               elements: {
                 avatarBox: "h-9 w-9",
-                userButtonPopoverCard: "shadow-xl",
+                userButtonPopoverCard: "shadow-xl pointer-events-auto",
               },
             }}
           />
