@@ -31,6 +31,8 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+export const SIDEBAR_MOBILE_POPOVER_EXEMPT_CLASS =
+  "sidebar-mobile-interaction-exempt"
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -181,6 +183,36 @@ function Sidebar({
   }
 
   if (isMobile) {
+    const preventMobileDismiss = (
+      event: Parameters<
+        NonNullable<React.ComponentProps<typeof SheetContent>["onInteractOutside"]>
+      >[0]
+    ) => {
+      const originalEvent = (event as CustomEvent<{ originalEvent?: Event }>).detail
+        ?.originalEvent
+
+      const eventTargets = (
+        (typeof originalEvent?.composedPath === "function"
+          ? originalEvent?.composedPath()
+          : []) ?? []
+      ).concat(
+        originalEvent?.target ? [originalEvent.target] : [],
+        event.target ? [event.target] : []
+      )
+
+      const interactedWithExemptPopover = eventTargets.some((target) => {
+        if (!(target instanceof Element)) {
+          return false
+        }
+
+        return target.closest(`.${SIDEBAR_MOBILE_POPOVER_EXEMPT_CLASS}`)
+      })
+
+      if (interactedWithExemptPopover) {
+        event.preventDefault()
+      }
+    }
+
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
         <SheetContent
@@ -194,6 +226,8 @@ function Sidebar({
             } as React.CSSProperties
           }
           side={side}
+          onInteractOutside={preventMobileDismiss}
+          disableOutsidePointerEvents={false}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>
