@@ -280,7 +280,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   }, [open]);
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      commandProps={{ shouldFilter: false }}
+    >
       <CommandInput
         placeholder="Search or type a command..."
         value={search}

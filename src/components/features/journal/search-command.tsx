@@ -269,7 +269,11 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   ];
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      commandProps={{ shouldFilter: false }}
+    >
       <CommandInput
         placeholder="Search your journal entries..."
         value={search}
