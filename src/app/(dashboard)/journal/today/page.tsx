@@ -10,9 +10,8 @@ import { Badge } from "@/components/shared/ui/badge"
 import { Separator } from "@/components/shared/ui/separator"
 import { Skeleton } from "@/components/shared/ui/skeleton"
 import { EnhancedPromptCard } from "@/components/features/journal/enhanced-prompt-card"
-import { 
-  Sparkles, 
-  Save, 
+import {
+  Save,
   Calendar,
   Clock,
   Target,
@@ -244,58 +243,51 @@ export default function TodayPage() {
       {/* Action Buttons */}
       <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm -mx-6 px-6 py-4 -mb-6 mt-8">
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="lg"
-            disabled={!hasContent}
-            asChild
-          >
-            <Link href="/nova">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Discuss with Nova
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            asChild
-          >
-            <Link href="/journal">
-              <Calendar className="h-4 w-4 mr-2" />
-              View History
-            </Link>
-          </Button>
-        </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="lg"
+              disabled={!hasContent}
+              asChild
+            >
+              <Link href="/nova">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Discuss with Nova
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              asChild
+            >
+              <Link href="/journal">
+                <Calendar className="h-4 w-4 mr-2" />
+                View History
+              </Link>
+            </Button>
+          </div>
 
-        <Button
-          size="lg"
-          onClick={() => handleSave(true)}
-          disabled={!hasContent || isManualSaving}
-          className="sm:min-w-[150px]"
-        >
-          {isManualSaving ? (
-            <>
-              <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Save Entry
-            </>
-          )}
-        </Button>
+          <Button
+            size="lg"
+            onClick={() => handleSave(true)}
+            disabled={!hasContent || isManualSaving}
+            className="sm:min-w-[150px]"
+          >
+            {isManualSaving ? (
+              <>
+                <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Entry
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
-      {/* Floating Nova Button */}
-      <Link
-        href="/nova"
-        className="fixed bottom-6 right-6 h-14 w-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center hover:shadow-xl transition-shadow lg:hidden"
-      >
-        <Sparkles className="h-6 w-6" />
-      </Link>
     </div>
   )
 }
