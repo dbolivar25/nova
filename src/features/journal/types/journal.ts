@@ -4,6 +4,15 @@ export type JournalEntry = Tables<"journal_entries"> & {
   prompt_responses?: PromptResponse[];
 };
 
+export interface JournalEntriesResponse {
+  entries: JournalEntry[];
+}
+
+export interface JournalSearchResponse extends JournalEntriesResponse {
+  onThisDay?: boolean;
+  date?: string;
+}
+
 export type JournalPrompt = Tables<"journal_prompts">;
 export type PromptResponse = Tables<"prompt_responses"> & {
   prompt?: JournalPrompt;

@@ -12,7 +12,9 @@ import {
   getJournalInsights,
 } from "@/features/journal/api/journal";
 import type {
+  JournalEntriesResponse,
   JournalPrompt,
+  JournalSearchResponse,
   JournalStats,
   JournalInsights,
   CreateJournalEntryInput,
@@ -37,7 +39,7 @@ export function useJournalEntries(
 ) {
   const queryKey = journalEntriesKey({ limit, offset, startDate, endDate });
 
-  return useQuery({
+  return useQuery<JournalEntriesResponse>({
     queryKey,
     queryFn: () => getJournalEntries(limit, offset, startDate, endDate),
     placeholderData: (previous) => previous,
@@ -183,7 +185,7 @@ export function useJournalSearch(
 ) {
   const queryKey = journalSearchKey({ search, mood, onThisDay, limit });
 
-  return useQuery({
+  return useQuery<JournalSearchResponse>({
     queryKey,
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -194,7 +196,8 @@ export function useJournalSearch(
 
       const response = await fetch(`/api/journal/entries?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to search');
-      return response.json();
+      const data: JournalSearchResponse = await response.json();
+      return data;
     },
     enabled: Boolean(search || mood || onThisDay),
     placeholderData: (previous) => previous,
