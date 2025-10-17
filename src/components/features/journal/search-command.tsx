@@ -386,9 +386,27 @@ function EntryItem(
 ) {
   const MoodIcon = entry.mood ? moodIcons[entry.mood as Mood] : null;
   const moodColor = entry.mood ? moodColors[entry.mood as Mood] : "";
+  const entryDate = parseISO(entry.entry_date);
+  const promptContent = entry.prompt_responses
+    ?.map((response) =>
+      [response.prompt?.prompt_text, response.response_text]
+        .filter(Boolean)
+        .join(" "),
+    )
+    .join(" ") ?? "";
+  const commandItemValue = [
+    format(entryDate, "yyyy-MM-dd"),
+    format(entryDate, "EEEE"),
+    entry.mood ?? "",
+    entry.freeform_text ?? "",
+    promptContent,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <CommandItem
+      value={commandItemValue}
       onSelect={onSelect}
       onMouseEnter={onHover}
       className={cn(
@@ -400,10 +418,10 @@ function EntryItem(
         {/* Date & Mood Icon */}
         <div className="flex flex-col items-center min-w-[48px]">
           <div className="text-sm font-medium">
-            {format(parseISO(entry.entry_date), "dd")}
+            {format(entryDate, "dd")}
           </div>
           <div className="text-xs text-muted-foreground">
-            {format(parseISO(entry.entry_date), "MMM")}
+            {format(entryDate, "MMM")}
           </div>
           {MoodIcon && <MoodIcon className={cn("h-4 w-4 mt-1", moodColor)} />}
         </div>
@@ -412,10 +430,10 @@ function EntryItem(
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium">
-              {format(parseISO(entry.entry_date), "EEEE")}
+              {format(entryDate, "EEEE")}
             </span>
             <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(parseISO(entry.entry_date), {
+              {formatDistanceToNow(entryDate, {
                 addSuffix: true,
               })}
             </span>
@@ -430,20 +448,12 @@ function EntryItem(
           {entry.freeform_text && (
             <p className="text-sm text-muted-foreground line-clamp-2">
               {searchTerm
-                ? (
-                  <span
-                    dangerouslySetInnerHTML={{
-                      __html: highlightText(
-                        getSearchSnippet(entry.freeform_text, searchTerm, 150),
-                        searchTerm,
-                      ),
-                    }}
-                  />
+                ? highlightText(
+                  getSearchSnippet(entry.freeform_text, searchTerm, 150),
+                  searchTerm,
                 )
-                : (
-                  entry.freeform_text.substring(0, 150) +
-                  (entry.freeform_text.length > 150 ? "..." : "")
-                )}
+                : entry.freeform_text.substring(0, 150) +
+                  (entry.freeform_text.length > 150 ? "..." : "")}
             </p>
           )}
         </div>
