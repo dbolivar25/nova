@@ -65,6 +65,42 @@ const moodColors: Record<Mood, string> = {
   peaceful: "text-teal-600 dark:text-teal-400",
 };
 
+function buildEntrySearchValue(entry: JournalEntry): string {
+  const entryDate = parseISO(entry.entry_date);
+  const hasValidDate = !Number.isNaN(entryDate.getTime());
+  const promptContent = entry.prompt_responses
+    ?.map((response) =>
+      [response.prompt?.prompt_text, response.response_text]
+        .filter(Boolean)
+        .join(" "),
+    )
+    .join(" ") ?? "";
+
+  const dateParts = hasValidDate
+    ? [
+        format(entryDate, "yyyy-MM-dd"),
+        format(entryDate, "MMMM d, yyyy"),
+        format(entryDate, "MMMM d"),
+        format(entryDate, "MMM d"),
+        format(entryDate, "MMMM"),
+        format(entryDate, "MMM"),
+        format(entryDate, "EEEE"),
+        format(entryDate, "EEE"),
+        entry.entry_date,
+      ]
+    : [entry.entry_date];
+
+  return [
+    ...dateParts,
+    entry.mood ?? "",
+    entry.freeform_text ?? "",
+    promptContent,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -96,17 +132,66 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
     50,
   );
 
-  // Determine which data to show
+  const normalizedSearch = search.trim().toLowerCase();
+
+  const matchesMood = useCallback(
+    (entry: JournalEntry) => !selectedMood || entry.mood === selectedMood,
+    [selectedMood],
+  );
+
+  const matchesSearch = useCallback(
+    (entry: JournalEntry) => {
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      return buildEntrySearchValue(entry).includes(normalizedSearch);
+    },
+    [normalizedSearch],
+  );
+
+  const filteredRecentEntries = useMemo(
+    () =>
+      (recentData?.entries ?? []).filter(
+        (entry) => matchesMood(entry) && matchesSearch(entry),
+      ),
+    [recentData?.entries, matchesMood, matchesSearch],
+  );
+
+  const filteredSearchEntries = useMemo(
+    () =>
+      (searchData?.entries ?? []).filter(
+        (entry) => matchesMood(entry) && matchesSearch(entry),
+      ),
+    [searchData?.entries, matchesMood, matchesSearch],
+  );
+
   const entries = useMemo(() => {
     if (debouncedSearch || selectedMood) {
-      return searchData?.entries || [];
-    }
-    return recentData?.entries || [];
-  }, [debouncedSearch, selectedMood, searchData?.entries, recentData?.entries]);
+      const merged = new Map<string, JournalEntry>();
 
-  const isLoading = debouncedSearch || selectedMood
-    ? isSearching
-    : isLoadingRecent;
+      filteredSearchEntries.forEach((entry) => {
+        merged.set(entry.id, entry);
+      });
+
+      filteredRecentEntries.forEach((entry) => {
+        if (!merged.has(entry.id)) {
+          merged.set(entry.id, entry);
+        }
+      });
+
+      return Array.from(merged.values());
+    }
+
+    return filteredRecentEntries;
+  }, [
+    debouncedSearch,
+    selectedMood,
+    filteredSearchEntries,
+    filteredRecentEntries,
+  ]);
+
+  const isLoading = debouncedSearch || selectedMood ? isSearching : isLoadingRecent;
 
   // Group entries by time period
   const groupedEntries = useMemo(() => {
@@ -252,7 +337,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
         )}
 
         {/* Search Results */}
-        {isLoading
+        {isLoading && entries.length === 0
           ? (
             <CommandGroup heading="Loading...">
               <div className="space-y-2 p-2">
@@ -272,7 +357,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                       <EntryItem
                         key={entry.id}
                         entry={entry}
-                        searchTerm={debouncedSearch}
+                        searchTerm={search}
                         onSelect={() => handleSelect(entry)}
                         isSelected={selectedEntry?.id === entry.id}
                         onHover={() => setSelectedEntry(entry)}
@@ -291,7 +376,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                       <EntryItem
                         key={entry.id}
                         entry={entry}
-                        searchTerm={debouncedSearch}
+                        searchTerm={search}
                         onSelect={() => handleSelect(entry)}
                         isSelected={selectedEntry?.id === entry.id}
                         onHover={() => setSelectedEntry(entry)}
@@ -310,7 +395,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                       <EntryItem
                         key={entry.id}
                         entry={entry}
-                        searchTerm={debouncedSearch}
+                        searchTerm={search}
                         onSelect={() => handleSelect(entry)}
                         isSelected={selectedEntry?.id === entry.id}
                         onHover={() => setSelectedEntry(entry)}
@@ -329,7 +414,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                       <EntryItem
                         key={entry.id}
                         entry={entry}
-                        searchTerm={debouncedSearch}
+                        searchTerm={search}
                         onSelect={() => handleSelect(entry)}
                         isSelected={selectedEntry?.id === entry.id}
                         onHover={() => setSelectedEntry(entry)}
@@ -347,7 +432,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                     <EntryItem
                       key={entry.id}
                       entry={entry}
-                      searchTerm={debouncedSearch}
+                      searchTerm={search}
                       onSelect={() => handleSelect(entry)}
                       isSelected={selectedEntry?.id === entry.id}
                       onHover={() => setSelectedEntry(entry)}
@@ -387,22 +472,7 @@ function EntryItem(
   const MoodIcon = entry.mood ? moodIcons[entry.mood as Mood] : null;
   const moodColor = entry.mood ? moodColors[entry.mood as Mood] : "";
   const entryDate = parseISO(entry.entry_date);
-  const promptContent = entry.prompt_responses
-    ?.map((response) =>
-      [response.prompt?.prompt_text, response.response_text]
-        .filter(Boolean)
-        .join(" "),
-    )
-    .join(" ") ?? "";
-  const commandItemValue = [
-    format(entryDate, "yyyy-MM-dd"),
-    format(entryDate, "EEEE"),
-    entry.mood ?? "",
-    entry.freeform_text ?? "",
-    promptContent,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const commandItemValue = buildEntrySearchValue(entry);
 
   return (
     <CommandItem
