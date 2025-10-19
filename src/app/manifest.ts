@@ -28,7 +28,7 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/nova-logo.svg",
         sizes: "any",
         type: "image/svg+xml",
-        purpose: "any maskable",
+        purpose: "maskable",
       },
       {
         src: "/android-chrome-192x192.png?v=2",
