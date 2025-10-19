@@ -30,6 +30,7 @@ export const metadata: Metadata = {
   creator: siteName,
   publisher: siteName,
   category: "Productivity",
+  themeColor: "#000000",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -73,6 +74,7 @@ export const metadata: Metadata = {
       },
     ],
   },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
