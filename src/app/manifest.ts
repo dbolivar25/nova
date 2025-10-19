@@ -6,7 +6,7 @@ import {
   siteUrl,
 } from "@/shared/lib/site-metadata";
 
-const THEME_COLOR = "#0f172a";
+const THEME_COLOR = "#000000";
 const BACKGROUND_COLOR = "#ffffff";
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -24,6 +24,12 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: THEME_COLOR,
     prefer_related_applications: false,
     icons: [
+      {
+        src: "/nova-logo.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any maskable",
+      },
       {
         src: "/android-chrome-192x192.png?v=2",
         sizes: "192x192",
