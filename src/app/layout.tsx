@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import {
@@ -30,7 +30,6 @@ export const metadata: Metadata = {
   creator: siteName,
   publisher: siteName,
   category: "Productivity",
-  themeColor: "#000000",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -75,6 +74,10 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
