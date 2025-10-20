@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@boundaryml/baml": "0.206.1",
-    "@clerk/nextjs": "^6.20.0",
+    "@clerk/nextjs": "^6.33.7",
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.10",
