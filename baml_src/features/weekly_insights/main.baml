@@ -7,7 +7,7 @@ function GenerateWeeklyInsights(
   weekStartDate: string,
   weekEndDate: string
 ) -> WeeklyInsights {
-  client GPT5Mini
+  client GroqGPT120B
   prompt #"
 {{ NovaFoundationalPrinciples() }}
 

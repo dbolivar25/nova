@@ -5,7 +5,7 @@ function GenerateNovaResponse(
   userContext: UserContext,
   temporalContext: TemporalContext
 ) -> AgentContent {
-  client GPT5Mini
+  client GroqGPT120B
   prompt #"
 {{ NovaFoundationalPrinciples() }}
 

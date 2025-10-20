@@ -30,6 +30,25 @@ client<llm> GPT5Nano {
   }
 }
 
+client<llm> GroqGPT20BLow {
+  provider openai-generic
+  options {
+    base_url "https://api.groq.com/openai/v1"
+    api_key env.GROQ_API_KEY
+    model "openai/gpt-oss-20b"
+    reasoning_effort "low"
+  }
+}
+
+client<llm> GroqGPT120B {
+  provider openai-generic
+  options {
+    base_url "https://api.groq.com/openai/v1"
+    api_key env.GROQ_API_KEY
+    model "openai/gpt-oss-120b"
+  }
+}
+
 // Retry policies
 retry_policy Exponential {
   max_retries 3
