@@ -1,8 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import { PenLine, Brain, Shield } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import {
@@ -79,13 +77,7 @@ const testimonials = [
   },
 ] as const;
 
-export default async function Home() {
-  const { userId } = await auth();
-
-  if (userId) {
-    redirect("/dashboard");
-  }
-
+export default function Home() {
   return (
     <div className="relative min-h-screen bg-background text-foreground antialiased">
       <div
