@@ -6,7 +6,7 @@ import {
   siteUrl,
 } from "@/shared/lib/site-metadata";
 
-const THEME_COLOR = "#000000";
+const THEME_COLOR = "#121827";
 const BACKGROUND_COLOR = "#ffffff";
 
 export default function manifest(): MetadataRoute.Manifest {
