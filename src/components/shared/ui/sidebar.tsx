@@ -301,7 +301,7 @@ function SidebarRail({
         onClick={toggleSidebar}
         title="Open Sidebar"
         className={cn(
-          "fixed inset-y-0 z-40 w-6 bg-transparent transition-opacity duration-150 ease-linear appearance-none focus-visible:outline-none focus-visible:ring-0 md:hidden",
+          "fixed inset-y-0 z-40 w-4 bg-transparent transition-opacity duration-150 ease-linear appearance-none focus-visible:outline-none focus-visible:ring-0 hover:bg-transparent focus:bg-transparent active:bg-transparent md:hidden",
           side === "left" ? "left-0" : "right-0",
           openMobile ? "pointer-events-none opacity-0" : "opacity-100",
           className
@@ -321,7 +321,7 @@ function SidebarRail({
       onClick={toggleSidebar}
       title="Toggle Sidebar"
       className={cn(
-        "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 bg-transparent transition-all ease-linear appearance-none focus-visible:outline-none focus-visible:ring-0 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
+        "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 bg-transparent transition-all ease-linear appearance-none focus-visible:outline-none focus-visible:ring-0 hover:bg-transparent focus:bg-transparent active:bg-transparent group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0",
