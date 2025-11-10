@@ -7,17 +7,18 @@ import { cn } from "@/shared/lib/utils"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-interface Source {
+export interface NovaSource {
   type: string
-  entryDate: string
-  excerpt: string
+  entryDate?: string
+  excerpt?: string
+  mood?: string
 }
 
 interface ChatMessageProps {
   role: "user" | "assistant"
-  content: string
-  sources?: Source[]
-  isStreaming?: boolean
+   content: string
+   sources?: NovaSource[]
+   isStreaming?: boolean
 }
 
 export function ChatMessage({
@@ -38,7 +39,7 @@ export function ChatMessage({
     }
   }, [sources])
 
-  const handleSourceClick = (source: Source) => {
+  const handleSourceClick = (source: NovaSource) => {
     router.push(`/journal/${source.entryDate}`)
   }
 

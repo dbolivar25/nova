@@ -94,7 +94,7 @@ export default function NovaPage() {
                         key={message.id}
                         role={message.role}
                         content={message.content}
-                        sources={'sources' in message ? message.sources : undefined}
+                         sources={"sources" in message ? message.sources : undefined}
                       />
                     ))}
 
