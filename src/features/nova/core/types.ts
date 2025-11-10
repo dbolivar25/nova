@@ -9,6 +9,4 @@ export interface NovaSource {
   mood?: string;
 }
 
-export interface HookModule {
-  // Placeholder to satisfy legacy imports while Nova is migrated.
-}
+export type HookModule = Record<string, unknown>;

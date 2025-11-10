@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     // Map stored history (BAML-style messages) into LLM-friendly text messages.
     const mappedHistory = historyMessages
       .map((m) => {
-        const c: any = m.content;
+        const c = m.content as { type?: string; userMessage?: { message?: string }; agentResponse?: { response?: string } };
         if (c?.type === "UserContent") {
           return { role: "user" as const, content: c.userMessage?.message ?? "" };
         }
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
             type: "AgentContent",
             agentResponse: { response: parsed.response },
             sources: parsed.sources ?? [],
-          } as any,
+          } as unknown as import("@/shared/lib/supabase/types").Json,
           metadata: {
             streamId: chatId,
             processingTime: 0,
