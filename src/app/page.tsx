@@ -147,7 +147,7 @@ export default function Home() {
         }}
       />
       <div className="container mx-auto px-4 pb-24 pt-10 sm:pt-14">
-        <nav className="flex flex-col gap-4 border-b border-border/60 pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <nav className="flex flex-wrap items-center justify-center gap-4 border-b border-border/60 pb-6 text-center sm:justify-between sm:text-left">
           <div className="flex items-center gap-3">
             <div className="relative h-9 w-9">
               <Image
@@ -169,7 +169,7 @@ export default function Home() {
             </div>
             <p className="text-2xl font-semibold leading-tight text-primary">Nova</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:flex-nowrap">
             <Button variant="ghost" size="sm" asChild>
               <Link href="/sign-in">Sign In</Link>
             </Button>
@@ -211,14 +211,14 @@ export default function Home() {
               <div className="relative">
                 <div className="absolute inset-0 -z-10 rounded-[32px] bg-gradient-to-br from-primary/15 via-transparent to-transparent opacity-80 blur-3xl dark:from-primary/20" />
                 <div className="relative rounded-[28px] border border-border/60 bg-card/80 p-6 shadow-lg shadow-black/5">
-                  <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs font-semibold uppercase tracking-[0.35em] text-muted-foreground">
                     <span className="inline-flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-primary" />
                       Tonight&apos;s prompt
                     </span>
                     <span>Gentle focus</span>
                   </div>
-                  <div className="mt-5 space-y-4">
+                  <div className="mt-6 space-y-5">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                         Prompt
