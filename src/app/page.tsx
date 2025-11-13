@@ -147,7 +147,7 @@ export default function Home() {
         }}
       />
       <div className="container mx-auto px-4 pb-24 pt-10 sm:pt-14">
-        <nav className="flex flex-wrap items-center justify-center gap-4 border-b border-border/60 pb-6 text-center sm:justify-between sm:text-left">
+        <nav className="flex flex-nowrap items-center justify-between gap-4 border-b border-border/60 pb-6 text-left">
           <div className="flex items-center gap-3">
             <div className="relative h-9 w-9">
               <Image
@@ -169,7 +169,7 @@ export default function Home() {
             </div>
             <p className="text-2xl font-semibold leading-tight text-primary">Nova</p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:flex-nowrap">
+          <div className="flex flex-nowrap items-center gap-3">
             <Button variant="ghost" size="sm" asChild>
               <Link href="/sign-in">Sign In</Link>
             </Button>
