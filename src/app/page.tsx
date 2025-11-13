@@ -211,22 +211,16 @@ export default function Home() {
               <div className="relative">
                 <div className="absolute inset-0 -z-10 rounded-[32px] bg-gradient-to-br from-primary/15 via-transparent to-transparent opacity-80 blur-3xl dark:from-primary/20" />
                 <div className="relative rounded-[28px] border border-border/60 bg-card/80 p-6 shadow-lg shadow-black/5">
-                  <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+                  <div className="flex items-center text-xs font-semibold uppercase tracking-[0.35em] text-muted-foreground">
                     <span className="inline-flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-primary" />
                       Tonight&apos;s prompt
                     </span>
-                    <span>Gentle focus</span>
                   </div>
                   <div className="mt-5 space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                        Prompt
-                      </p>
-                      <p className="mt-2 text-lg leading-relaxed text-foreground">
-                        What moment reminded you to slow down today?
-                      </p>
-                    </div>
+                    <p className="text-lg leading-relaxed text-foreground">
+                      What moment reminded you to slow down today?
+                    </p>
                     <p className="text-sm leading-6 text-muted-foreground">
                       Hearing the kettle whistle pulled me out of a busy afternoon. I stood by the window,
                       breathed in the steam, and felt my shoulders release.
