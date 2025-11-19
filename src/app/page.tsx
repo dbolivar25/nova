@@ -308,8 +308,7 @@ export default function Home() {
                 Everything stays calm so you can focus on noticing what changed.
               </p>
             </div>
-            <ol className="relative grid gap-6 sm:grid-cols-3">
-              <div className="pointer-events-none absolute left-0 top-6 hidden h-px w-full bg-gradient-to-r from-primary/50 via-primary/25 to-transparent sm:block" />
+            <ol className="grid gap-6 sm:grid-cols-3">
               {rituals.map((ritual, index) => (
                 <li key={ritual.title} className="relative space-y-3">
                   <div className="inline-flex items-center gap-3 rounded-full bg-background/80 px-3 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
