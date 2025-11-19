@@ -93,11 +93,37 @@ export async function POST(req: NextRequest) {
 
     // Run the agent and stream plain text back to the client.
     const streamResult = await novaAgent.stream({ messages });
+    const outputPromise = streamResult.output;
+
+    const encoder = new TextEncoder();
+    let previousResponse = "";
+
+    const responseStream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const partial of streamResult.partialOutputStream) {
+            const next = partial?.response ?? "";
+            if (!next || next === previousResponse) {
+              continue;
+            }
+
+            const delta = next.slice(previousResponse.length);
+            if (delta) {
+              controller.enqueue(encoder.encode(delta));
+            }
+            previousResponse = next;
+          }
+          controller.close();
+        } catch (error) {
+          console.error("[Nova Chat] Stream error:", error);
+          controller.error(error);
+        }
+      },
+    });
 
     // Persist assistant message asynchronously once full structured output is available.
-    void (async () => {
-      try {
-        const fullOutput = await streamResult.output;
+    void outputPromise
+      .then(async (fullOutput) => {
         const parsed = NovaAssistantOutputSchema.parse(fullOutput);
         await NovaChatService.saveAssistantMessage({
           chatId,
@@ -111,13 +137,13 @@ export async function POST(req: NextRequest) {
             processingTime: 0,
           },
         });
-      } catch (error) {
+      })
+      .catch((error) => {
         console.error("[Nova Chat] Failed to persist assistant message:", error);
-      }
-    })();
+      });
 
     // Return a simple text stream (no SSE). Client will treat chunks as deltas.
-    return streamResult.toTextStreamResponse({
+    return new Response(responseStream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache",
