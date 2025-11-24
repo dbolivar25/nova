@@ -136,6 +136,8 @@ export function ChatMessage({
                     {children}
                   </blockquote>
                 ),
+                // Style line breaks to have paragraph-like spacing (h-4 matches mb-4 on <p>)
+                br: () => <span className="block h-4" aria-hidden="true" />,
                 a: ({ href, children }) => {
                   const isCitation = href?.startsWith('@source-')
 
