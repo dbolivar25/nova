@@ -22,6 +22,16 @@ interface ChatMessageProps {
    isStreaming?: boolean
 }
 
+function normalizeContent(text: string): string {
+  return text
+    .replace(/\u2011/g, '-')  // Non-breaking hyphen → regular hyphen
+    .replace(/\u00A0/g, ' ')  // Non-breaking space → regular space
+    .replace(/\u2010/g, '-')  // Hyphen → regular hyphen
+    .replace(/\u2012/g, '-')  // Figure dash → regular hyphen
+    .replace(/\u2013/g, '-')  // En dash → regular hyphen
+    .replace(/\u2014/g, '-')  // Em dash → regular hyphen
+}
+
 export function ChatMessage({
   role,
   content,
@@ -32,6 +42,7 @@ export function ChatMessage({
   const router = useRouter()
   const sourceRefs = useRef<(HTMLDivElement | null)[]>([])
   const isUser = role === "user"
+  const normalizedContent = normalizeContent(content)
 
   // Reset refs when sources change
   useEffect(() => {
@@ -45,7 +56,7 @@ export function ChatMessage({
   }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(content)
+    navigator.clipboard.writeText(normalizedContent)
     toast.success("Copied to clipboard")
   }
 
@@ -143,7 +154,7 @@ export function ChatMessage({
                 },
               }}
             >
-              {content}
+              {normalizedContent}
             </ReactMarkdown>
           </div>
 
