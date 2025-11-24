@@ -54,6 +54,12 @@ export async function POST(req: NextRequest) {
       message,
     });
 
+    // Generate title for newly created non-temporary chats (fire-and-forget)
+    const isNewChat = !requestChatId;
+    if (isNewChat && !temporary) {
+      void NovaChatService.generateChatTitle(chatId, message);
+    }
+
     // Build context in parallel - only prefetch 5 recent entries since tools can fetch more
     const [userContext, journalContext, historyMessages] = await Promise.all([
       NovaContextService.getUserJournalContext(userId, userEmail),
