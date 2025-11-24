@@ -344,6 +344,67 @@ export class InsightsService {
   }
 
   /**
+   * Get insights for a specific week
+   */
+  static async getInsightsForWeek(userId: string, weekStartDate: string): Promise<WeeklyInsights | null> {
+    const supabase = await createServerSupabaseClient();
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('clerk_id', userId)
+      .single();
+
+    if (!user) {
+      return null;
+    }
+
+    const { data: insights } = await supabase
+      .from('weekly_insights')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('week_start_date', weekStartDate);
+
+    if (!insights || insights.length === 0) {
+      return null;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const emotionalTrends = insights.find(i => i.insight_type === 'emotional_trends')?.insight_content as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const keyThemesData = insights.find(i => i.insight_type === 'key_themes')?.insight_content as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const growthMomentsData = insights.find(i => i.insight_type === 'growth_moments')?.insight_content as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const patterns = insights.find(i => i.insight_type === 'patterns')?.insight_content as any;
+
+    const keyThemes = keyThemesData?.themes || [];
+    const growthMoments = growthMomentsData?.moments || [];
+
+    if (!emotionalTrends || !patterns) {
+      return null;
+    }
+
+    const { count } = await supabase
+      .from('journal_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('entry_date', insights[0].week_start_date)
+      .lte('entry_date', insights[0].week_end_date);
+
+    return {
+      weekStartDate: insights[0].week_start_date,
+      weekEndDate: insights[0].week_end_date,
+      entryCount: count || 0,
+      emotionalTrends,
+      keyThemes,
+      growthMoments,
+      weekAheadSuggestions: patterns.suggestions || [],
+      novaObservation: patterns.novaObservation || '',
+    };
+  }
+
+  /**
    * Check if insights exist for a specific week
    */
   static async hasInsightsForWeek(

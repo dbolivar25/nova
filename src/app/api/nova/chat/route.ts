@@ -53,10 +53,10 @@ export async function POST(req: NextRequest) {
       message,
     });
 
-    // Build context in parallel
+    // Build context in parallel - only prefetch 5 recent entries since tools can fetch more
     const [userContext, journalContext, historyMessages] = await Promise.all([
       NovaContextService.getUserJournalContext(userId, userEmail),
-      NovaContextService.buildJournalContext(userId, message, 15),
+      NovaContextService.buildJournalContext(userId, message, 5),
       includeHistory ? NovaChatService.getChatHistory(chatId, userId, 10) : Promise.resolve([]),
     ]);
 
@@ -68,6 +68,10 @@ export async function POST(req: NextRequest) {
         userContext,
         journalContext,
         temporalContext,
+      },
+      toolContext: {
+        userId,
+        userEmail,
       },
     });
 
