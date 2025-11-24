@@ -9,6 +9,7 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createNovaAgent } from "@/features/nova/core/nova-agent";
 import { createUserMessage, toAISDKMessages } from "@/features/nova/core/nova-prompts";
+import { encodeNovaEvent } from "@/features/nova/core/nova-stream";
 import { NovaChatService } from "@/features/nova/services/nova-chat-service";
 import { NovaContextService } from "@/features/nova/services/nova-context-service";
 import type { AgentContent } from "@/integrations/baml_client/types";
@@ -89,57 +90,45 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder();
     let previousResponse = "";
 
-    const sendEvent = (controller: ReadableStreamDefaultController, event: object) => {
-      controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
-    };
-
     const responseStream = new ReadableStream({
       async start(controller) {
+        const send = (event: Parameters<typeof encodeNovaEvent>[0]) => {
+          controller.enqueue(encoder.encode(encodeNovaEvent(event)));
+        };
+
         try {
-          // Stream text deltas as NDJSON events
+          // Stream text deltas
           for await (const partial of streamResult.partialOutputStream as AsyncIterable<
             partial_types.AgentContent | undefined
           >) {
             const next = partial?.agentResponse?.response ?? "";
-            if (!next || next === previousResponse) {
-              continue;
-            }
+            if (!next || next === previousResponse) continue;
 
             const delta = next.slice(previousResponse.length);
-            if (delta) {
-              sendEvent(controller, { type: "delta", text: delta });
-            }
+            if (delta) send({ type: "delta", text: delta });
             previousResponse = next;
           }
 
-          // Wait for full output, persist, and send complete event
-          try {
-            const fullOutput = await outputPromise;
+          // Persist and send final result
+          const fullOutput = await outputPromise;
 
-            await NovaChatService.saveAssistantMessage({
-              chatId,
-              content: fullOutput as unknown as import("@/shared/lib/supabase/types").Json,
-              metadata: {
-                streamId: chatId,
-                processingTime: 0,
-              },
-            });
+          await NovaChatService.saveAssistantMessage({
+            chatId,
+            content: fullOutput as unknown as import("@/shared/lib/supabase/types").Json,
+            metadata: { streamId: chatId, processingTime: 0 },
+          });
 
-            // Send complete event with full content and sources
-            sendEvent(controller, {
-              type: "done",
-              content: fullOutput.agentResponse.response,
-              sources: fullOutput.sources,
-            });
-          } catch (error) {
-            console.error("[Nova Chat] Failed to persist assistant message:", error);
-            sendEvent(controller, { type: "error", message: "Failed to save message" });
-          }
-
-          controller.close();
+          send({
+            type: "done",
+            content: fullOutput.agentResponse.response,
+            sources: fullOutput.sources,
+          });
         } catch (error) {
           console.error("[Nova Chat] Stream error:", error);
-          controller.error(error);
+          const message = error instanceof Error ? error.message : "Stream failed";
+          send({ type: "error", message });
+        } finally {
+          controller.close();
         }
       },
     });

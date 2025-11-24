@@ -5,18 +5,14 @@ import {
   novaChatHistoryQueryKey,
   novaChatListQueryKey,
 } from "@/features/nova/hooks/nova-chat-query-keys";
+import { parseNovaStream, type NovaSource } from "@/features/nova/core/nova-stream";
 
 interface NovaMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  sources?: Array<{
-    type: string;
-    entryDate?: string;
-    excerpt?: string;
-    mood?: string;
-  }>;
+  sources?: NovaSource[];
 }
 
 interface UseNovaChatOptions {
@@ -30,18 +26,8 @@ export const NOVA_HISTORY_STALE_TIME = 5 * 60 * 1000;
 export const NOVA_HISTORY_CACHE_TIME = 30 * 60 * 1000;
 
 type SerializedMessage =
-  | {
-      id: string;
-      content: { type: "UserContent"; userMessage: { message: string } };
-    }
-  | {
-      id: string;
-      content: {
-        type: "AgentContent";
-        agentResponse: { response: string };
-        sources?: NovaMessage["sources"];
-      };
-    };
+  | { id: string; content: { type: "UserContent"; userMessage: { message: string } } }
+  | { id: string; content: { type: "AgentContent"; agentResponse: { response: string }; sources?: NovaSource[] } };
 
 export function useNovaChat(options: UseNovaChatOptions = {}) {
   const [messages, setMessages] = useState<NovaMessage[]>([]);
@@ -63,35 +49,25 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
       if (!message.trim() || isStreaming) return;
 
       const trimmed = message.trim();
-      const userMessage: NovaMessage = {
-        id: `${Date.now()}`,
-        role: "user",
-        content: trimmed,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, userMessage]);
+      setMessages((prev) => [
+        ...prev,
+        { id: `${Date.now()}`, role: "user", content: trimmed, timestamp: new Date() },
+      ]);
       setIsStreaming(true);
       setCurrentResponse("");
 
       try {
         const response = await fetch("/api/nova/chat", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: trimmed,
-            chatId: currentChatId,
-            includeHistory,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: trimmed, chatId: currentChatId, includeHistory }),
         });
 
         if (!response.ok || !response.body) {
           throw new Error("Failed to start chat stream");
         }
 
-        // Capture chat id from response header when a new chat is created
+        // Handle new chat creation
         const responseChatId = response.headers.get("x-nova-chat-id");
         if (responseChatId && responseChatId !== currentChatId) {
           setCurrentChatId(responseChatId);
@@ -99,78 +75,34 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
           skipNextHistoryLoadRef.current = true;
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+        // Parse the stream
+        const result = await parseNovaStream(
+          response.body.getReader(),
+          setCurrentResponse
+        );
 
-        let buffer = "";
-        let streamedContent = "";
-        let finalContent = "";
-        let sources: NovaMessage["sources"] | undefined;
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          // Parse complete NDJSON lines
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || ""; // Keep incomplete line in buffer
-
-          for (const line of lines) {
-            if (!line.trim()) continue;
-
-            try {
-              const event = JSON.parse(line) as
-                | { type: "delta"; text: string }
-                | { type: "done"; content: string; sources: NovaMessage["sources"] }
-                | { type: "error"; message: string };
-
-              if (event.type === "delta") {
-                streamedContent += event.text;
-                setCurrentResponse(streamedContent);
-              } else if (event.type === "done") {
-                finalContent = event.content;
-                sources = event.sources;
-              } else if (event.type === "error") {
-                throw new Error(event.message);
-              }
-            } catch (e) {
-              // Skip malformed lines but log for debugging
-              if (e instanceof SyntaxError) {
-                console.warn("Skipping malformed NDJSON line:", line);
-              } else {
-                throw e;
-              }
-            }
-          }
-        }
-
-        // Use final content from done event, or fall back to streamed content
-        const messageContent = finalContent || streamedContent.trim();
-
-        if (messageContent) {
-          const assistantMessage: NovaMessage = {
-            id: `${Date.now()}-assistant`,
-            role: "assistant",
-            content: messageContent,
-            timestamp: new Date(),
-            sources,
-          };
-
-          setMessages((prev) => [...prev, assistantMessage]);
+        if (result.content) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `${Date.now()}-assistant`,
+              role: "assistant",
+              content: result.content,
+              timestamp: new Date(),
+              sources: result.sources,
+            },
+          ]);
         }
 
         setCurrentResponse("");
-        setIsStreaming(false);
         void queryClient.invalidateQueries({ queryKey: novaChatListQueryKey });
         onComplete?.();
       } catch (error) {
         console.error("Nova chat error:", error);
-        const errorMsg =
-          error instanceof Error ? error.message : "Failed to send message";
+        const errorMsg = error instanceof Error ? error.message : "Failed to send message";
         toast.error(errorMsg);
         onError?.(error instanceof Error ? error : new Error(errorMsg));
+      } finally {
         setIsStreaming(false);
       }
     },
