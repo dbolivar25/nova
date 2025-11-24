@@ -89,9 +89,14 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder();
     let previousResponse = "";
 
+    const sendEvent = (controller: ReadableStreamDefaultController, event: object) => {
+      controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+    };
+
     const responseStream = new ReadableStream({
       async start(controller) {
         try {
+          // Stream text deltas as NDJSON events
           for await (const partial of streamResult.partialOutputStream as AsyncIterable<
             partial_types.AgentContent | undefined
           >) {
@@ -102,10 +107,35 @@ export async function POST(req: NextRequest) {
 
             const delta = next.slice(previousResponse.length);
             if (delta) {
-              controller.enqueue(encoder.encode(delta));
+              sendEvent(controller, { type: "delta", text: delta });
             }
             previousResponse = next;
           }
+
+          // Wait for full output, persist, and send complete event
+          try {
+            const fullOutput = await outputPromise;
+
+            await NovaChatService.saveAssistantMessage({
+              chatId,
+              content: fullOutput as unknown as import("@/shared/lib/supabase/types").Json,
+              metadata: {
+                streamId: chatId,
+                processingTime: 0,
+              },
+            });
+
+            // Send complete event with full content and sources
+            sendEvent(controller, {
+              type: "done",
+              content: fullOutput.agentResponse.response,
+              sources: fullOutput.sources,
+            });
+          } catch (error) {
+            console.error("[Nova Chat] Failed to persist assistant message:", error);
+            sendEvent(controller, { type: "error", message: "Failed to save message" });
+          }
+
           controller.close();
         } catch (error) {
           console.error("[Nova Chat] Stream error:", error);
@@ -114,25 +144,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Persist assistant message asynchronously
-    void outputPromise
-      .then(async (fullOutput) => {
-        await NovaChatService.saveAssistantMessage({
-          chatId,
-          content: fullOutput as unknown as import("@/shared/lib/supabase/types").Json,
-          metadata: {
-            streamId: chatId,
-            processingTime: 0,
-          },
-        });
-      })
-      .catch((error) => {
-        console.error("[Nova Chat] Failed to persist assistant message:", error);
-      });
-
     return new Response(responseStream, {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": "application/x-ndjson",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
         "X-Accel-Buffering": "no",

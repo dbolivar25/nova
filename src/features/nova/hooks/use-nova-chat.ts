@@ -53,7 +53,6 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
   );
 
   const queryClient = useQueryClient();
-  const currentResponseRef = useRef("");
   const skipNextHistoryLoadRef = useRef(false);
   const pendingCreatedChatIdRef = useRef<string | null>(null);
 
@@ -74,7 +73,6 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
       setMessages((prev) => [...prev, userMessage]);
       setIsStreaming(true);
       setCurrentResponse("");
-      currentResponseRef.current = "";
 
       try {
         const response = await fetch("/api/nova/chat", {
@@ -104,31 +102,66 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
+        let buffer = "";
+        let streamedContent = "";
+        let finalContent = "";
+        let sources: NovaMessage["sources"] | undefined;
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          if (!chunk) continue;
+          buffer += decoder.decode(value, { stream: true });
 
-          currentResponseRef.current += chunk;
-          setCurrentResponse(currentResponseRef.current);
+          // Parse complete NDJSON lines
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+
+            try {
+              const event = JSON.parse(line) as
+                | { type: "delta"; text: string }
+                | { type: "done"; content: string; sources: NovaMessage["sources"] }
+                | { type: "error"; message: string };
+
+              if (event.type === "delta") {
+                streamedContent += event.text;
+                setCurrentResponse(streamedContent);
+              } else if (event.type === "done") {
+                finalContent = event.content;
+                sources = event.sources;
+              } else if (event.type === "error") {
+                throw new Error(event.message);
+              }
+            } catch (e) {
+              // Skip malformed lines but log for debugging
+              if (e instanceof SyntaxError) {
+                console.warn("Skipping malformed NDJSON line:", line);
+              } else {
+                throw e;
+              }
+            }
+          }
         }
 
-        const finalText = currentResponseRef.current.trim();
-        if (finalText) {
+        // Use final content from done event, or fall back to streamed content
+        const messageContent = finalContent || streamedContent.trim();
+
+        if (messageContent) {
           const assistantMessage: NovaMessage = {
             id: `${Date.now()}-assistant`,
             role: "assistant",
-            content: finalText,
+            content: messageContent,
             timestamp: new Date(),
+            sources,
           };
 
           setMessages((prev) => [...prev, assistantMessage]);
         }
 
         setCurrentResponse("");
-        currentResponseRef.current = "";
         setIsStreaming(false);
         void queryClient.invalidateQueries({ queryKey: novaChatListQueryKey });
         onComplete?.();
@@ -147,7 +180,6 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
   const clearMessages = useCallback(() => {
     setMessages([]);
     setCurrentResponse("");
-    currentResponseRef.current = "";
 
     if (currentChatId) {
       queryClient.setQueryData(novaChatHistoryQueryKey(currentChatId), []);
@@ -198,7 +230,6 @@ export function useNovaChat(options: UseNovaChatOptions = {}) {
     } else {
       setMessages([]);
       setCurrentResponse("");
-      currentResponseRef.current = "";
       setIsLoadingHistory(false);
     }
   }, [currentChatId, hydrateHistory]);
