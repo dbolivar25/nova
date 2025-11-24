@@ -1,28 +1,35 @@
-import { ToolLoopAgent, Output, tool } from "ai";
+import { ToolLoopAgent, tool } from "ai";
 import { z } from "zod";
 import { novaModel } from "@/shared/lib/ai/provider";
 import { NovaContextService } from "@/features/nova/services/nova-context-service";
 import { NovaChatService } from "@/features/nova/services/nova-chat-service";
+import { novaOutputSpec } from "./nova-output";
 
 // Structured output for Nova assistant responses.
-// This closely mirrors the previous AgentContent shape used in the UI and persistence.
-const journalSourceSchema = z.object({
-  type: z.literal("JournalEntryRef"),
-  entryDate: z.string().describe("ISO date for the journal entry being cited."),
-  excerpt: z.string().describe("Relevant excerpt from the entry."),
-  mood: z.string().optional().describe("Optional mood captured for the entry."),
-});
-
-const insightSourceSchema = z.object({
-  type: z.literal("WeeklyInsightRef"),
-  insightType: z.string().describe("Insight category or name."),
-  summary: z.string().describe("What the referenced weekly insight said."),
-});
-
+// This mirrors the BAML AgentContent shape to keep local validation aligned.
 export const NovaAssistantOutputSchema = z.object({
-  response: z.string().describe("Primary assistant reply to render to the user."),
+  type: z.literal("AgentContent"),
+  agentResponse: z.object({
+    type: z.literal("AgentResponse"),
+    response: z.string().describe("Primary assistant reply to render to the user."),
+  }),
   sources: z
-    .array(z.union([journalSourceSchema, insightSourceSchema]))
+    .array(
+      z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("JournalEntryRef"),
+          entryDate: z.string().describe("ISO date for the journal entry being cited."),
+          excerpt: z.string().describe("Relevant excerpt from the entry."),
+          mood: z.string().optional().describe("Optional mood captured for the entry."),
+        }),
+        z.object({
+          type: z.literal("WeeklyInsightRef"),
+          weekStartDate: z.string().describe("ISO week start date for the referenced insight."),
+          insightType: z.string().describe("Insight category or name."),
+          summary: z.string().describe("What the referenced weekly insight said."),
+        }),
+      ])
+    )
     .default([]),
 });
 
@@ -47,10 +54,21 @@ Citations:
 - Limit to the strongest 1–3 citations; omit if unsupported
 
 Required structured output:
-- response: the user-facing message with inline citations when applicable
-- sources: array of referenced items. Each item is either
-  { type: "JournalEntryRef", entryDate: "YYYY-MM-DD", excerpt: "...", mood?: "..." }
-  or { type: "WeeklyInsightRef", insightType: "string", summary: "..." }
+- Return a single JSON object with this exact shape:
+  {
+    "type": "AgentContent",
+    "agentResponse": {
+      "type": "AgentResponse",
+      "response": "<the user-facing message with inline citations>"
+    },
+    "sources": [
+      { "type": "JournalEntryRef", "entryDate": "YYYY-MM-DD", "excerpt": "...", "mood": "..." },
+      { "type": "WeeklyInsightRef", "weekStartDate": "YYYY-MM-DD", "insightType": "string", "summary": "..." }
+    ]
+  }
+- Always include "sources" (use an empty array if nothing is cited).
+- Inline citations inside agentResponse.response should follow [N](@source-N) and map to sources array order.
+- Use no markdown fences or extra text outside the JSON object.
 `;
 
 // Tools
@@ -101,7 +119,5 @@ export const novaAgent = new ToolLoopAgent({
     getUserContext: getUserContextTool,
     getChatHistory: getChatHistoryTool,
   },
-  output: Output.object({
-    schema: NovaAssistantOutputSchema,
-  }),
+  output: novaOutputSpec,
 });

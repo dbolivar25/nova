@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
-import { novaAgent, NovaAssistantOutputSchema } from "@/features/nova/core/nova-agent";
+import { novaAgent } from "@/features/nova/core/nova-agent";
 import { NovaChatService } from "@/features/nova/services/nova-chat-service";
 import { NovaContextService } from "@/features/nova/services/nova-context-service";
+import type { AgentContent } from "@/integrations/baml_client/types";
+import type { partial_types } from "@/integrations/baml_client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     // Run the agent and stream plain text back to the client.
     const streamResult = await novaAgent.stream({ messages });
-    const outputPromise = streamResult.output;
+    const outputPromise = streamResult.output as Promise<AgentContent>;
 
     const encoder = new TextEncoder();
     let previousResponse = "";
@@ -101,8 +103,9 @@ export async function POST(req: NextRequest) {
     const responseStream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const partial of streamResult.partialOutputStream) {
-            const next = partial?.response ?? "";
+          for await (const partial of streamResult
+            .partialOutputStream as AsyncIterable<partial_types.AgentContent | undefined>) {
+            const next = partial?.agentResponse?.response ?? "";
             if (!next || next === previousResponse) {
               continue;
             }
@@ -124,14 +127,9 @@ export async function POST(req: NextRequest) {
     // Persist assistant message asynchronously once full structured output is available.
     void outputPromise
       .then(async (fullOutput) => {
-        const parsed = NovaAssistantOutputSchema.parse(fullOutput);
         await NovaChatService.saveAssistantMessage({
           chatId,
-          content: {
-            type: "AgentContent",
-            agentResponse: { response: parsed.response },
-            sources: parsed.sources ?? [],
-          } as unknown as import("@/shared/lib/supabase/types").Json,
+          content: fullOutput as unknown as import("@/shared/lib/supabase/types").Json,
           metadata: {
             streamId: chatId,
             processingTime: 0,
