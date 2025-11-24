@@ -32,23 +32,6 @@ function normalizeContent(text: string): string {
     .replace(/\u2014/g, '-')  // Em dash → regular hyphen
 }
 
-/**
- * Ensure proper markdown paragraph breaks.
- * During streaming, BAML may send single newlines where double newlines are intended.
- * This converts single newlines after sentence-ending punctuation to double newlines
- * so they render as separate paragraphs with proper spacing.
- */
-function ensureParagraphBreaks(text: string): string {
-  return text
-    // Normalize Windows line endings
-    .replace(/\r\n/g, '\n')
-    // Collapse 3+ newlines to 2
-    .replace(/\n{3,}/g, '\n\n')
-    // Single newline after sentence-ending punctuation = paragraph break
-    // The (?!\n) ensures we don't add extra newlines if already doubled
-    .replace(/([.!?])\n(?!\n)/g, '$1\n\n');
-}
-
 export function ChatMessage({
   role,
   content,
@@ -59,7 +42,7 @@ export function ChatMessage({
   const router = useRouter()
   const sourceRefs = useRef<(HTMLDivElement | null)[]>([])
   const isUser = role === "user"
-  const normalizedContent = ensureParagraphBreaks(normalizeContent(content))
+  const normalizedContent = normalizeContent(content)
 
   // Reset refs when sources change
   useEffect(() => {
