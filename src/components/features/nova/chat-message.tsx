@@ -3,21 +3,33 @@ import { Button } from "@/components/shared/ui/button"
 import { Copy, ThumbsUp, ThumbsDown, ChevronDown, Calendar, ArrowRight } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import remarkBreaks from "remark-breaks"
 import { cn } from "@/shared/lib/utils"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-interface Source {
+export interface NovaSource {
   type: string
-  entryDate: string
-  excerpt: string
+  entryDate?: string
+  excerpt?: string
+  mood?: string
 }
 
 interface ChatMessageProps {
   role: "user" | "assistant"
-  content: string
-  sources?: Source[]
-  isStreaming?: boolean
+   content: string
+   sources?: NovaSource[]
+   isStreaming?: boolean
+}
+
+function normalizeContent(text: string): string {
+  return text
+    .replace(/\u2011/g, '-')  // Non-breaking hyphen → regular hyphen
+    .replace(/\u00A0/g, ' ')  // Non-breaking space → regular space
+    .replace(/\u2010/g, '-')  // Hyphen → regular hyphen
+    .replace(/\u2012/g, '-')  // Figure dash → regular hyphen
+    .replace(/\u2013/g, '-')  // En dash → regular hyphen
+    .replace(/\u2014/g, '-')  // Em dash → regular hyphen
 }
 
 export function ChatMessage({
@@ -30,6 +42,7 @@ export function ChatMessage({
   const router = useRouter()
   const sourceRefs = useRef<(HTMLDivElement | null)[]>([])
   const isUser = role === "user"
+  const normalizedContent = normalizeContent(content)
 
   // Reset refs when sources change
   useEffect(() => {
@@ -38,12 +51,12 @@ export function ChatMessage({
     }
   }, [sources])
 
-  const handleSourceClick = (source: Source) => {
+  const handleSourceClick = (source: NovaSource) => {
     router.push(`/journal/${source.entryDate}`)
   }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(content)
+    navigator.clipboard.writeText(normalizedContent)
     toast.success("Copied to clipboard")
   }
 
@@ -70,7 +83,7 @@ export function ChatMessage({
         <div className="flex-1 min-w-0">
           <div className="prose prose-base max-w-none">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
                 p: ({ children }) => (
                   <p className="mb-4 last:mb-0 text-base leading-relaxed">{children}</p>
@@ -106,6 +119,8 @@ export function ChatMessage({
                     {children}
                   </blockquote>
                 ),
+                // Style line breaks to have paragraph-like spacing (h-4 matches mb-4 on <p>)
+                br: () => <span className="block h-4" aria-hidden="true" />,
                 a: ({ href, children }) => {
                   const isCitation = href?.startsWith('@source-')
 
@@ -141,7 +156,7 @@ export function ChatMessage({
                 },
               }}
             >
-              {content}
+              {normalizedContent}
             </ReactMarkdown>
           </div>
 
