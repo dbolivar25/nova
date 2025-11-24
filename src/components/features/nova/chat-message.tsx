@@ -3,6 +3,7 @@ import { Button } from "@/components/shared/ui/button"
 import { Copy, ThumbsUp, ThumbsDown, ChevronDown, Calendar, ArrowRight } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import remarkBreaks from "remark-breaks"
 import { cn } from "@/shared/lib/utils"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -71,7 +72,7 @@ export function ChatMessage({
         <div className="flex-1 min-w-0">
           <div className="prose prose-base max-w-none">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
                 p: ({ children }) => (
                   <p className="mb-4 last:mb-0 text-base leading-relaxed">{children}</p>
