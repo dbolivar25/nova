@@ -162,7 +162,7 @@ export const findWeeklyInsightsTool = tool({
   inputSchema: z.object({
     weekStartDate: z
       .string()
-      .optional()
+      .nullish()
       .describe("Optional: Start date of the week in YYYY-MM-DD format. If not provided, returns the most recent insights."),
   }),
   execute: async ({ weekStartDate }, options: unknown) => {

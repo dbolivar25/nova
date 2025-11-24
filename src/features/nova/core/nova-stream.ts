@@ -11,12 +11,19 @@ export type NovaStreamEvent =
   | { type: "done"; content: string; sources: NovaSource[] }
   | { type: "error"; message: string };
 
-export interface NovaSource {
-  type: string;
-  entryDate?: string;
-  excerpt?: string;
-  mood?: string;
-}
+export type NovaSource =
+  | {
+      type: "JournalEntryRef";
+      entryDate: string;
+      excerpt: string;
+      mood?: string;
+    }
+  | {
+      type: "WeeklyInsightRef";
+      weekStartDate: string;
+      insightType: string;
+      summary: string;
+    };
 
 export interface NovaStreamResult {
   content: string;
