@@ -1,7 +1,14 @@
+/**
+ * Nova Chat API Route
+ *
+ * Handles chat requests to the Nova AI companion using AI SDK with BAML parsing.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
-import { novaAgent } from "@/features/nova/core/nova-agent";
+import { createNovaAgent } from "@/features/nova/core/nova-agent";
+import { createUserMessage, toAISDKMessages } from "@/features/nova/core/nova-prompts";
 import { NovaChatService } from "@/features/nova/services/nova-chat-service";
 import { NovaContextService } from "@/features/nova/services/nova-context-service";
 import type { AgentContent } from "@/integrations/baml_client/types";
@@ -26,9 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     const json = await req.json();
-    const { message, chatId: requestChatId, temporary, includeHistory } = ChatRequestSchema.parse(
-      json,
-    );
+    const { message, chatId: requestChatId, temporary, includeHistory } = ChatRequestSchema.parse(json);
 
     const userEmail = (sessionClaims?.email as string) || "";
 
@@ -48,52 +53,32 @@ export async function POST(req: NextRequest) {
       message,
     });
 
-    // Load limited history for context if requested
-    const historyMessages = includeHistory
-      ? await NovaChatService.getChatHistory(chatId, userId, 10)
-      : [];
-
-    // Build contextual data
-    const [userContext, journalContext] = await Promise.all([
+    // Build context in parallel
+    const [userContext, journalContext, historyMessages] = await Promise.all([
       NovaContextService.getUserJournalContext(userId, userEmail),
       NovaContextService.buildJournalContext(userId, message, 15),
+      includeHistory ? NovaChatService.getChatHistory(chatId, userId, 10) : Promise.resolve([]),
     ]);
 
     const temporalContext = NovaContextService.getTemporalContext(new Date());
 
-    // Map stored history (BAML-style messages) into LLM-friendly text messages.
-    const mappedHistory = historyMessages
-      .map((m) => {
-        const c = m.content as { type?: string; userMessage?: { message?: string }; agentResponse?: { response?: string } };
-        if (c?.type === "UserContent") {
-          return { role: "user" as const, content: c.userMessage?.message ?? "" };
-        }
-        if (c?.type === "AgentContent") {
-          return { role: "assistant" as const, content: c.agentResponse?.response ?? "" };
-        }
-        return null;
-      })
-      .filter((m): m is { role: "user" | "assistant"; content: string } => !!m && !!m.content);
+    // Create agent with full context baked into system prompt
+    const novaAgent = createNovaAgent({
+      context: {
+        userContext,
+        journalContext,
+        temporalContext,
+      },
+    });
 
-    const messages = [
-      {
-        role: "system" as const,
-        content:
-          "You are Nova, a thoughtful journaling companion. " +
-          "Use the provided structured context about the user and their journal entries.",
-      },
-      {
-        role: "system" as const,
-        content: JSON.stringify({ userContext, journalContext, temporalContext }),
-      },
-      ...mappedHistory,
-      {
-        role: "user" as const,
-        content: message,
-      },
-    ];
+    // Create BAML message for current user input (same format as history)
+    const currentMessage = createUserMessage(message);
 
-    // Run the agent and stream plain text back to the client.
+    // Combine history + current, convert to AI SDK format with XML content
+    const allMessages = [...historyMessages, currentMessage];
+    const messages = toAISDKMessages(allMessages);
+
+    // Run the agent and stream response
     const streamResult = await novaAgent.stream({ messages });
     const outputPromise = streamResult.output as Promise<AgentContent>;
 
@@ -103,8 +88,9 @@ export async function POST(req: NextRequest) {
     const responseStream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const partial of streamResult
-            .partialOutputStream as AsyncIterable<partial_types.AgentContent | undefined>) {
+          for await (const partial of streamResult.partialOutputStream as AsyncIterable<
+            partial_types.AgentContent | undefined
+          >) {
             const next = partial?.agentResponse?.response ?? "";
             if (!next || next === previousResponse) {
               continue;
@@ -124,7 +110,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Persist assistant message asynchronously once full structured output is available.
+    // Persist assistant message asynchronously
     void outputPromise
       .then(async (fullOutput) => {
         await NovaChatService.saveAssistantMessage({
@@ -140,7 +126,6 @@ export async function POST(req: NextRequest) {
         console.error("[Nova Chat] Failed to persist assistant message:", error);
       });
 
-    // Return a simple text stream (no SSE). Client will treat chunks as deltas.
     return new Response(responseStream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
@@ -156,7 +141,7 @@ export async function POST(req: NextRequest) {
       {
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

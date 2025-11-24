@@ -1,77 +1,21 @@
+/**
+ * Nova Agent Configuration
+ *
+ * Configures the AI SDK ToolLoopAgent with tools for accessing
+ * journal context, user context, and chat history.
+ */
+
 import { ToolLoopAgent, tool } from "ai";
 import { z } from "zod";
 import { novaModel } from "@/shared/lib/ai/provider";
 import { NovaContextService } from "@/features/nova/services/nova-context-service";
 import { NovaChatService } from "@/features/nova/services/nova-chat-service";
 import { novaOutputSpec } from "./nova-output";
+import { buildNovaSystemPrompt, type NovaSystemPromptContext } from "./nova-prompts";
 
-// Structured output for Nova assistant responses.
-// This mirrors the BAML AgentContent shape to keep local validation aligned.
-export const NovaAssistantOutputSchema = z.object({
-  type: z.literal("AgentContent"),
-  agentResponse: z.object({
-    type: z.literal("AgentResponse"),
-    response: z.string().describe("Primary assistant reply to render to the user."),
-  }),
-  sources: z
-    .array(
-      z.discriminatedUnion("type", [
-        z.object({
-          type: z.literal("JournalEntryRef"),
-          entryDate: z.string().describe("ISO date for the journal entry being cited."),
-          excerpt: z.string().describe("Relevant excerpt from the entry."),
-          mood: z.string().optional().describe("Optional mood captured for the entry."),
-        }),
-        z.object({
-          type: z.literal("WeeklyInsightRef"),
-          weekStartDate: z.string().describe("ISO week start date for the referenced insight."),
-          insightType: z.string().describe("Insight category or name."),
-          summary: z.string().describe("What the referenced weekly insight said."),
-        }),
-      ])
-    )
-    .default([]),
-});
-
-export type NovaAssistantOutput = z.infer<typeof NovaAssistantOutputSchema>;
-
-const NOVA_INSTRUCTIONS = `
-You are Nova, a warm and evidence-based journaling companion that helps people reflect and grow.
-
-Tone & style:
-- Warm, empathetic, concise, and pragmatic
-- Use short paragraphs (2-3 sentences) separated by DOUBLE newlines for readability
-- Celebrate progress and ask one thoughtful follow-up question when it helps
-
-Ground rules:
-- Never fabricate details; only use information from provided context or tools
-- Prefer recent journal entries when citing patterns
-- If you need additional context, call the available tools (journal context, user context, chat history)
-
-Citations:
-- When referencing past entries, include inline citations like [1](@source-1)
-- The sources array must match the citation order
-- Limit to the strongest 1–3 citations; omit if unsupported
-
-Required structured output:
-- Return a single JSON object with this exact shape:
-  {
-    "type": "AgentContent",
-    "agentResponse": {
-      "type": "AgentResponse",
-      "response": "<the user-facing message with inline citations>"
-    },
-    "sources": [
-      { "type": "JournalEntryRef", "entryDate": "YYYY-MM-DD", "excerpt": "...", "mood": "..." },
-      { "type": "WeeklyInsightRef", "weekStartDate": "YYYY-MM-DD", "insightType": "string", "summary": "..." }
-    ]
-  }
-- Always include "sources" (use an empty array if nothing is cited).
-- Inline citations inside agentResponse.response should follow [N](@source-N) and map to sources array order.
-- Use no markdown fences or extra text outside the JSON object.
-`;
-
+// ============================================
 // Tools
+// ============================================
 
 const getJournalContextTool = tool({
   description: "Get recent journal entries for additional context.",
@@ -79,7 +23,6 @@ const getJournalContextTool = tool({
     userId: z.string(),
     limit: z.number().min(1).max(25).default(15),
   }),
-  // NovaContextService already handles user lookup and shaping.
   async execute({ userId, limit }) {
     const entries = await NovaContextService.getRelevantEntries(userId, limit);
     return { entries };
@@ -111,13 +54,25 @@ const getChatHistoryTool = tool({
   },
 });
 
-export const novaAgent = new ToolLoopAgent({
-  model: novaModel,
-  instructions: NOVA_INSTRUCTIONS,
-  tools: {
-    getJournalContext: getJournalContextTool,
-    getUserContext: getUserContextTool,
-    getChatHistory: getChatHistoryTool,
-  },
-  output: novaOutputSpec,
-});
+// ============================================
+// Agent Factory
+// ============================================
+
+export interface CreateNovaAgentOptions {
+  context: NovaSystemPromptContext;
+}
+
+export function createNovaAgent({ context }: CreateNovaAgentOptions) {
+  const systemPrompt = buildNovaSystemPrompt(context);
+
+  return new ToolLoopAgent({
+    model: novaModel,
+    instructions: systemPrompt,
+    tools: {
+      getJournalContext: getJournalContextTool,
+      getUserContext: getUserContextTool,
+      getChatHistory: getChatHistoryTool,
+    },
+    output: novaOutputSpec,
+  });
+}

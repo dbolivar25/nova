@@ -1,11 +1,22 @@
-import { NoOutputGeneratedError, Output } from "ai";
+/**
+ * Nova Output Specification
+ *
+ * Defines the AI SDK Output spec that uses BAML for parsing model responses.
+ * The model outputs text (guided by instructions), and BAML validates/parses
+ * the JSON structure into typed AgentContent.
+ */
+
+import { NoOutputGeneratedError } from "ai";
+import type { Output } from "ai";
 import { b } from "@/integrations/baml_client";
 import type { AgentContent } from "@/integrations/baml_client/types";
 import type { partial_types } from "@/integrations/baml_client";
 
 const toNoOutputError = (error: unknown): NoOutputGeneratedError => {
   const cause =
-    error instanceof Error ? error : new Error(typeof error === "string" ? error : String(error));
+    error instanceof Error
+      ? error
+      : new Error(typeof error === "string" ? error : String(error));
 
   return new NoOutputGeneratedError({
     message: "Nova agent failed to produce a valid structured response",
@@ -13,11 +24,10 @@ const toNoOutputError = (error: unknown): NoOutputGeneratedError => {
   });
 };
 
-export const novaOutputSpec = {
-  // Encourage the model to emit JSON matching the BAML shape.
-  responseFormat: Promise.resolve({ type: "json" }),
+export const novaOutputSpec: Output.Output<AgentContent, partial_types.AgentContent> = {
+  responseFormat: Promise.resolve({ type: "text" }),
 
-  async parseCompleteOutput({ text }: { text: string }) {
+  async parseCompleteOutput({ text }) {
     const candidate = text.trim();
     if (!candidate) {
       throw toNoOutputError(new Error("Empty model response"));
@@ -30,7 +40,7 @@ export const novaOutputSpec = {
     }
   },
 
-  async parsePartialOutput({ text }: { text: string }) {
+  async parsePartialOutput({ text }) {
     const candidate = text.trim();
     if (!candidate) {
       return undefined;
@@ -40,11 +50,7 @@ export const novaOutputSpec = {
       const partial = b.parseStream.GenerateNovaResponse(candidate);
       return { partial };
     } catch {
-      // Ignore partial parse errors to allow the stream to continue.
       return undefined;
     }
   },
-} satisfies Omit<ReturnType<(typeof Output)["text"]>, "parseCompleteOutput" | "parsePartialOutput"> & {
-  parseCompleteOutput: (options: { text: string }) => Promise<AgentContent>;
-  parsePartialOutput: (options: { text: string }) => Promise<{ partial: partial_types.AgentContent } | undefined>;
 };
