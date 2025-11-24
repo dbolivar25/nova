@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/shared/ui/button"
-import { Copy, ThumbsUp, ThumbsDown, ChevronDown, Calendar, ArrowRight } from "lucide-react"
+import { Copy, ThumbsUp, ThumbsDown, ChevronDown, Calendar, ArrowRight, Lightbulb } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
@@ -8,12 +8,19 @@ import { cn } from "@/shared/lib/utils"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-export interface NovaSource {
-  type: string
-  entryDate?: string
-  excerpt?: string
-  mood?: string
-}
+export type NovaSource =
+  | {
+      type: "JournalEntryRef"
+      entryDate: string
+      excerpt: string
+      mood?: string
+    }
+  | {
+      type: "WeeklyInsightRef"
+      weekStartDate: string
+      insightType: string
+      summary: string
+    }
 
 interface ChatMessageProps {
   role: "user" | "assistant"
@@ -52,7 +59,11 @@ export function ChatMessage({
   }, [sources])
 
   const handleSourceClick = (source: NovaSource) => {
-    router.push(`/journal/${source.entryDate}`)
+    if (source.type === "JournalEntryRef") {
+      router.push(`/journal/${source.entryDate}`)
+    } else {
+      router.push(`/insights?week=${source.weekStartDate}`)
+    }
   }
 
   const handleCopy = () => {
@@ -231,15 +242,34 @@ export function ChatMessage({
                     {index + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-xs font-medium">
-                        {source.entryDate}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                      &ldquo;{source.excerpt}&rdquo;
-                    </p>
+                    {source.type === "JournalEntryRef" ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs font-medium">
+                            {source.entryDate}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          &ldquo;{source.excerpt}&rdquo;
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Lightbulb className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs font-medium">
+                            Week of {source.weekStartDate}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            · {source.insightType}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          {source.summary}
+                        </p>
+                      </>
+                    )}
                   </div>
                   <ArrowRight className="h-3 w-3 text-muted-foreground
                     opacity-0 group-hover:opacity-100 transition-opacity
