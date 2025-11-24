@@ -355,21 +355,24 @@ export function toAISDKMessages(messages: Message[]): AISDKMessage[] {
 // ============================================
 
 export const NOVA_OUTPUT_FORMAT = `
-FINAL RESPONSE FORMAT:
-When you have gathered enough context and are ready to reply to the user, respond with a single assistant message containing this exact structure (no tool calls, just text):
+CRITICAL - FINAL RESPONSE FORMAT:
+DO NOT call any tools for your final response. Simply output this exact text structure as your assistant message:
 
 {"type":"AgentContent","agentResponse":{"type":"AgentResponse","response":"<your message>"},"sources":[]}
 
+Example of a complete valid response:
+{"type":"AgentContent","agentResponse":{"type":"AgentResponse","response":"I noticed you've been writing about gratitude lately [1](@source-1). That's wonderful!"},"sources":[{"type":"JournalEntryRef","entryDate":"2024-01-15","excerpt":"feeling grateful for sunshine"}]}
+
 Fields:
 - response: Your message to the user. Use inline citations like [1](@source-1) when referencing journal entries.
-- sources: Array of references. Use empty array [] if no citations. Each source is either:
-  - {"type":"JournalEntryRef","entryDate":"YYYY-MM-DD","excerpt":"..."}
-  - {"type":"WeeklyInsightRef","weekStartDate":"YYYY-MM-DD","insightType":"...","summary":"..."}
+- sources: Array of references. Use empty array [] if no citations.
 
-Important:
-- This is your final text response, NOT a tool call
-- Output raw text (the structure above), no markdown code fences
-- Inline citation numbers must match sources array order
+IMPORTANT RULES:
+- DO NOT use any tools (no function calls) for your final response
+- DO NOT wrap in markdown code fences
+- DO NOT call a "JSON" tool - there is no such tool
+- Just output the raw text structure above as your message
+- The response field contains your actual message to the user
 `.trim();
 
 // ============================================
