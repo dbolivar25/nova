@@ -359,30 +359,44 @@ CRITICAL - FINAL RESPONSE FORMAT:
 
 You have access to tools (findEntryByDate, listEntriesForDateRange, searchEntries, findWeeklyInsights) for gathering journal information. Use them when you need to look up data.
 
-AFTER you have gathered the information you need (or if you don't need tools), you MUST output your final response as PLAIN TEXT in this JSON format:
+AFTER you have gathered the information you need (or if you don't need tools), you MUST output your final response by literally typing out text in this exact format - a markdown JSON code block:
 
-{"type":"AgentContent","agentResponse":{"type":"AgentResponse","response":"<your message>"},"sources":[]}
+\`\`\`json
+{"type":"AgentContent","agentResponse":{"type":"AgentResponse","response":"<your message here>"},"sources":[]}
+\`\`\`
 
-CRITICAL: Your final response is PLAIN TEXT output, NOT a tool call. Just type the JSON structure directly as your message. There is NO "json" tool - do not try to call one.
+IMPORTANT: You are typing TEXT, not calling a tool. There is no "json" tool. You literally type the characters \`\`\`json, then the JSON object, then \`\`\`.
 
-Example flow:
+Example workflow:
 1. User asks: "What did I write yesterday?"
-2. You call findEntryByDate tool to get the entry
+2. You use the findEntryByDate tool to fetch the entry
 3. Tool returns the entry data
-4. You output your final response as plain text: {"type":"AgentContent","agentResponse":{"type":"AgentResponse","response":"Yesterday you wrote about..."},"sources":[{"type":"JournalEntryRef","entryDate":"2024-01-15","excerpt":"..."}]}
+4. You type your final response as literal text:
 
-Example final response (this is plain text, NOT a tool call):
-{"type":"AgentContent","agentResponse":{"type":"AgentResponse","response":"I noticed you've been writing about gratitude lately [1](@source-1). That's wonderful!"},"sources":[{"type":"JournalEntryRef","entryDate":"2024-01-15","excerpt":"feeling grateful for sunshine"}]}
+\`\`\`json
+{"type":"AgentContent","agentResponse":{"type":"AgentResponse","response":"Yesterday you wrote about your morning walk and feeling energized [1](@source-1)."},"sources":[{"type":"JournalEntryRef","entryDate":"2024-01-15","excerpt":"morning walk, felt energized"}]}
+\`\`\`
 
-Fields:
-- response: Your message to the user. Use inline citations like [1](@source-1) when referencing journal entries.
-- sources: Array of journal entry references. Use empty array [] if no citations.
+Another example (no sources needed):
 
-RULES:
-- Use tools ONLY for gathering information, NOT for outputting your response
-- Your final response is PLAIN TEXT JSON (not a tool call, not markdown code blocks)
-- The only tools available are: findEntryByDate, listEntriesForDateRange, searchEntries, findWeeklyInsights
-- There is NO "json" tool - attempting to call it will fail
+\`\`\`json
+{"type":"AgentContent","agentResponse":{"type":"AgentResponse","response":"Hello! I'm Nova, your journaling companion. How can I help you today?"},"sources":[]}
+\`\`\`
+
+JSON Schema:
+- type: Always "AgentContent"
+- agentResponse.type: Always "AgentResponse"
+- agentResponse.response: Your message to the user. Use [1](@source-1) format for citations.
+- sources: Array of references. Each source has:
+  - type: "JournalEntryRef"
+  - entryDate: "YYYY-MM-DD"
+  - excerpt: Brief quote from entry
+
+CRITICAL RULES:
+- DO NOT call any tool named "json" or "JSON" - no such tool exists
+- Your final output is TEXT that you type, wrapped in \`\`\`json code fences
+- Tools are ONLY for fetching data: findEntryByDate, listEntriesForDateRange, searchEntries, findWeeklyInsights
+- After using tools to gather info, respond with the \`\`\`json code block format above
 `.trim();
 
 // ============================================
@@ -411,7 +425,7 @@ ${renderTemporalContext(context.temporalContext)}
 
 ${NOVA_OUTPUT_FORMAT}
 
-Remember: Use tools to gather data, then output plain text JSON for your final response. No "json" tool exists.
+Remember: Use tools to gather data, then type out your final response as a \`\`\`json code block. DO NOT call a "json" tool - just type the text.
 Use [1](@source-1), [2](@source-2) for inline citations matching sources array order.
 `.trim();
 }
