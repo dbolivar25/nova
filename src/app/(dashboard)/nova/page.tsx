@@ -8,6 +8,7 @@ import { useNovaChatContext } from "@/components/features/nova/nova-chat-sidebar
 import { NovaWelcome } from "@/components/features/nova/nova-welcome"
 import { Send } from "lucide-react"
 import { useNovaChat } from "@/features/nova/hooks/use-nova-chat"
+import { NovaLoading } from "@/components/features/nova/nova-loading"
 import { cn } from "@/shared/lib/utils"
 
 export default function NovaPage() {
@@ -105,11 +106,7 @@ export default function NovaPage() {
                   )}
 
                   {isStreaming && !currentResponse && (
-                    <div className="flex gap-1.5">
-                      <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "0ms" }} />
-                      <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "150ms" }} />
-                      <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "300ms" }} />
-                    </div>
+                    <NovaLoading />
                   )}
                 </div>
               )}
