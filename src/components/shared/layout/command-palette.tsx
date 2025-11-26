@@ -28,7 +28,7 @@ import {
   PenLine,
   Plus,
   Search,
-  Sparkles,
+  MessageCircle,
   Sun,
   User,
 } from "lucide-react";
@@ -170,8 +170,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       },
     },
     {
-      icon: Sparkles,
-      label: "Chat with Nova AI",
+      icon: MessageCircle,
+      label: "Chat with Nova",
       shortcut: "G N",
       action: () => {
         router.push("/nova");

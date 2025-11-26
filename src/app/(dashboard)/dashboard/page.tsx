@@ -10,13 +10,11 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import Link from "next/link";
 import {
   ArrowRight,
-  Calendar,
-  Sparkles,
-  BarChart3,
   PenLine,
   ChevronRight,
   BookOpen,
   Flame,
+  Trophy,
 } from "lucide-react";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/features/journal/hooks/use-journal";
 import { StreakFlame } from "@/components/features/journal/streak-flame";
@@ -167,7 +165,7 @@ export default function DashboardPage() {
           { label: "Total Entries", value: stats?.totalEntries || 0, icon: BookOpen },
           { label: "Average Words", value: stats?.averageWordCount || 0, icon: PenLine },
           { label: "Current Streak", value: currentStreak, icon: Flame, suffix: currentStreak === 1 ? "day" : "days" },
-          { label: "Longest Streak", value: stats?.longestStreak || 0, icon: BarChart3, suffix: (stats?.longestStreak || 0) === 1 ? "day" : "days" },
+          { label: "Longest Streak", value: stats?.longestStreak || 0, icon: Trophy, suffix: (stats?.longestStreak || 0) === 1 ? "day" : "days" },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -252,71 +250,18 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Actions + Achievements */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="space-y-4">
-            <h3 className="font-serif text-xl font-semibold">Quick Actions</h3>
-            <div className="space-y-2">
-              {[
-                {
-                  href: "/nova",
-                  icon: Sparkles,
-                  title: "Chat with Nova",
-                  description: "Explore insights from your journal",
-                  color: "text-violet-500",
-                  bg: "bg-violet-500/10",
-                },
-                {
-                  href: "/insights",
-                  icon: BarChart3,
-                  title: "Weekly Insights",
-                  description: recentEntries.length >= 3
-                    ? "View your patterns and themes"
-                    : `${3 - recentEntries.length} more entries needed`,
-                  color: "text-cyan-500",
-                  bg: "bg-cyan-500/10",
-                },
-                {
-                  href: "/journal",
-                  icon: Calendar,
-                  title: "Journal History",
-                  description: "Browse past reflections",
-                  color: "text-blue-500",
-                  bg: "bg-blue-500/10",
-                },
-              ].map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="group flex items-center gap-4 rounded-xl border border-border/40 bg-card/30 p-4 transition-all duration-200 hover:border-primary/20 hover:bg-card/60"
-                >
-                  <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${action.bg} transition-transform group-hover:scale-105`}>
-                    <action.icon className={`h-5 w-5 ${action.color}`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{action.title}</p>
-                    <p className="text-sm text-muted-foreground">{action.description}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              ))}
-            </div>
+        {/* Achievements */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Flame className="h-5 w-5 text-warm" />
+            <h3 className="font-serif text-xl font-semibold">Achievements</h3>
           </div>
-
-          {/* Achievement Badges */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-warm" />
-              <h3 className="font-serif text-xl font-semibold">Achievements</h3>
-            </div>
-            <div className="rounded-xl border border-border/40 bg-card/30 p-4">
-              <StreakBadges
-                milestones={stats?.milestones}
-                currentStreak={stats?.currentStreak || 0}
-                longestStreak={stats?.longestStreak || 0}
-              />
-            </div>
+          <div className="rounded-lg border border-border/40 bg-card/30 p-4">
+            <StreakBadges
+              milestones={stats?.milestones}
+              currentStreak={stats?.currentStreak || 0}
+              longestStreak={stats?.longestStreak || 0}
+            />
           </div>
         </div>
       </div>

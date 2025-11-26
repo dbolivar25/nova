@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/shared/ui/button"
-import { Copy, ThumbsUp, ThumbsDown, ChevronDown, Calendar, ArrowRight, Lightbulb, Sparkles } from "lucide-react"
+import { Copy, ThumbsUp, ThumbsDown, ChevronDown, Calendar, ArrowRight, Lightbulb, MessageCircle } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
@@ -88,7 +88,7 @@ export function ChatMessage({
     <div className="mb-6">
       <div className="flex gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <MessageCircle className="h-4 w-4 text-primary" />
         </div>
 
         <div className="flex-1 min-w-0 pt-1">

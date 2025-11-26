@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   MessageSquare,
   Feather,
-  Sparkles,
+  PenLine,
 } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -218,7 +218,7 @@ export default function TodayPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-muted-foreground" />
+            <Feather className="h-5 w-5 text-muted-foreground" />
             <h2 className="font-serif text-xl font-semibold">Open Reflection</h2>
           </div>
           <Badge variant="outline" className="font-normal text-muted-foreground border-border/60">

@@ -1,11 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { UserButton } from "@clerk/nextjs"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/components/shared/ui/button"
-import { MoonIcon, SunIcon, PenLine, Calendar, Sparkles, ChartBar, User } from "lucide-react"
+import { MoonIcon, SunIcon, PenLine, Calendar, MessageCircle, ChartBar, User } from "lucide-react"
 import { useTheme } from "next-themes"
 import {
   DropdownMenu,
@@ -17,14 +18,14 @@ import {
 const navigation = [
   { name: "Today", href: "/dashboard", icon: PenLine },
   { name: "Journal", href: "/journal", icon: Calendar },
-  { name: "Nova", href: "/nova", icon: Sparkles },
+  { name: "Nova", href: "/nova", icon: MessageCircle },
   { name: "Insights", href: "/insights", icon: ChartBar },
   { name: "Profile", href: "/profile", icon: User },
 ]
 
 export function NavHeader() {
   const pathname = usePathname()
-  const { setTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -32,10 +33,17 @@ export function NavHeader() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary" />
-              <span className="text-xl font-semibold">Nova</span>
+              <div className="relative h-6 w-6">
+                <Image
+                  src={resolvedTheme === 'dark' ? '/nova-logo-dark-mode.svg' : '/nova-logo.svg'}
+                  alt="Nova"
+                  fill
+                  sizes="24px"
+                />
+              </div>
+              <span className="font-serif text-xl font-semibold">Nova</span>
             </Link>
-            
+
             <nav className="hidden md:flex items-center gap-6">
               {navigation.map((item) => {
                 const Icon = item.icon
@@ -80,7 +88,7 @@ export function NavHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <UserButton 
+            <UserButton
               afterSignOutUrl="/"
               appearance={{
                 elements: {

@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { Badge } from "@/components/shared/ui/badge"
 import { Button } from "@/components/shared/ui/button"
 import { Skeleton } from "@/components/shared/ui/skeleton"
-import { TrendingUp, Brain, Heart, Target, RefreshCw, Sparkles, Quote } from "lucide-react"
+import { TrendingUp, Brain, Heart, Target, RefreshCw, MessageCircle, Quote } from "lucide-react"
 import { toast } from "sonner"
 import { useWeeklyInsights, useGenerateWeeklyInsights } from "@/features/insights/hooks/use-weekly-insights"
 
@@ -83,10 +83,7 @@ export default function InsightsPage() {
                 Generating...
               </>
             ) : (
-              <>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Generate Insights Now
-              </>
+              "Generate Insights Now"
             )}
           </Button>
         </div>
@@ -252,10 +249,10 @@ export default function InsightsPage() {
       </div>
 
       {/* Nova's Observation */}
-      <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card via-card to-primary/5 p-6 sm:p-8">
+      <div className="rounded-xl border border-border/50 bg-card/50 p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <Sparkles className="h-5 w-5 text-primary" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <MessageCircle className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h2 className="font-serif text-lg font-semibold">Nova&apos;s Observation</h2>

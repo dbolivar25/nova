@@ -6,7 +6,7 @@ import { Textarea } from "@/components/shared/ui/textarea"
 import { ChatMessage } from "@/components/features/nova/chat-message"
 import { useNovaChatContext } from "@/components/features/nova/nova-chat-sidebar-layout"
 import { NovaWelcome } from "@/components/features/nova/nova-welcome"
-import { Send, Sparkles } from "lucide-react"
+import { Send, MessageCircle } from "lucide-react"
 import { useNovaChat } from "@/features/nova/hooks/use-nova-chat"
 import { cn } from "@/shared/lib/utils"
 
@@ -81,7 +81,7 @@ export default function NovaPage() {
               {isLoadingHistory ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="flex items-center gap-3 text-muted-foreground">
-                    <Sparkles className="h-5 w-5 animate-pulse text-primary" />
+                    <div className="h-5 w-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
                     <span className="font-medium">Loading conversation...</span>
                   </div>
                 </div>
@@ -107,7 +107,7 @@ export default function NovaPage() {
                   {isStreaming && !currentResponse && (
                     <div className="flex gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                        <Sparkles className="h-4 w-4 text-primary" />
+                        <MessageCircle className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 pt-2">
                         <div className="flex gap-1.5">
@@ -124,14 +124,14 @@ export default function NovaPage() {
           </div>
 
           {/* Input area */}
-          <div className="absolute inset-x-0 bottom-0 border-t border-border/40 bg-background/95 backdrop-blur-xl">
-            <div className="max-w-3xl mx-auto px-4 py-4 sm:px-6">
+          <div className="absolute inset-x-0 bottom-0 bg-background">
+            <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
               <form onSubmit={handleSubmit} className="flex items-end gap-3">
                 <div
                   className={cn(
-                    "flex-1 rounded-2xl transition-all duration-200",
-                    "bg-muted/30 border border-border/40",
-                    "focus-within:bg-muted/50 focus-within:border-primary/30 focus-within:shadow-lg focus-within:shadow-primary/5"
+                    "flex-1 rounded-xl transition-all duration-200",
+                    "bg-muted/40 border border-border/50",
+                    "focus-within:bg-muted/60 focus-within:border-primary/30"
                   )}
                 >
                   <Textarea
@@ -139,8 +139,8 @@ export default function NovaPage() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Share a thought with Nova..."
-                    className="min-h-[52px] max-h-[200px] resize-none border-0 bg-transparent px-5 py-4 text-base placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:outline-none"
+                    placeholder="Message Nova..."
+                    className="min-h-[48px] max-h-[200px] resize-none border-0 bg-transparent px-4 py-3 text-base placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:outline-none"
                     disabled={isStreaming}
                     rows={1}
                   />
@@ -149,21 +149,12 @@ export default function NovaPage() {
                 <Button
                   type="submit"
                   size="icon"
-                  className={cn(
-                    "h-[52px] w-[52px] shrink-0 rounded-xl transition-all duration-200",
-                    "bg-primary text-primary-foreground shadow-lg shadow-primary/20",
-                    "hover:scale-105 hover:shadow-xl hover:shadow-primary/25",
-                    "disabled:opacity-40 disabled:hover:scale-100"
-                  )}
+                  className="h-12 w-12 shrink-0 rounded-xl"
                   disabled={!input.trim() || isStreaming}
                 >
                   <Send className="h-5 w-5" />
                 </Button>
               </form>
-
-              <p className="mt-3 text-center text-xs text-muted-foreground/60">
-                Nova uses your journal entries to provide personalized insights
-              </p>
             </div>
           </div>
         </>
