@@ -1,4 +1,4 @@
-# Nova
+# Nova - a journaling assistant
 
 Nova is a calm space for daily reflection. Users sign in with Clerk, capture a single journal entry per day with curated prompts, revisit their history through calendars and search, chat with the Nova assistant, and receive weekly insights generated from their own writing.
 
