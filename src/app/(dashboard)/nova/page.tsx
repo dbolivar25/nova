@@ -6,7 +6,7 @@ import { Textarea } from "@/components/shared/ui/textarea"
 import { ChatMessage } from "@/components/features/nova/chat-message"
 import { useNovaChatContext } from "@/components/features/nova/nova-chat-sidebar-layout"
 import { NovaWelcome } from "@/components/features/nova/nova-welcome"
-import { Send, MessageCircle } from "lucide-react"
+import { Send } from "lucide-react"
 import { useNovaChat } from "@/features/nova/hooks/use-nova-chat"
 import { cn } from "@/shared/lib/utils"
 
@@ -105,17 +105,10 @@ export default function NovaPage() {
                   )}
 
                   {isStreaming && !currentResponse && (
-                    <div className="flex gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                        <MessageCircle className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1 pt-2">
-                        <div className="flex gap-1.5">
-                          <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "0ms" }} />
-                          <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "150ms" }} />
-                          <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "300ms" }} />
-                        </div>
-                      </div>
+                    <div className="flex gap-1.5">
+                      <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "0ms" }} />
+                      <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "150ms" }} />
+                      <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "300ms" }} />
                     </div>
                   )}
                 </div>
