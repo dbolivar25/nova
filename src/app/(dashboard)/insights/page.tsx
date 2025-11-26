@@ -132,8 +132,8 @@ export default function InsightsPage() {
         {/* Emotional Trends */}
         <div className="group rounded-2xl border border-border/50 bg-card/50 p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
-              <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
+              <TrendingUp className="h-5 w-5 text-sky-600 dark:text-sky-400" />
             </div>
             <div>
               <h2 className="font-serif text-lg font-semibold">Emotional Trends</h2>
@@ -225,8 +225,8 @@ export default function InsightsPage() {
         {/* Week Ahead Focus */}
         <div className="group rounded-2xl border border-border/50 bg-card/50 p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-              <Target className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10">
+              <Target className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h2 className="font-serif text-lg font-semibold">Week Ahead</h2>

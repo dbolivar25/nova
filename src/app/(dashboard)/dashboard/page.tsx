@@ -274,16 +274,16 @@ export default function DashboardPage() {
                   description: recentEntries.length >= 3
                     ? "View your patterns and themes"
                     : `${3 - recentEntries.length} more entries needed`,
-                  color: "text-emerald-500",
-                  bg: "bg-emerald-500/10",
+                  color: "text-cyan-500",
+                  bg: "bg-cyan-500/10",
                 },
                 {
                   href: "/journal",
                   icon: Calendar,
                   title: "Journal History",
                   description: "Browse past reflections",
-                  color: "text-amber-500",
-                  bg: "bg-amber-500/10",
+                  color: "text-blue-500",
+                  bg: "bg-blue-500/10",
                 },
               ].map((action) => (
                 <Link

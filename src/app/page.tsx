@@ -63,14 +63,14 @@ const featureHighlights = [
     description:
       "Journal with a gentle nudge or switch to free-write. Nova adjusts to your rhythm and never rushes you.",
     icon: PenLine,
-    gradient: "from-amber-500/20 to-orange-500/10",
+    gradient: "from-blue-500/20 to-indigo-500/10",
   },
   {
     title: "Insights when ready",
     description:
       "Patterns emerge when you're curious. No overwhelming dashboards—just calm reflection when you ask.",
     icon: Brain,
-    gradient: "from-emerald-500/20 to-teal-500/10",
+    gradient: "from-cyan-500/20 to-sky-500/10",
   },
   {
     title: "Private by design",
