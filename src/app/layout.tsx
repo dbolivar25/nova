@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, Cormorant_Garamond } from "next/font/google";
+import { Jost, Cormorant_Garamond } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import {
   siteDescription,
@@ -13,9 +13,9 @@ import { Splash } from "./splash";
 import { Providers } from "./providers";
 import "./globals.css";
 
-const outfit = Outfit({
+const jost = Jost({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-jost",
   display: "swap",
 });
 
@@ -92,7 +92,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={`${outfit.variable} ${cormorant.variable} font-sans antialiased`}>
+        <body className={`${jost.variable} ${cormorant.variable} font-sans antialiased`}>
           <Splash />
           <Providers>{children}</Providers>
         </body>
