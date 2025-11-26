@@ -73,15 +73,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   }, [search]);
 
   // Fetch recent entries when no search
+  // Load more entries so cmdk has enough to filter through (e.g., find "Thursday" entries)
   const { data: recentData } = useJournalEntries(
-    5, // limit to 5 recent entries for command palette
+    30, // load more entries for better search coverage
     0,
     undefined,
     undefined,
   );
 
   // Search entries when search is active
-  const { data: searchData } = useJournalSearch(
+  const { data: searchData, isPlaceholderData } = useJournalSearch(
     debouncedSearch || undefined,
     undefined,
     undefined,
@@ -89,13 +90,24 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   );
 
   // Determine which data to show
+  // Strategy: Only use API search results if they actually found something.
+  // If API returns empty, fall back to recent entries and let cmdk filter client-side.
+  // This ensures we always show relevant results (Thursday matches "th" via cmdk filter).
   const entries = useMemo(() => {
     if (debouncedSearch) {
-      return searchData?.entries || [];
+      // Only use API search results if they found something AND are not stale placeholder data
+      if (searchData?.entries && searchData.entries.length > 0 && !isPlaceholderData) {
+        return searchData.entries;
+      }
+      // API returned empty or still loading - fall back to recent entries
+      // cmdk will filter these client-side based on the search term
+      return recentData?.entries || [];
     }
     return recentData?.entries || [];
-  }, [debouncedSearch, searchData?.entries, recentData?.entries]);
+  }, [debouncedSearch, searchData?.entries, recentData?.entries, isPlaceholderData]);
 
+  // Track whether we're showing API search results vs client-filtered recent entries
+  const isShowingSearchResults = debouncedSearch && searchData?.entries && searchData.entries.length > 0 && !isPlaceholderData;
 
   const handleSelect = useCallback((entry: JournalEntry) => {
     router.push(`/journal/${entry.entry_date}`);
@@ -342,8 +354,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           </>
         )}
 
-        {/* Recent Journal Entries */}
-        {!debouncedSearch && entries.length > 0 && (
+        {/* Recent Journal Entries (shown when not searching or while search is loading) */}
+        {!isShowingSearchResults && entries.length > 0 && (
           <>
             <CommandGroup heading="Recent Entries">
               {entries.map((entry: JournalEntry) => (
@@ -359,8 +371,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           </>
         )}
 
-        {/* Search Results */}
-        {debouncedSearch && entries.length > 0 && (
+        {/* Search Results (shown only when search data has loaded) */}
+        {isShowingSearchResults && entries.length > 0 && (
           <>
             <CommandGroup heading="Journal Entries">
               {entries.map((entry: JournalEntry) => (
@@ -419,8 +431,18 @@ interface EntryItemProps {
 function EntryItem({ entry, searchTerm, onSelect }: EntryItemProps) {
   const MoodIcon = entry.mood ? moodIcons[entry.mood as Mood] : null;
 
+  // Explicit value for cmdk filtering - include all searchable text
+  const searchableValue = [
+    format(parseISO(entry.entry_date), "EEEE"),    // "Thursday"
+    format(parseISO(entry.entry_date), "MMMM"),    // "November"
+    format(parseISO(entry.entry_date), "dd"),      // "21"
+    format(parseISO(entry.entry_date), "yyyy"),    // "2024"
+    entry.freeform_text?.substring(0, 200) || "",  // Entry content
+  ].join(" ");
+
   return (
     <CommandItem
+      value={searchableValue}
       onSelect={onSelect}
       className="cursor-pointer group transition-all"
     >
