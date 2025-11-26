@@ -6,7 +6,7 @@ import { Textarea } from "@/components/shared/ui/textarea"
 import { ChatMessage } from "@/components/features/nova/chat-message"
 import { useNovaChatContext } from "@/components/features/nova/nova-chat-sidebar-layout"
 import { NovaWelcome } from "@/components/features/nova/nova-welcome"
-import { Send, Sparkles } from "lucide-react"
+import { Send, MessageCircle } from "lucide-react"
 import { useNovaChat } from "@/features/nova/hooks/use-nova-chat"
 import { cn } from "@/shared/lib/utils"
 
@@ -15,7 +15,6 @@ export default function NovaPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Get current chat ID from global context
   const { currentChatId, setCurrentChatId: setContextChatId, refreshChats } = useNovaChatContext()
 
   const {
@@ -62,104 +61,104 @@ export default function NovaPage() {
     await sendMessage(message)
   }
 
-  // Determine if we should show the welcome screen
   const showWelcome = messages.length === 0 && !currentChatId && !isLoadingHistory
 
   return (
     <div className="relative h-[calc(100vh-3.5rem)]">
-        {showWelcome ? (
-          <NovaWelcome
-            onSendMessage={handleWelcomeMessage}
-            isStreaming={isStreaming}
-          />
-        ) : (
-          <>
-            {/* Messages area - scrollable with wider content */}
-            <div
-              ref={scrollAreaRef}
-              className="absolute inset-x-0 top-0 bottom-[76px] overflow-y-auto"
-            >
-              <div className="max-w-4xl mx-auto px-6 py-6">
-                {isLoadingHistory ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Sparkles className="h-5 w-5 animate-pulse" />
-                      <span>Loading conversation...</span>
-                    </div>
+      {showWelcome ? (
+        <NovaWelcome
+          onSendMessage={handleWelcomeMessage}
+          isStreaming={isStreaming}
+        />
+      ) : (
+        <>
+          {/* Messages area */}
+          <div
+            ref={scrollAreaRef}
+            className="absolute inset-x-0 top-0 bottom-[100px] overflow-y-auto"
+          >
+            <div className="max-w-3xl mx-auto px-4 py-8 sm:px-6">
+              {isLoadingHistory ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <div className="h-5 w-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                    <span className="font-medium">Loading conversation...</span>
                   </div>
-                ) : (
-                  <>
-                    {messages.map((message) => (
-                      <ChatMessage
-                        key={message.id}
-                        role={message.role}
-                        content={message.content}
-                         sources={"sources" in message ? message.sources : undefined}
-                      />
-                    ))}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {messages.map((message) => (
+                    <ChatMessage
+                      key={message.id}
+                      role={message.role}
+                      content={message.content}
+                      sources={"sources" in message ? message.sources : undefined}
+                    />
+                  ))}
 
-                    {/* Show streaming response */}
-                    {isStreaming && currentResponse && (
-                      <ChatMessage
-                        role="assistant"
-                        content={currentResponse}
-                        isStreaming={true}
-                      />
-                    )}
+                  {isStreaming && currentResponse && (
+                    <ChatMessage
+                      role="assistant"
+                      content={currentResponse}
+                      isStreaming={true}
+                    />
+                  )}
 
-                    {/* Show loading indicator when waiting */}
-                    {isStreaming && !currentResponse && (
-                      <div className="mb-8">
-                        <div className="space-y-2">
-                          <div className="h-2 w-24 bg-muted animate-pulse rounded" />
-                          <div className="h-2 w-32 bg-muted animate-pulse rounded" />
+                  {isStreaming && !currentResponse && (
+                    <div className="flex gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                        <MessageCircle className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 pt-2">
+                        <div className="flex gap-1.5">
+                          <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "0ms" }} />
+                          <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "150ms" }} />
+                          <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "300ms" }} />
                         </div>
                       </div>
-                    )}
-                  </>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+          </div>
 
-            {/* Input area - elevated glass design */}
-            <div className="absolute inset-x-0 bottom-0 pb-8 md:pb-0 backdrop-blur-md bg-background/80">
-              <div className="max-w-4xl mx-auto px-6 py-4">
-                <form onSubmit={handleSubmit} className="relative flex items-end gap-2">
-                  <div
-                    className={cn(
-                      "flex-1 rounded-2xl transition-all duration-200",
-                      "bg-muted/40 border border-border/30 shadow-sm",
-                      "focus-within:bg-muted/60 focus-within:shadow-md focus-within:border-border/50"
-                    )}
-                  >
-                    <Textarea
-                      ref={textareaRef}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Send a thought to Nova..."
-                      className="min-h-[48px] max-h-[200px] resize-none border-0 bg-transparent px-4 py-3 text-base placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:outline-none"
-                      disabled={isStreaming}
-                      rows={1}
-                    />
-                  </div>
+          {/* Input area */}
+          <div className="absolute inset-x-0 bottom-0 bg-background">
+            <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
+              <form onSubmit={handleSubmit} className="flex items-end gap-3">
+                <div
+                  className={cn(
+                    "flex-1 rounded-xl transition-all duration-200",
+                    "bg-muted/40 border border-border/50",
+                    "focus-within:bg-muted/60 focus-within:border-primary/30"
+                  )}
+                >
+                  <Textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Message Nova..."
+                    className="min-h-[48px] max-h-[200px] resize-none border-0 bg-transparent px-4 py-3 text-base placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:outline-none"
+                    disabled={isStreaming}
+                    rows={1}
+                  />
+                </div>
 
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className={cn(
-                      "h-[52px] w-[52px] rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform duration-150",
-                      "hover:scale-105 hover:shadow-md disabled:opacity-40"
-                    )}
-                    disabled={!input.trim() || isStreaming}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </form>
-              </div>
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="h-12 w-12 shrink-0 rounded-xl"
+                  disabled={!input.trim() || isStreaming}
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </form>
             </div>
-          </>
-        )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
