@@ -23,7 +23,6 @@ import {
 } from "@/components/shared/ui/sidebar";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { useCommand } from "@/components/shared/providers/command-provider";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
@@ -70,7 +69,6 @@ export function AppSidebar() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Detect if user is on Mac for proper keyboard shortcut display
   useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
     setMounted(true);
@@ -78,41 +76,35 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="floating" className="border-0">
-      <SidebarHeader className="border-b border-border/20 px-4 py-4">
+      <SidebarHeader className="border-b border-sidebar-border/50 px-4 py-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <motion.div
-              className="flex h-9 w-9 items-center justify-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+          <Link href="/dashboard" className="flex items-center gap-3 group">
+            <div className="flex h-10 w-10 items-center justify-center transition-transform duration-200 group-hover:scale-105">
               {mounted && (
                 <Image
                   src={resolvedTheme === 'dark' ? '/nova-logo-dark-mode.svg' : '/nova-logo.svg'}
                   alt="Nova Logo"
-                  width={36}
-                  height={36}
-                  className="h-9 w-9"
+                  width={40}
+                  height={40}
+                  className="h-10 w-10"
                 />
               )}
-            </motion.div>
-            <span className="text-[26px] font-semibold leading-none text-primary">Nova</span>
-          </div>
-          <motion.button
+            </div>
+            <span className="font-serif text-2xl font-semibold text-sidebar-foreground">Nova</span>
+          </Link>
+          <button
             onClick={toggle}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/50 hover:bg-accent transition-colors mt-0.5"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-sidebar-accent/50 text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
             title={`Search (${isMac ? '⌘' : 'Ctrl'}+K)`}
           >
             <Search className="h-4 w-4" />
-          </motion.button>
+          </button>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-2">
+      <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarMenu className="gap-1">
+          <SidebarMenu className="space-y-1">
             {navItems.map((item) => {
               const isActive =
                 pathname === item.url ||
@@ -120,7 +112,8 @@ export function AppSidebar() {
                   pathname.startsWith("/journal/today")) ||
                 (item.url === "/journal" &&
                   pathname.startsWith("/journal/") &&
-                  pathname !== "/journal/today");
+                  pathname !== "/journal/today" &&
+                  !pathname.startsWith("/journal/today"));
 
               return (
                 <SidebarMenuItem key={item.title}>
@@ -128,18 +121,28 @@ export function AppSidebar() {
                     asChild
                     isActive={isActive}
                     className={cn(
-                      "h-11 px-3 w-full transition-all duration-200 rounded-xl",
-                      isActive && "bg-accent shadow-sm font-medium",
+                      "h-11 px-3 w-full rounded-xl transition-all duration-200",
+                      isActive
+                        ? "bg-sidebar-accent font-medium shadow-sm"
+                        : "hover:bg-sidebar-accent/50"
                     )}
                   >
-                    <Link href={item.url}>
+                    <Link href={item.url} className="flex items-center gap-3">
                       <item.icon
                         className={cn(
-                          "h-4 w-4 transition-colors",
-                          isActive && "text-primary",
+                          "h-[18px] w-[18px] transition-colors",
+                          isActive ? "text-sidebar-primary" : "text-sidebar-foreground/70"
                         )}
                       />
-                      <span className="flex-1">{item.title}</span>
+                      <span className={cn(
+                        "flex-1",
+                        isActive ? "text-sidebar-foreground" : "text-sidebar-foreground/80"
+                      )}>
+                        {item.title}
+                      </span>
+                      {isActive && (
+                        <div className="h-1.5 w-1.5 rounded-full bg-sidebar-primary" />
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -149,22 +152,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/20 p-3">
+      <SidebarFooter className="border-t border-sidebar-border/50 p-4">
         <div className="flex items-center gap-3">
           <UserButton
             afterSignOutUrl="/"
             appearance={{
               elements: {
-                avatarBox: "h-9 w-9",
-                userButtonPopoverCard: "shadow-xl pointer-events-auto",
+                avatarBox: "h-10 w-10 rounded-xl",
+                userButtonPopoverCard: "shadow-xl pointer-events-auto rounded-xl",
               },
             }}
           />
           <div className="flex flex-col flex-1 overflow-hidden">
-            <span className="text-sm font-medium truncate">
+            <span className="text-sm font-medium truncate text-sidebar-foreground">
               {user?.firstName} {user?.lastName}
             </span>
-            <span className="text-xs text-muted-foreground truncate">
+            <span className="text-xs text-sidebar-foreground/60 truncate">
               {user?.primaryEmailAddress?.emailAddress}
             </span>
           </div>
@@ -173,4 +176,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-

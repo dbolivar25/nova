@@ -1,12 +1,10 @@
 "use client"
 
 import { useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shared/ui/card"
 import { Badge } from "@/components/shared/ui/badge"
 import { Button } from "@/components/shared/ui/button"
 import { Skeleton } from "@/components/shared/ui/skeleton"
-import { TrendingUp, Brain, Heart, Target, RefreshCw } from "lucide-react"
-import { PageHeader } from "@/components/shared/layout/page-header"
+import { TrendingUp, Brain, Heart, Target, RefreshCw, Sparkles, Quote } from "lucide-react"
 import { toast } from "sonner"
 import { useWeeklyInsights, useGenerateWeeklyInsights } from "@/features/insights/hooks/use-weekly-insights"
 
@@ -40,26 +38,14 @@ export default function InsightsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Weekly Insights"
-          subtitle="Personalized analysis and patterns from your journal entries"
-        />
+      <div className="max-w-5xl mx-auto space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-5 w-64" />
+        </div>
         <div className="grid md:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-4 w-60 mt-2" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-6 w-20" />
-                </div>
-              </CardContent>
-            </Card>
+            <Skeleton key={i} className="h-64 rounded-2xl" />
           ))}
         </div>
       </div>
@@ -68,51 +54,64 @@ export default function InsightsPage() {
 
   if (!insights) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Weekly Insights"
-          subtitle="Personalized analysis and patterns from your journal entries"
-        />
-        <Card>
-          <CardHeader>
-            <CardTitle>No Insights Yet</CardTitle>
-            <CardDescription>
-              Journal for at least 3 days in a week to generate insights
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              Nova will analyze your journal entries to identify emotional patterns, recurring themes,
-              growth moments, and provide personalized guidance for the week ahead.
-            </p>
-            <Button onClick={handleGenerateInsights} disabled={isGenerating}>
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Insights Now'
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="max-w-3xl mx-auto">
+        <div className="space-y-2 mb-8">
+          <h1 className="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
+            Weekly Insights
+          </h1>
+          <p className="text-muted-foreground">
+            Personalized patterns and themes from your reflections
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card via-card to-primary/5 p-8 text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+            <Brain className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="font-serif text-2xl font-semibold">No Insights Yet</h2>
+          <p className="mt-2 text-muted-foreground max-w-md mx-auto">
+            Journal for at least 3 days this week to generate personalized insights about your emotional patterns and growth moments.
+          </p>
+          <Button
+            onClick={handleGenerateInsights}
+            disabled={isGenerating}
+            className="mt-6 rounded-xl h-11 px-6"
+          >
+            {isGenerating ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate Insights Now
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <PageHeader
-          title="Weekly Insights"
-          subtitle={`Week of ${new Date(insights.weekStartDate).toLocaleDateString()} - ${new Date(insights.weekEndDate).toLocaleDateString()}`}
-        />
+    <div className="max-w-5xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
+            Weekly Insights
+          </h1>
+          <p className="text-muted-foreground">
+            {new Date(insights.weekStartDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(insights.weekEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
         <Button
           variant="outline"
           size="sm"
           onClick={handleGenerateInsights}
           disabled={isGenerating}
+          className="rounded-xl border-border/60"
         >
           {isGenerating ? (
             <>
@@ -128,136 +127,147 @@ export default function InsightsPage() {
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Insights Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Emotional Trends */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Emotional Trends
-            </CardTitle>
-            <CardDescription>Your emotional journey this week</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Overall Mood</span>
-                <Badge variant="secondary">{insights.emotionalTrends.overallMood}</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {insights.emotionalTrends.summary}
-              </p>
-              {insights.emotionalTrends.dominantEmotions.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {insights.emotionalTrends.dominantEmotions.map((emotion, i) => (
-                    <Badge key={i} variant="outline">{emotion}</Badge>
-                  ))}
-                </div>
-              )}
+        <div className="group rounded-2xl border border-border/50 bg-card/50 p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+              <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h2 className="font-serif text-lg font-semibold">Emotional Trends</h2>
+              <p className="text-sm text-muted-foreground">Your journey this week</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Overall Mood</span>
+              <Badge variant="secondary" className="capitalize">{insights.emotionalTrends.overallMood}</Badge>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {insights.emotionalTrends.summary}
+            </p>
+            {insights.emotionalTrends.dominantEmotions.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2">
+                {insights.emotionalTrends.dominantEmotions.map((emotion, i) => (
+                  <Badge key={i} variant="outline" className="border-border/60 text-xs capitalize">
+                    {emotion}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Key Themes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Key Themes
-            </CardTitle>
-            <CardDescription>Topics that emerged this week</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {insights.keyThemes.map((theme, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Badge>{theme.name}</Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {theme.frequency} {theme.frequency === 1 ? 'entry' : 'entries'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{theme.description}</p>
-                </div>
-              ))}
+        <div className="group rounded-2xl border border-border/50 bg-card/50 p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
+              <Brain className="h-5 w-5 text-violet-600 dark:text-violet-400" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h2 className="font-serif text-lg font-semibold">Key Themes</h2>
+              <p className="text-sm text-muted-foreground">Topics that emerged</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {insights.keyThemes.map((theme, i) => (
+              <div key={i} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-primary/10 text-primary border-0 hover:bg-primary/20">{theme.name}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {theme.frequency} {theme.frequency === 1 ? 'entry' : 'entries'}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">{theme.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Growth Moments */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5" />
-              Growth Moments
-            </CardTitle>
-            <CardDescription>Breakthroughs and realizations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {insights.growthMoments.map((moment, i) => (
+        <div className="group rounded-2xl border border-border/50 bg-card/50 p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
+              <Heart className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div>
+              <h2 className="font-serif text-lg font-semibold">Growth Moments</h2>
+              <p className="text-sm text-muted-foreground">Breakthroughs and realizations</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {insights.growthMoments.length > 0 ? (
+              insights.growthMoments.map((moment, i) => (
                 <div key={i} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{moment.title}</span>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(moment.date).toLocaleDateString()}
+                      {new Date(moment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground italic">&ldquo;{moment.quote}&rdquo;</p>
-                  <p className="text-sm">{moment.significance}</p>
+                  <div className="flex gap-2 rounded-xl bg-muted/30 p-3">
+                    <Quote className="h-4 w-4 shrink-0 text-muted-foreground/50 mt-0.5" />
+                    <p className="text-sm italic text-muted-foreground">{moment.quote}</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{moment.significance}</p>
                 </div>
-              ))}
-              {insights.growthMoments.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No specific growth moments identified this week.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No specific growth moments identified this week. Keep journaling to uncover your insights.
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Week Ahead Focus */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Week Ahead Focus
-            </CardTitle>
-            <CardDescription>Suggested areas of attention</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {insights.weekAheadSuggestions.map((suggestion, i) => (
-                <div key={i} className="space-y-2">
+        <div className="group rounded-2xl border border-border/50 bg-card/50 p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+              <Target className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="font-serif text-lg font-semibold">Week Ahead</h2>
+              <p className="text-sm text-muted-foreground">Suggested focus areas</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {insights.weekAheadSuggestions.length > 0 ? (
+              insights.weekAheadSuggestions.map((suggestion, i) => (
+                <div key={i} className="space-y-1.5">
                   <p className="text-sm font-medium">{suggestion.focusArea}</p>
                   <p className="text-sm text-muted-foreground">{suggestion.rationale}</p>
-                  <p className="text-sm italic">{suggestion.guidance}</p>
+                  <p className="text-sm italic text-primary/80">{suggestion.guidance}</p>
                 </div>
-              ))}
-              {insights.weekAheadSuggestions.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Continue with your current journaling practice.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Continue with your current journaling practice. New suggestions will appear as patterns emerge.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Nova's Observation */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Nova&apos;s Weekly Observation</CardTitle>
-          <CardDescription>
-            Analyzed {insights.entryCount} {insights.entryCount === 1 ? 'entry' : 'entries'} from this week
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-            {insights.novaObservation}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card via-card to-primary/5 p-6 sm:p-8">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Sparkles className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-serif text-lg font-semibold">Nova&apos;s Observation</h2>
+            <p className="text-sm text-muted-foreground">
+              Based on {insights.entryCount} {insights.entryCount === 1 ? 'entry' : 'entries'} this week
+            </p>
+          </div>
+        </div>
+        <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+          {insights.novaObservation}
+        </p>
+      </div>
     </div>
   )
 }

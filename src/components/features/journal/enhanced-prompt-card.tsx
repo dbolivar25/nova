@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader } from "@/components/shared/ui/card"
 import { Textarea } from "@/components/shared/ui/textarea"
 import { cn } from "@/shared/lib/utils"
 import { Check, Circle } from "lucide-react"
@@ -16,12 +15,12 @@ interface EnhancedPromptCardProps {
   isCompleted: boolean
 }
 
-export function EnhancedPromptCard({ 
-  prompt, 
-  value, 
-  onChange, 
-  index, 
-  isCompleted 
+export function EnhancedPromptCard({
+  prompt,
+  value,
+  onChange,
+  index,
+  isCompleted
 }: EnhancedPromptCardProps) {
   const [isFocused, setIsFocused] = useState(false)
   const wordCount = value.trim().split(/\s+/).filter(Boolean).length
@@ -30,97 +29,105 @@ export function EnhancedPromptCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.1 }}
+      transition={{ duration: 0.4, delay: index * 0.1, ease: "easeOut" }}
     >
-      <Card className={cn(
-        "transition-all duration-300 relative overflow-hidden",
-        isFocused && "ring-2 ring-primary shadow-lg",
-        isCompleted && "bg-muted/30"
+      <div className={cn(
+        "relative overflow-hidden rounded-2xl border transition-all duration-300",
+        isFocused
+          ? "border-primary/40 shadow-lg shadow-primary/10"
+          : "border-border/50",
+        isCompleted && !isFocused && "bg-muted/20"
       )}>
-        <motion.div 
-          className={cn(
-            "absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"
-          )}
+        {/* Gradient overlay when focused */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: isFocused ? 1 : 0 }}
           transition={{ duration: 0.2 }}
         />
-        
-        <CardHeader className="relative">
-          <div className="flex items-start justify-between gap-4">
+
+        {/* Header */}
+        <div className="relative p-5 pb-0">
+          <div className="flex items-start gap-4">
+            {/* Completion indicator */}
+            <motion.div
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
+                isCompleted
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/50 text-muted-foreground"
+              )}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <AnimatePresence mode="wait">
+                {isCompleted ? (
+                  <motion.div
+                    key="check"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    exit={{ scale: 0, rotate: 180 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Check className="h-4 w-4" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="circle"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  >
+                    <Circle className="h-4 w-4" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Prompt content */}
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <motion.div 
-                  className={cn(
-                    "h-6 w-6 rounded-full flex items-center justify-center",
-                    isCompleted 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-muted text-muted-foreground"
-                  )}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <AnimatePresence mode="wait">
-                    {isCompleted ? (
-                      <motion.div
-                        key="check"
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        exit={{ scale: 0, rotate: 180 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <Check className="h-3 w-3" />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="circle"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                      >
-                        <Circle className="h-3 w-3" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs font-medium">
                   Prompt {index + 1}
                 </Badge>
                 <AnimatePresence>
                   {wordCount > 0 && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
+                      initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, x: -10 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs border-border/60 text-muted-foreground">
                         {wordCount} words
                       </Badge>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-              <p className="text-sm font-medium leading-relaxed pl-8">
+              <p className="font-serif text-lg font-medium leading-relaxed text-foreground">
                 {prompt}
               </p>
             </div>
           </div>
-        </CardHeader>
-        
-        <CardContent className="relative pt-0">
+        </div>
+
+        {/* Textarea */}
+        <div className="relative p-5 pt-4">
           <Textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder="Take your time to reflect..."
+            placeholder="Take your time to reflect on this..."
             className={cn(
-              "min-h-[140px] resize-none transition-all",
-              "placeholder:text-muted-foreground/60"
+              "min-h-[140px] resize-none rounded-xl border-border/40 bg-background/50 p-4 text-base transition-all",
+              "placeholder:text-muted-foreground/50",
+              "focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:border-primary/30"
             )}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </motion.div>
   )
 }
