@@ -2,15 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Circle,
-  ListChecks,
-  Sparkles,
-  Trash2,
-  Undo2,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, ListChecks, Sparkles, Trash2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/shared/ui/badge";
 import { Button } from "@/components/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/shared/ui/dialog";
@@ -19,7 +11,6 @@ import { Label } from "@/components/shared/ui/label";
 import { Progress } from "@/components/shared/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/shared/ui/select";
 import { Textarea } from "@/components/shared/ui/textarea";
-import { cn } from "@/shared/lib/utils";
 import { clearSurveyState, loadSurveyState, saveSurveyState } from "@/features/onboarding/storage";
 import type { DailyGoal, GoalDirection, SurveyResponses, SurveyState } from "@/features/onboarding/types";
 
@@ -61,16 +52,28 @@ const steps = [
     description: "Share your name so we can greet you properly.",
   },
   {
-    title: "Reflection",
-    description: "Capture what to celebrate and what to change.",
+    title: "Celebrate",
+    description: "Capture what you’re proud of.",
+  },
+  {
+    title: "Adjust",
+    description: "Note what you want to change.",
+  },
+  {
+    title: "Incorporate",
+    description: "Traits or actions to add.",
+  },
+  {
+    title: "Horizon",
+    description: "Goals across time.",
   },
   {
     title: "Habits",
-    description: "List daily goals to lean into or reduce.",
+    description: "Daily goals to lean into or reduce.",
   },
   {
     title: "Finish",
-    description: "Review everything before completing.",
+    description: "Review and confirm.",
   },
 ];
 
@@ -203,10 +206,27 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
   }, [state.currentStep]);
 
   const nameValid = state.responses.name.trim().length > 0;
-  const reflectionValid =
-    state.responses.proudOf.trim().length > 0 &&
-    state.responses.notProudOf.trim().length > 0 &&
-    state.responses.incorporate.trim().length > 0;
+  const proudValid = state.responses.proudOf.trim().length > 0;
+  const notProudValid = state.responses.notProudOf.trim().length > 0;
+  const incorporateValid = state.responses.incorporate.trim().length > 0;
+  const horizonValid = state.responses.horizonGoals.trim().length > 0;
+
+  const stepIsValid = useMemo(() => {
+    switch (state.currentStep) {
+      case 0:
+        return nameValid;
+      case 1:
+        return proudValid;
+      case 2:
+        return notProudValid;
+      case 3:
+        return incorporateValid;
+      case 4:
+        return horizonValid;
+      default:
+        return true;
+    }
+  }, [state.currentStep, nameValid, proudValid, notProudValid, incorporateValid, horizonValid]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -222,49 +242,18 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Badge variant="secondary" className="rounded-full">Local only</Badge>
-              {state.completedAt ? (
-                <span className="flex items-center gap-1 text-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary" /> Completed
-                </span>
-              ) : (
-                <span>Finish once and you’re set.</span>
-              )}
+          <div className="space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Step {state.currentStep + 1} of {steps.length}</p>
+                <div className="text-sm font-semibold leading-tight">{steps[state.currentStep]?.title}</div>
+                <p className="text-sm text-muted-foreground">{steps[state.currentStep]?.description}</p>
+              </div>
+              <div className="text-right text-xs text-muted-foreground">
+                {formattedSavedAt ? `Saved ${formattedSavedAt}` : "Local only"}
+              </div>
             </div>
-            <div className="text-right text-xs text-muted-foreground">
-              {formattedSavedAt ? `Saved ${formattedSavedAt}` : "Not saved yet"}
-            </div>
-          </div>
-
-          <Progress value={progress} className="h-2" />
-
-          <div className="grid gap-2 sm:grid-cols-4">
-            {steps.map((step, index) => {
-              const isActive = index === state.currentStep;
-              const isComplete = index < state.currentStep || (!!state.completedAt && index <= state.currentStep);
-              return (
-                <div
-                  key={step.title}
-                  className={cn(
-                    "flex flex-col gap-1 rounded-lg border p-3 text-left",
-                    isActive ? "border-primary/40 bg-primary/5" : "border-border/60 bg-muted/30"
-                  )}
-                >
-                  <div className="flex items-center gap-2 text-sm font-semibold">
-                    {isComplete ? (
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Circle className="h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                    <span className={cn(isActive ? "text-primary" : "text-foreground")}>{`Step ${index + 1}`}</span>
-                  </div>
-                  <div className="text-sm font-medium leading-tight">{step.title}</div>
-                  <p className="text-xs text-muted-foreground">{step.description}</p>
-                </div>
-              );
-            })}
+            <Progress value={progress} className="h-2" />
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto pr-1">
@@ -295,12 +284,22 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
                   value={state.responses.proudOf}
                   onChange={(value) => handleResponseChange("proudOf", value)}
                 />
+              </div>
+            )}
+
+            {state.currentStep === 2 && (
+              <div className="space-y-4 py-1">
                 <QuestionBlock
                   label="What actions or character traits are you currently not proud of?"
                   placeholder="Examples: procrastinating, doomscrolling at night, snapping when stressed..."
                   value={state.responses.notProudOf}
                   onChange={(value) => handleResponseChange("notProudOf", value)}
                 />
+              </div>
+            )}
+
+            {state.currentStep === 3 && (
+              <div className="space-y-4 py-1">
                 <QuestionBlock
                   label="What actions or character traits do you want to incorporate into your life?"
                   placeholder="Examples: patient listening, daily reading, moving your body, asking for help..."
@@ -310,18 +309,19 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
               </div>
             )}
 
-            {state.currentStep === 2 && (
-              <div className="space-y-6 py-1">
-                <div className="space-y-2">
-                  <Label>Goals across the week, month, year, and lifetime</Label>
-                  <Textarea
-                    value={state.responses.horizonGoals}
-                    onChange={(event) => handleResponseChange("horizonGoals", event.target.value)}
-                    placeholder="Week: finish a draft. Month: rebuild morning routine. Year: deepen relationships. Lifetime: stay curious."
-                    className="min-h-[120px]"
-                  />
-                </div>
+            {state.currentStep === 4 && (
+              <div className="space-y-4 py-1">
+                <QuestionBlock
+                  label="Goals across the week, month, year, and lifetime"
+                  placeholder="Week: finish a draft. Month: rebuild morning routine. Year: deepen relationships. Lifetime: stay curious."
+                  value={state.responses.horizonGoals}
+                  onChange={(value) => handleResponseChange("horizonGoals", value)}
+                />
+              </div>
+            )}
 
+            {state.currentStep === 5 && (
+              <div className="space-y-6 py-1">
                 <div className="space-y-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -422,7 +422,7 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
               </div>
             )}
 
-            {state.currentStep === 3 && (
+            {state.currentStep === 6 && (
               <div className="space-y-4 py-1 text-sm">
                 <SummaryRow label="Preferred name" value={state.responses.name || "Not set"} />
                 <SummaryRow label="Proud of" value={state.responses.proudOf || "No notes yet"} />
@@ -496,7 +496,7 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
                       currentStep: Math.min(prev.currentStep + 1, steps.length - 1),
                     }))
                   }
-                  disabled={(state.currentStep === 0 && !nameValid) || (state.currentStep === 1 && !reflectionValid)}
+                  disabled={!stepIsValid}
                 >
                   Next
                   <ArrowRight className="h-4 w-4" />
