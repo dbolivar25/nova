@@ -238,7 +238,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     },
   ];
 
-  const handleThemeSelection = (preference: "light" | "sunset" | "dark" | "system") => {
+  type ThemePreference = "light" | "sunset" | "dark" | "system";
+
+  const handleThemeSelection = (preference: ThemePreference) => {
     setTheme(preference);
 
     const message =
@@ -252,10 +254,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   };
 
   const themeActions = [
-    { icon: Sun, label: "Use Light Theme", preference: "light" },
-    { icon: Sunset, label: "Use Sunset Theme", preference: "sunset" },
-    { icon: Moon, label: "Use Dark Theme", preference: "dark" },
-    { icon: Monitor, label: "Use System Theme", preference: "system" },
+    { icon: Sun, label: "Use Light Theme", preference: "light" as const },
+    { icon: Sunset, label: "Use Sunset Theme", preference: "sunset" as const },
+    { icon: Moon, label: "Use Dark Theme", preference: "dark" as const },
+    { icon: Monitor, label: "Use System Theme", preference: "system" as const },
   ].map((action) => ({
     icon: action.icon,
     label: `${action.label}${(theme ?? "system") === action.preference ? " (Current)" : ""}`,
