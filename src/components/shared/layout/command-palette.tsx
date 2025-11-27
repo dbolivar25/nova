@@ -24,20 +24,24 @@ import {
   History,
   Home,
   LogOut,
+  Clock3,
   Moon,
   PenLine,
   Plus,
   Search,
   MessageCircle,
   Sun,
+  Sunset,
+  Monitor,
   User,
 } from "lucide-react";
 import { useJournalEntries, useJournalSearch } from "@/features/journal/hooks/use-journal";
 import { getSearchSnippet, highlightText } from "@/shared/lib/utils/highlight";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
 import { SignOutButton } from "@clerk/nextjs";
 import type { JournalEntry, Mood } from "@/features/journal/types/journal";
+import { ThemePreference } from "@/shared/lib/theme-preferences";
+import { useThemePreference } from "@/shared/hooks/use-theme-preference";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -59,7 +63,7 @@ const moodIcons: Record<Mood, React.ComponentType<{ className?: string }>> = {
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { preference: themePreference, setPreference: setThemePreference } = useThemePreference();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -236,18 +240,36 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     },
   ];
 
+  const handleThemeSelection = (preference: ThemePreference) => {
+    setThemePreference(preference);
+
+    const message =
+      preference === "time"
+        ? "Time-based theming enabled"
+        : preference === "system"
+          ? "System theme enabled"
+          : `Switched to ${preference} theme`;
+
+    toast.success(message);
+    onOpenChange(false);
+    setSearch("");
+  };
+
+  const themeActions = [
+    { icon: Sun, label: "Use Light Theme", preference: "light" as ThemePreference },
+    { icon: Sunset, label: "Use Sunset Theme", preference: "sunset" as ThemePreference },
+    { icon: Moon, label: "Use Dark Theme", preference: "dark" as ThemePreference },
+    { icon: Clock3, label: "Time-of-Day Theme", preference: "time" as ThemePreference },
+    { icon: Monitor, label: "Use System Theme", preference: "system" as ThemePreference },
+  ].map((action) => ({
+    icon: action.icon,
+    label: `${action.label}${themePreference === action.preference ? " (Current)" : ""}`,
+    action: () => handleThemeSelection(action.preference),
+  }));
+
   // Settings actions
   const settingsActions = [
-    {
-      icon: theme === "dark" ? Sun : Moon,
-      label: theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
-      action: () => {
-        setTheme(theme === "dark" ? "light" : "dark");
-        toast.success(`Switched to ${theme === "dark" ? "light" : "dark"} mode`);
-        onOpenChange(false);
-        setSearch("");
-      },
-    },
+    ...themeActions,
     {
       icon: User,
       label: "Profile Settings",

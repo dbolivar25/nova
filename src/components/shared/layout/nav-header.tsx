@@ -6,7 +6,18 @@ import { usePathname } from "next/navigation"
 import { UserButton } from "@clerk/nextjs"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/components/shared/ui/button"
-import { MoonIcon, SunIcon, PenLine, Calendar, MessageCircle, ChartBar, User } from "lucide-react"
+import {
+  Clock3,
+  MoonIcon,
+  SunIcon,
+  PenLine,
+  Calendar,
+  MessageCircle,
+  ChartBar,
+  User,
+  Sunset,
+  Monitor,
+} from "lucide-react"
 import { useTheme } from "next-themes"
 import {
   DropdownMenu,
@@ -14,6 +25,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/shared/ui/dropdown-menu"
+import { ThemePreference } from "@/shared/lib/theme-preferences"
+import { useThemePreference } from "@/shared/hooks/use-theme-preference"
 
 const navigation = [
   { name: "Today", href: "/dashboard", icon: PenLine },
@@ -25,7 +38,12 @@ const navigation = [
 
 export function NavHeader() {
   const pathname = usePathname()
-  const { setTheme, resolvedTheme } = useTheme()
+  const { resolvedTheme } = useTheme()
+  const { setPreference: setThemePreference } = useThemePreference()
+
+  const handleThemeChange = (preference: ThemePreference) => {
+    setThemePreference(preference)
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -76,13 +94,24 @@ export function NavHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
+                <DropdownMenuItem onClick={() => handleThemeChange("light")}>
+                  <SunIcon className="mr-2 h-4 w-4" />
                   Light
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                <DropdownMenuItem onClick={() => handleThemeChange("sunset")}>
+                  <Sunset className="mr-2 h-4 w-4" />
+                  Sunset
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleThemeChange("dark")}>
+                  <MoonIcon className="mr-2 h-4 w-4" />
                   Dark
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
+                <DropdownMenuItem onClick={() => handleThemeChange("time")}>
+                  <Clock3 className="mr-2 h-4 w-4" />
+                  Time of Day
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleThemeChange("system")}>
+                  <Monitor className="mr-2 h-4 w-4" />
                   System
                 </DropdownMenuItem>
               </DropdownMenuContent>

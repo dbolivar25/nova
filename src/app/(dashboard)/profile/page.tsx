@@ -18,13 +18,14 @@ import { Download, Shield, Bell, Hash, Clock, FileJson, FileText, Palette } from
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/layout/page-header"
 import { useUserPreferences } from "@/features/user/hooks/use-preferences"
-import { useTheme } from "next-themes"
+import { ThemePreference } from "@/shared/lib/theme-preferences"
+import { useThemePreference } from "@/shared/hooks/use-theme-preference"
 
 export default function ProfilePage() {
   const { user } = useUser()
   const { preferences, isLoading, updatePreferences } = useUserPreferences()
   const [isExporting, setIsExporting] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const { preference: themePreference, setPreference: setThemePreference } = useThemePreference()
 
   const handleExportData = async (format: 'json' | 'csv') => {
     setIsExporting(true)
@@ -66,6 +67,10 @@ export default function ProfilePage() {
     } catch (error) {
       console.error(`Failed to update ${key}:`, error)
     }
+  }
+
+  const handleThemePreferenceChange = (value: ThemePreference) => {
+    setThemePreference(value)
   }
 
   // Format time for display
@@ -214,15 +219,17 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <Select
-                  value={theme}
-                  onValueChange={setTheme}
+                  value={themePreference}
+                  onValueChange={(value) => handleThemePreferenceChange(value as ThemePreference)}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="sunset">Sunset</SelectItem>
                     <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="time">Time of Day</SelectItem>
                     <SelectItem value="system">System</SelectItem>
                   </SelectContent>
                 </Select>
