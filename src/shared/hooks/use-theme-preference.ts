@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
 import {
@@ -10,49 +10,29 @@ import {
   getStoredThemePreference,
 } from "@/shared/lib/theme-preferences";
 
-type ThemePreferenceStore = {
-  preference: ThemePreference;
-};
-
-const store: ThemePreferenceStore = {
-  preference: DEFAULT_THEME_PREFERENCE,
-};
-
-if (typeof window !== "undefined") {
-  store.preference = getStoredThemePreference();
-}
-
-const listeners = new Set<() => void>();
-
-const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-};
-
-const getSnapshot = () => store.preference;
-
-const setPreferenceState = (preference: ThemePreference) => {
-  if (store.preference === preference) {
-    return;
-  }
-
-  store.preference = preference;
-  listeners.forEach((listener) => listener());
-};
-
 export const useThemePreference = () => {
-  const { setTheme } = useTheme();
-  const preference = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const { theme, setTheme } = useTheme();
+  const [preference, setPreferenceState] = useState<ThemePreference>(
+    () => getStoredThemePreference() || DEFAULT_THEME_PREFERENCE,
+  );
 
   useEffect(() => {
-    applyThemePreference(preference, setTheme);
-  }, [preference, setTheme]);
+    const storedPreference = getStoredThemePreference();
+    setPreferenceState(storedPreference);
+    applyThemePreference(storedPreference, setTheme);
+  }, [setTheme]);
 
-  const handlePreferenceChange = useCallback((next: ThemePreference) => {
-    setPreferenceState(next);
-  }, []);
+  useEffect(() => {
+    setPreferenceState(getStoredThemePreference());
+  }, [theme]);
+
+  const handlePreferenceChange = useCallback(
+    (next: ThemePreference) => {
+      setPreferenceState(next);
+      applyThemePreference(next, setTheme);
+    },
+    [setTheme],
+  );
 
   return { preference, setPreference: handlePreferenceChange };
 };
