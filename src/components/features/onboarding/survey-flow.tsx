@@ -66,10 +66,10 @@ export function SurveyFlow() {
       return;
     }
 
-    if (user?.fullName) {
-      setResponses((prev) => ({ ...prev, name: prev.name || user.fullName }));
-    } else if (user?.firstName) {
-      setResponses((prev) => ({ ...prev, name: prev.name || user.firstName }));
+    const candidateName = user?.fullName ?? user?.firstName ?? null;
+
+    if (candidateName) {
+      setResponses((prev) => ({ ...prev, name: prev.name || candidateName }));
     }
   }, [user, hasHydrated, responses.name]);
 
