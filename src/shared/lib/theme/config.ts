@@ -1,7 +1,7 @@
-import { Flower2, Monitor, Moon, Sun, Sunset, TreePine } from "lucide-react";
+import { Cloud, Flower2, Monitor, Moon, Sun, Sunset, TreePine } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export type ThemeId = "light" | "sunset" | "dark" | "rose-pine" | "evergreen" | "system";
+export type ThemeId = "light" | "sunset" | "dark" | "rose-pine" | "evergreen" | "sky" | "system";
 
 export interface ThemeConfig {
   id: ThemeId;
@@ -35,6 +35,11 @@ const themeConfigs: Record<Exclude<ThemeId, "system">, ThemeConfig> = {
     label: "Evergreen",
     icon: TreePine,
   },
+  sky: {
+    id: "sky",
+    label: "Sky",
+    icon: Cloud,
+  },
 };
 
 const systemThemeConfig: ThemeConfig = {
@@ -49,5 +54,6 @@ export const themeList: ThemeConfig[] = [
   themeConfigs.dark,
   themeConfigs["rose-pine"],
   themeConfigs.evergreen,
+  themeConfigs.sky,
   systemThemeConfig,
 ];

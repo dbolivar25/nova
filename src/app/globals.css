@@ -265,6 +265,49 @@
   --sidebar-ring: oklch(0.70 0.12 145);
 }
 
+.sky {
+  /* Sky - Light and airy like clouds on a clear day */
+  --background: oklch(0.97 0.015 225);
+  --foreground: oklch(0.25 0.04 230);
+  --card: oklch(0.99 0.008 220);
+  --card-foreground: oklch(0.25 0.04 230);
+  --popover: oklch(0.99 0.008 220);
+  --popover-foreground: oklch(0.25 0.04 230);
+  --primary: oklch(0.55 0.14 230);
+  --primary-foreground: oklch(0.99 0.005 220);
+  --secondary: oklch(0.92 0.03 225);
+  --secondary-foreground: oklch(0.30 0.05 230);
+  --muted: oklch(0.94 0.02 225);
+  --muted-foreground: oklch(0.50 0.04 230);
+  --accent: oklch(0.88 0.06 210);
+  --accent-foreground: oklch(0.25 0.04 230);
+  --destructive: oklch(0.55 0.20 25);
+  --border: oklch(0.88 0.025 225);
+  --input: oklch(0.95 0.02 225);
+  --ring: oklch(0.55 0.14 230);
+
+  /* Accent colors - Bright sky tones */
+  --warm: oklch(0.60 0.12 230);
+  --glow: oklch(0.65 0.10 200);
+
+  /* Chart colors - Sky and cloud palette */
+  --chart-1: oklch(0.55 0.14 230);
+  --chart-2: oklch(0.65 0.10 200);
+  --chart-3: oklch(0.60 0.08 250);
+  --chart-4: oklch(0.70 0.06 180);
+  --chart-5: oklch(0.50 0.12 260);
+
+  /* Sidebar */
+  --sidebar: oklch(0.96 0.012 225);
+  --sidebar-foreground: oklch(0.25 0.04 230);
+  --sidebar-primary: oklch(0.55 0.14 230);
+  --sidebar-primary-foreground: oklch(0.99 0.005 220);
+  --sidebar-accent: oklch(0.90 0.04 220);
+  --sidebar-accent-foreground: oklch(0.25 0.04 230);
+  --sidebar-border: oklch(0.90 0.02 225);
+  --sidebar-ring: oklch(0.55 0.14 230);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
