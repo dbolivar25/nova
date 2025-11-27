@@ -111,6 +111,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <NextThemesProvider
         attribute="class"
         defaultTheme="light"
+        storageKey="nova-theme"
+        themes={["light", "sunset", "dark"]}
         enableSystem
         disableTransitionOnChange
       >
