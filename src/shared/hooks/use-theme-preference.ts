@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 
 import {
@@ -34,6 +34,10 @@ const subscribe = (listener: () => void) => {
 const getSnapshot = () => store.preference;
 
 const setPreferenceState = (preference: ThemePreference) => {
+  if (store.preference === preference) {
+    return;
+  }
+
   store.preference = preference;
   listeners.forEach((listener) => listener());
 };
@@ -41,24 +45,14 @@ const setPreferenceState = (preference: ThemePreference) => {
 export const useThemePreference = () => {
   const { setTheme } = useTheme();
   const preference = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  const hydrated = useRef(false);
 
   useEffect(() => {
-    if (hydrated.current) {
-      return;
-    }
-
     applyThemePreference(preference, setTheme);
-    hydrated.current = true;
   }, [preference, setTheme]);
 
-  const handlePreferenceChange = useCallback(
-    (next: ThemePreference) => {
-      setPreferenceState(next);
-      applyThemePreference(next, setTheme);
-    },
-    [setTheme],
-  );
+  const handlePreferenceChange = useCallback((next: ThemePreference) => {
+    setPreferenceState(next);
+  }, []);
 
   return { preference, setPreference: handlePreferenceChange };
 };
