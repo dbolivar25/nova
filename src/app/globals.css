@@ -222,6 +222,49 @@
   --sidebar-ring: oklch(0.82 0.07 20);
 }
 
+.evergreen {
+  /* Evergreen - Deep forest tranquility */
+  --background: oklch(0.15 0.03 145);
+  --foreground: oklch(0.92 0.02 100);
+  --card: oklch(0.18 0.035 145);
+  --card-foreground: oklch(0.92 0.02 100);
+  --popover: oklch(0.18 0.035 145);
+  --popover-foreground: oklch(0.92 0.02 100);
+  --primary: oklch(0.70 0.12 145);
+  --primary-foreground: oklch(0.15 0.03 145);
+  --secondary: oklch(0.22 0.04 145);
+  --secondary-foreground: oklch(0.88 0.02 100);
+  --muted: oklch(0.22 0.035 145);
+  --muted-foreground: oklch(0.60 0.04 145);
+  --accent: oklch(0.75 0.10 175);
+  --accent-foreground: oklch(0.15 0.03 145);
+  --destructive: oklch(0.60 0.18 25);
+  --border: oklch(0.28 0.04 145);
+  --input: oklch(0.22 0.035 145);
+  --ring: oklch(0.70 0.12 145);
+
+  /* Accent colors - Forest tones */
+  --warm: oklch(0.70 0.12 145);
+  --glow: oklch(0.65 0.10 160);
+
+  /* Chart colors - Nature palette */
+  --chart-1: oklch(0.70 0.12 145);
+  --chart-2: oklch(0.75 0.10 175);
+  --chart-3: oklch(0.65 0.08 90);
+  --chart-4: oklch(0.60 0.10 200);
+  --chart-5: oklch(0.55 0.06 120);
+
+  /* Sidebar */
+  --sidebar: oklch(0.13 0.025 145);
+  --sidebar-foreground: oklch(0.92 0.02 100);
+  --sidebar-primary: oklch(0.70 0.12 145);
+  --sidebar-primary-foreground: oklch(0.15 0.03 145);
+  --sidebar-accent: oklch(0.22 0.04 145);
+  --sidebar-accent-foreground: oklch(0.92 0.02 100);
+  --sidebar-border: oklch(0.25 0.035 145);
+  --sidebar-ring: oklch(0.70 0.12 145);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
