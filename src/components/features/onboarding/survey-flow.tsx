@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { ArrowRight, CheckCircle2, ListChecks, Plus, Sparkles, Trash2, Undo2, UserRound } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Circle,
+  ListChecks,
+  Sparkles,
+  Trash2,
+  Undo2,
+} from "lucide-react";
 import { Badge } from "@/components/shared/ui/badge";
 import { Button } from "@/components/shared/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shared/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/shared/ui/dialog";
 import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
 import { Progress } from "@/components/shared/ui/progress";
@@ -14,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/shared/ui/textarea";
 import { cn } from "@/shared/lib/utils";
 import { clearSurveyState, loadSurveyState, saveSurveyState } from "@/features/onboarding/storage";
-import type { DailyGoal, GoalDirection, SurveyResponses } from "@/features/onboarding/types";
+import type { DailyGoal, GoalDirection, SurveyResponses, SurveyState } from "@/features/onboarding/types";
 
 const defaultResponses: SurveyResponses = {
   name: "",
@@ -25,85 +32,109 @@ const defaultResponses: SurveyResponses = {
   dailyGoals: [],
 };
 
+const defaultState: SurveyState = {
+  responses: defaultResponses,
+  currentStep: 0,
+  lastUpdated: new Date().toISOString(),
+};
+
+function normalizeState(state: SurveyState | null | undefined): SurveyState {
+  if (!state) {
+    return defaultState;
+  }
+
+  return {
+    ...defaultState,
+    ...state,
+    responses: {
+      ...defaultResponses,
+      ...state.responses,
+    },
+    lastUpdated: state.lastUpdated ?? defaultState.lastUpdated,
+    completedAt: state.completedAt,
+  };
+}
+
 const steps = [
   {
-    title: "Name & intention",
-    description: "Ground the experience with how you'd like Nova to address you.",
+    title: "Welcome",
+    description: "Share your name so we can greet you properly.",
   },
   {
-    title: "Character survey",
-    description: "Capture the traits, actions, and goals shaping your day-to-day.",
+    title: "Reflection",
+    description: "Capture what to celebrate and what to change.",
   },
   {
-    title: "Summary",
-    description: "Review everything you've shared and pick up where you left off.",
+    title: "Habits",
+    description: "List daily goals to lean into or reduce.",
+  },
+  {
+    title: "Finish",
+    description: "Review everything before completing.",
   },
 ];
 
-export function SurveyFlow() {
+interface SurveyDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialState?: SurveyState | null;
+  onComplete?: (state: SurveyState) => void;
+}
+
+export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: SurveyDialogProps) {
   const { user } = useUser();
 
-  const [responses, setResponses] = useState<SurveyResponses>(defaultResponses);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [state, setState] = useState<SurveyState>(() => normalizeState(initialState ?? loadSurveyState()));
+  const [hydrated, setHydrated] = useState(false);
   const [goalDraft, setGoalDraft] = useState("");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("increase");
   const [suggestions, setSuggestions] = useState<DailyGoal[]>([]);
-  const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
-    const saved = loadSurveyState();
-    if (saved) {
-      setResponses(saved.responses);
-      setCurrentStep(saved.currentStep ?? 0);
-      setLastSaved(saved.lastUpdated);
-    }
-    setHasHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hasHydrated || responses.name) {
+    if (!open) {
       return;
     }
 
-    const candidateName = user?.fullName ?? user?.firstName ?? null;
+    const saved = normalizeState(initialState ?? loadSurveyState());
+    setState(saved);
+    setHydrated(true);
+  }, [initialState, open]);
 
+  useEffect(() => {
+    if (!hydrated || state.responses.name) {
+      return;
+    }
+
+    const candidateName = user?.fullName ?? user?.firstName;
     if (candidateName) {
-      setResponses((prev) => ({ ...prev, name: prev.name || candidateName }));
+      setState((prev) => updateLastUpdated({
+        ...prev,
+        responses: { ...prev.responses, name: candidateName },
+      }));
     }
-  }, [user, hasHydrated, responses.name]);
+  }, [user, hydrated, state.responses.name]);
 
   useEffect(() => {
-    if (!hasHydrated) {
+    if (!hydrated) {
       return;
     }
 
-    const snapshot = {
-      responses,
-      currentStep,
-      lastUpdated: new Date().toISOString(),
-    };
-
-    saveSurveyState(snapshot);
-    setLastSaved(snapshot.lastUpdated);
-  }, [responses, currentStep, hasHydrated]);
-
-  const progressValue = useMemo(() => {
-    if (steps.length <= 1) {
-      return 0;
-    }
-    return (currentStep / (steps.length - 1)) * 100;
-  }, [currentStep]);
+    saveSurveyState(state);
+  }, [state, hydrated]);
 
   const handleResponseChange = (field: keyof SurveyResponses, value: string) => {
-    setResponses((prev) => ({ ...prev, [field]: value }));
+    setState((prev) => updateLastUpdated({
+      ...prev,
+      responses: {
+        ...prev.responses,
+        [field]: value,
+      },
+    }));
   };
 
   const handleAddGoal = (goalText?: string, direction?: GoalDirection) => {
     const text = (goalText ?? goalDraft).trim();
-    if (!text) {
-      return;
-    }
+    if (!text) return;
 
     const goal: DailyGoal = {
       id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
@@ -111,9 +142,12 @@ export function SurveyFlow() {
       direction: direction ?? goalDirection,
     };
 
-    setResponses((prev) => ({
+    setState((prev) => updateLastUpdated({
       ...prev,
-      dailyGoals: [...prev.dailyGoals, goal],
+      responses: {
+        ...prev.responses,
+        dailyGoals: [...prev.responses.dailyGoals, goal],
+      },
     }));
 
     if (!goalText) {
@@ -122,406 +156,394 @@ export function SurveyFlow() {
   };
 
   const handleRemoveGoal = (id: string) => {
-    setResponses((prev) => ({
+    setState((prev) => updateLastUpdated({
       ...prev,
-      dailyGoals: prev.dailyGoals.filter((goal) => goal.id !== id),
+      responses: {
+        ...prev.responses,
+        dailyGoals: prev.responses.dailyGoals.filter((goal) => goal.id !== id),
+      },
     }));
   };
 
   const handleGenerateSuggestions = () => {
-    const generated = generateGoalSuggestions(responses);
-    setSuggestions(generated);
+    setSuggestions(generateGoalSuggestions(state.responses));
   };
 
   const handleReset = () => {
-    setResponses(defaultResponses);
+    setState({ ...defaultState, lastUpdated: new Date().toISOString() });
     setGoalDraft("");
+    setGoalDirection("increase");
     setSuggestions([]);
-    setCurrentStep(0);
-    setLastSaved(null);
     clearSurveyState();
   };
 
-  const formattedSavedAt = useMemo(() => {
-    if (!lastSaved) {
-      return null;
-    }
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(lastSaved));
-  }, [lastSaved]);
+  const handleComplete = () => {
+    setState((prev) => {
+      const completedState = updateLastUpdated({
+        ...prev,
+        completedAt: prev.completedAt ?? new Date().toISOString(),
+        currentStep: steps.length - 1,
+      });
+      onComplete?.(completedState);
+      return completedState;
+    });
+    onOpenChange(false);
+  };
 
-  const nameStepValid = responses.name.trim().length > 0;
+  const formattedSavedAt = useMemo(() => {
+    if (!state.lastUpdated) return null;
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+      new Date(state.lastUpdated)
+    );
+  }, [state.lastUpdated]);
+
+  const progress = useMemo(() => {
+    if (steps.length <= 1) return 0;
+    return (state.currentStep / (steps.length - 1)) * 100;
+  }, [state.currentStep]);
+
+  const nameValid = state.responses.name.trim().length > 0;
+  const reflectionValid =
+    state.responses.proudOf.trim().length > 0 &&
+    state.responses.notProudOf.trim().length > 0 &&
+    state.responses.incorporate.trim().length > 0;
 
   return (
-    <div className="space-y-6">
-      <Card className="border-primary/10 bg-primary/5">
-        <CardHeader className="flex flex-row items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-primary">
-              <ListChecks className="h-4 w-4" />
-              <span>Personalized survey</span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader className="space-y-1">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <ListChecks className="h-5 w-5 text-primary" />
+            Personalize Nova
+          </DialogTitle>
+          <DialogDescription>
+            A quick, one-time survey to tune prompts to your priorities. Everything stays in your browser.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Badge variant="secondary" className="rounded-full">Local only</Badge>
+              {state.completedAt ? (
+                <span className="flex items-center gap-1 text-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" /> Completed
+                </span>
+              ) : (
+                <span>Finish once and you’re set.</span>
+              )}
             </div>
-            <CardTitle className="font-serif text-2xl">Set your baseline with Nova</CardTitle>
-            <CardDescription>
-              Capture what matters most today. Your answers stay local to this device while we refine the experience.
-            </CardDescription>
+            <div className="text-right text-xs text-muted-foreground">
+              {formattedSavedAt ? `Saved ${formattedSavedAt}` : "Not saved yet"}
+            </div>
           </div>
-          <div className="text-right text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Saved privately</p>
-            {formattedSavedAt ? (
-              <span>Updated {formattedSavedAt}</span>
-            ) : (
-              <span>No responses yet</span>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Progress value={progressValue} className="h-2" />
-          <div className="grid gap-3 sm:grid-cols-3">
+
+          <Progress value={progress} className="h-2" />
+
+          <div className="grid gap-2 sm:grid-cols-4">
             {steps.map((step, index) => {
-              const isActive = index === currentStep;
-              const isComplete = index < currentStep;
+              const isActive = index === state.currentStep;
+              const isComplete = index < state.currentStep || (!!state.completedAt && index <= state.currentStep);
               return (
                 <div
                   key={step.title}
                   className={cn(
-                    "rounded-xl border p-4",
-                    isActive
-                      ? "border-primary/40 bg-primary/10"
-                      : isComplete
-                        ? "border-border/60 bg-muted/40"
-                        : "border-border/50"
+                    "flex flex-col gap-1 rounded-lg border p-3 text-left",
+                    isActive ? "border-primary/40 bg-primary/5" : "border-border/60 bg-muted/30"
                   )}
                 >
-                  <div className="flex items-center gap-2 text-sm font-medium">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
                     {isComplete ? (
                       <CheckCircle2 className="h-4 w-4 text-primary" />
                     ) : (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full border text-xs">
-                        {index + 1}
-                      </span>
+                      <Circle className="h-3.5 w-3.5 text-muted-foreground" />
                     )}
-                    <span className={cn(isActive ? "text-primary" : "text-foreground")}>{step.title}</span>
+                    <span className={cn(isActive ? "text-primary" : "text-foreground")}>{`Step ${index + 1}`}</span>
                   </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{step.description}</p>
+                  <div className="text-sm font-medium leading-tight">{step.title}</div>
+                  <p className="text-xs text-muted-foreground">{step.description}</p>
                 </div>
               );
             })}
           </div>
-        </CardContent>
-      </Card>
 
-      {currentStep === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserRound className="h-5 w-5 text-primary" />
-              Who are we supporting?
-            </CardTitle>
-            <CardDescription>Share your name and the intention behind this check-in.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="preferred-name">Preferred name</Label>
-              <Input
-                id="preferred-name"
-                value={responses.name}
-                onChange={(event) => handleResponseChange("name", event.target.value)}
-                placeholder="How should Nova address you?"
-              />
-              <p className="text-sm text-muted-foreground">
-                This helps us keep the prompts grounded and personal.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Saved locally</Badge>
-              <Badge variant="outline">No database changes</Badge>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                size="lg"
-                onClick={() => setCurrentStep(1)}
-                disabled={!nameStepValid}
-                className="gap-2"
-              >
-                Continue to survey
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" onClick={handleReset} className="gap-2">
-                <Undo2 className="h-4 w-4" />
-                Reset responses
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {currentStep === 1 && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Character & actions</CardTitle>
-              <CardDescription>Reflect on what feels aligned and where you want to shift.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                {
-                  key: "proudOf",
-                  label: "What actions or character traits are you currently proud of?",
-                  placeholder: "Examples: staying calm during conflict, following through on plans, showing up for friends...",
-                },
-                {
-                  key: "notProudOf",
-                  label: "What actions or character traits are you currently not proud of?",
-                  placeholder: "Examples: procrastinating, short temper when tired, ignoring boundaries...",
-                },
-                {
-                  key: "incorporate",
-                  label: "What actions or character traits do you want to incorporate into your life?",
-                  placeholder: "Examples: patient listening, daily reading, asking for help, leading with empathy...",
-                },
-              ].map((question) => (
-                <div key={question.key} className="space-y-2">
-                  <Label>{question.label}</Label>
-                  <Textarea
-                    value={responses[question.key as keyof SurveyResponses] as string}
-                    onChange={(event) => handleResponseChange(question.key as keyof SurveyResponses, event.target.value)}
-                    placeholder={question.placeholder}
-                    className="min-h-[110px]"
+          <div className="max-h-[60vh] overflow-y-auto pr-1">
+            {state.currentStep === 0 && (
+              <div className="space-y-4 py-1">
+                <div className="space-y-2">
+                  <Label htmlFor="preferred-name">Preferred name</Label>
+                  <Input
+                    id="preferred-name"
+                    value={state.responses.name}
+                    onChange={(event) => handleResponseChange("name", event.target.value)}
+                    placeholder="What should we call you?"
                   />
+                  <p className="text-sm text-muted-foreground">We’ll use this greeting across the app.</p>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline">One-time setup</Badge>
+                  <Badge variant="secondary">Takes under 2 minutes</Badge>
+                </div>
+              </div>
+            )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Goals across time</CardTitle>
-              <CardDescription>
-                Map the next week, month, year, and lifetime so we can recommend the right daily focus.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>What goals do you have for the next week, month, year, and lifetime?</Label>
-                <Textarea
-                  value={responses.horizonGoals}
-                  onChange={(event) => handleResponseChange("horizonGoals", event.target.value)}
-                  placeholder="List short-term and long-term goals. Example: This week: finish draft. This month: rebuild morning routine. This year: deepen relationships. Lifetime: stay curious."
-                  className="min-h-[120px]"
+            {state.currentStep === 1 && (
+              <div className="space-y-4 py-1">
+                <QuestionBlock
+                  label="What actions or character traits are you currently proud of?"
+                  placeholder="Examples: keeping calm in tough conversations, following through on plans, making time for friends..."
+                  value={state.responses.proudOf}
+                  onChange={(value) => handleResponseChange("proudOf", value)}
+                />
+                <QuestionBlock
+                  label="What actions or character traits are you currently not proud of?"
+                  placeholder="Examples: procrastinating, doomscrolling at night, snapping when stressed..."
+                  value={state.responses.notProudOf}
+                  onChange={(value) => handleResponseChange("notProudOf", value)}
+                />
+                <QuestionBlock
+                  label="What actions or character traits do you want to incorporate into your life?"
+                  placeholder="Examples: patient listening, daily reading, moving your body, asking for help..."
+                  value={state.responses.incorporate}
+                  onChange={(value) => handleResponseChange("incorporate", value)}
                 />
               </div>
-            </CardContent>
-          </Card>
+            )}
 
-          <Card>
-            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle>Daily goals & habits</CardTitle>
-                <CardDescription>
-                  List what to lean into and what to minimize. We can suggest ideas based on your answers.
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm" className="gap-2" onClick={handleGenerateSuggestions}>
-                <Sparkles className="h-4 w-4" />
-                Get AI-inspired recommendations
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="daily-goal">Add a daily goal or habit</Label>
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
-                  <Input
-                    id="daily-goal"
-                    value={goalDraft}
-                    onChange={(event) => setGoalDraft(event.target.value)}
-                    placeholder="Example: 10-minute reflection before bed"
-                  />
-                  <Select value={goalDirection} onValueChange={(value) => setGoalDirection(value as GoalDirection)}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Focus" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="increase">Lean into</SelectItem>
-                      <SelectItem value="reduce">Reduce or minimize</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button className="gap-2" onClick={() => handleAddGoal()}>
-                    <Plus className="h-4 w-4" />
-                    Add
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  The list can include things to stop or reduce—not just new habits to adopt.
-                </p>
-              </div>
-
-              {suggestions.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span>Suggested daily goals</span>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {suggestions.map((goal) => (
-                      <div
-                        key={goal.id}
-                        className="flex items-start justify-between rounded-lg border border-border/60 bg-muted/30 p-3"
-                      >
-                        <div className="space-y-1 pr-3">
-                          <p className="font-medium text-foreground">{goal.text}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {goal.direction === "reduce" ? "Dial back or replace" : "Strengthen or repeat"}
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => handleAddGoal(goal.text, goal.direction)}
-                          className="gap-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {responses.dailyGoals.length > 0 && (
+            {state.currentStep === 2 && (
+              <div className="space-y-6 py-1">
                 <div className="space-y-2">
-                  <Label>Current daily goals</Label>
-                  <div className="space-y-2">
-                    {responses.dailyGoals.map((goal) => (
-                      <div
-                        key={goal.id}
-                        className="flex items-center justify-between rounded-lg border border-border/50 bg-card/60 p-3"
-                      >
-                        <div className="space-y-1 pr-4">
-                          <p className="font-medium leading-tight">{goal.text}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {goal.direction === "reduce" ? "Plan to reduce or replace" : "Plan to practice daily"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={goal.direction === "reduce" ? "outline" : "secondary"}>
-                            {goal.direction === "reduce" ? "Minimize" : "Lean into"}
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveGoal(goal.id)}
-                            className="text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Remove goal</span>
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <Label>Goals across the week, month, year, and lifetime</Label>
+                  <Textarea
+                    value={state.responses.horizonGoals}
+                    onChange={(event) => handleResponseChange("horizonGoals", event.target.value)}
+                    placeholder="Week: finish a draft. Month: rebuild morning routine. Year: deepen relationships. Lifetime: stay curious."
+                    className="min-h-[120px]"
+                  />
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button variant="ghost" onClick={() => setCurrentStep(0)} className="gap-2">
-              <Undo2 className="h-4 w-4" />
-              Back to name
-            </Button>
-            <Button size="lg" className="gap-2" onClick={() => setCurrentStep(2)}>
-              Review summary
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <Label className="text-sm font-semibold">Daily goals & habits</Label>
+                      <p className="text-xs text-muted-foreground">Include what to reduce—not just add.</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="gap-2" onClick={handleGenerateSuggestions}>
+                      <Sparkles className="h-4 w-4" />
+                      Suggest ideas
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                    <Input
+                      value={goalDraft}
+                      onChange={(event) => setGoalDraft(event.target.value)}
+                      placeholder="Ex: 10-minute reflection before bed"
+                    />
+                    <Select value={goalDirection} onValueChange={(value) => setGoalDirection(value as GoalDirection)}>
+                      <SelectTrigger className="w-full sm:w-[170px]">
+                        <SelectValue placeholder="Focus" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="increase">Lean into</SelectItem>
+                        <SelectItem value="reduce">Reduce or replace</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button className="gap-2" onClick={() => handleAddGoal()}>
+                      Add
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {suggestions.length > 0 && (
+                    <div className="space-y-2 rounded-lg border border-border/60 bg-muted/30 p-3">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        Quick picks
+                      </div>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {suggestions.map((goal) => (
+                          <button
+                            type="button"
+                            key={goal.id}
+                            className="flex items-center justify-between rounded-md border border-border/50 bg-card/60 p-3 text-left transition hover:border-primary/40"
+                            onClick={() => handleAddGoal(goal.text, goal.direction)}
+                          >
+                            <div>
+                              <p className="text-sm font-medium">{goal.text}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {goal.direction === "reduce" ? "Minimize" : "Practice daily"}
+                              </p>
+                            </div>
+                            <Badge variant={goal.direction === "reduce" ? "outline" : "secondary"}>
+                              {goal.direction === "reduce" ? "Reduce" : "Increase"}
+                            </Badge>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {state.responses.dailyGoals.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Your list</Label>
+                      <div className="space-y-2">
+                        {state.responses.dailyGoals.map((goal) => (
+                          <div
+                            key={goal.id}
+                            className="flex items-center justify-between rounded-lg border border-border/60 bg-card/50 p-3"
+                          >
+                            <div className="space-y-1 pr-3">
+                              <p className="text-sm font-medium leading-tight">{goal.text}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {goal.direction === "reduce" ? "Reduce or replace" : "Lean into daily"}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={goal.direction === "reduce" ? "outline" : "secondary"}>
+                                {goal.direction === "reduce" ? "Reduce" : "Grow"}
+                              </Badge>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-muted-foreground hover:text-destructive"
+                                onClick={() => handleRemoveGoal(goal.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Remove goal</span>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {state.currentStep === 3 && (
+              <div className="space-y-4 py-1 text-sm">
+                <SummaryRow label="Preferred name" value={state.responses.name || "Not set"} />
+                <SummaryRow label="Proud of" value={state.responses.proudOf || "No notes yet"} />
+                <SummaryRow label="Not proud of" value={state.responses.notProudOf || "No notes yet"} />
+                <SummaryRow label="Traits to incorporate" value={state.responses.incorporate || "No notes yet"} />
+                <SummaryRow label="Goals across time" value={state.responses.horizonGoals || "No horizon goals listed"} />
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Daily goals</p>
+                  {state.responses.dailyGoals.length === 0 ? (
+                    <p className="rounded-md border border-dashed border-border/60 bg-muted/30 p-3 text-muted-foreground">
+                      Nothing listed yet.
+                    </p>
+                  ) : (
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {state.responses.dailyGoals.map((goal) => (
+                        <div
+                          key={goal.id}
+                          className="rounded-lg border border-border/60 bg-card/50 p-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold leading-tight">{goal.text}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {goal.direction === "reduce" ? "Reduce or replace" : "Practice"}
+                              </p>
+                            </div>
+                            <Badge variant={goal.direction === "reduce" ? "outline" : "secondary"}>
+                              {goal.direction === "reduce" ? "Reduce" : "Increase"}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Badge variant="secondary">Local storage</Badge>
+              <Badge variant="outline">No DB writes</Badge>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                onClick={handleReset}
+              >
+                <Undo2 className="h-3.5 w-3.5" /> Reset responses
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setState((prev) => ({
+                    ...prev,
+                    currentStep: Math.max(prev.currentStep - 1, 0),
+                  }))
+                }
+                disabled={state.currentStep === 0}
+              >
+                Back
+              </Button>
+              {state.currentStep < steps.length - 1 ? (
+                <Button
+                  className="gap-2"
+                  onClick={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      currentStep: Math.min(prev.currentStep + 1, steps.length - 1),
+                    }))
+                  }
+                  disabled={(state.currentStep === 0 && !nameValid) || (state.currentStep === 1 && !reflectionValid)}
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button className="gap-2" onClick={handleComplete}>
+                  Finish setup
+                  <CheckCircle2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-      {currentStep === 2 && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Summary</CardTitle>
-              <CardDescription>Everything stays saved locally so you can revisit or adjust anytime.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <SummaryBlock title="Your name">{responses.name || "Not provided"}</SummaryBlock>
-                <SummaryBlock title="Proud of">{responses.proudOf || "No notes yet"}</SummaryBlock>
-                <SummaryBlock title="Not proud of">{responses.notProudOf || "No notes yet"}</SummaryBlock>
-                <SummaryBlock title="Traits to incorporate">{responses.incorporate || "No notes yet"}</SummaryBlock>
-              </div>
-
-              <SummaryBlock title="Goals by horizon">{responses.horizonGoals || "Not captured yet."}</SummaryBlock>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <ListChecks className="h-4 w-4 text-primary" />
-                  <h3 className="font-semibold">Daily goals list</h3>
-                </div>
-                {responses.dailyGoals.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No daily goals captured yet.</p>
-                ) : (
-                  <div className="grid gap-2 md:grid-cols-2">
-                    {responses.dailyGoals.map((goal) => (
-                      <div
-                        key={goal.id}
-                        className="rounded-lg border border-border/60 bg-card/60 p-3"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-medium leading-tight">{goal.text}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {goal.direction === "reduce" ? "Reduce or replace" : "Lean into"}
-                            </p>
-                          </div>
-                          <Badge variant={goal.direction === "reduce" ? "outline" : "secondary"}>
-                            {goal.direction === "reduce" ? "Minimize" : "Practice"}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                  <Badge variant="secondary">Saved in browser</Badge>
-                  {formattedSavedAt && <span>Last saved {formattedSavedAt}</span>}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="ghost" onClick={() => setCurrentStep(1)} className="gap-2">
-                    <Undo2 className="h-4 w-4" />
-                    Edit survey
-                  </Button>
-                  <Button asChild className="gap-2">
-                    <Link href="/dashboard">
-                      Return to dashboard
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1 rounded-md border border-border/60 bg-muted/30 p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm leading-relaxed whitespace-pre-wrap">{value}</p>
     </div>
   );
 }
 
-function SummaryBlock({ title, children }: { title: string; children: React.ReactNode }) {
+function QuestionBlock({
+  label,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/20 p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
-      <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap">{children}</p>
+    <div className="space-y-2">
+      <Label className="text-sm font-semibold">{label}</Label>
+      <Textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="min-h-[120px]"
+      />
     </div>
   );
 }
@@ -537,26 +559,25 @@ function generateGoalSuggestions(responses: SurveyResponses): DailyGoal[] {
   };
 
   if (responses.incorporate) {
-    addIdea(`Practice ${responses.incorporate.split(" ").slice(0, 4).join(" ")} for 10 minutes daily`, "increase");
+    addIdea(`Practice ${responses.incorporate.split(" ").slice(0, 5).join(" ")} for 10 minutes`, "increase");
   }
 
   if (responses.proudOf) {
-    addIdea("Keep a nightly note of moments you felt proud to reinforce them", "increase");
+    addIdea("Capture one proud moment nightly to reinforce it", "increase");
   }
 
   if (responses.notProudOf) {
-    addIdea("Set a 3-minute pause before reacting in tough moments", "reduce");
-    addIdea("Swap one unhelpful habit for a grounding breath routine", "reduce");
+    addIdea("Add a 3-minute pause before reacting in tough moments", "reduce");
+    addIdea("Replace doomscrolling with a short stretch", "reduce");
   }
 
   if (responses.horizonGoals) {
-    addIdea("Block 20 focused minutes toward your weekly goal", "increase");
-    addIdea("Capture one learning from today for your long-term vision", "increase");
+    addIdea("Spend 20 focused minutes on your weekly goal", "increase");
   }
 
   if (ideas.length === 0) {
-    addIdea("Take a 5-minute reflection walk each day", "increase");
-    addIdea("Limit doomscrolling windows to 10 minutes", "reduce");
+    addIdea("Take a 5-minute reflection walk", "increase");
+    addIdea("Keep screens away for the first 30 minutes after waking", "reduce");
   }
 
   const unique = new Map<string, DailyGoal>();
@@ -567,4 +588,11 @@ function generateGoalSuggestions(responses: SurveyResponses): DailyGoal[] {
   });
 
   return Array.from(unique.values()).slice(0, 6);
+}
+
+function updateLastUpdated(next: SurveyState): SurveyState {
+  return {
+    ...next,
+    lastUpdated: new Date().toISOString(),
+  };
 }
