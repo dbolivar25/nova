@@ -14,10 +14,9 @@ import {
   MessageCircle,
   ChartBar,
   User,
-  Sunset,
-  Monitor,
 } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useThemeConfig } from "@/shared/hooks/use-theme-config"
+import { themeList } from "@/shared/lib/theme/config"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +34,7 @@ const navigation = [
 
 export function NavHeader() {
   const pathname = usePathname()
-  const { resolvedTheme, setTheme } = useTheme()
+  const { setTheme, logoSrc } = useThemeConfig()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -45,7 +44,7 @@ export function NavHeader() {
             <Link href="/dashboard" className="flex items-center gap-2">
               <div className="relative h-6 w-6">
                 <Image
-                  src={resolvedTheme === 'dark' ? '/nova-logo-dark-mode.svg' : '/nova-logo.svg'}
+                  src={logoSrc}
                   alt="Nova"
                   fill
                   sizes="24px"
@@ -86,22 +85,15 @@ export function NavHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                  <SunIcon className="mr-2 h-4 w-4" />
-                  Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("sunset")}>
-                  <Sunset className="mr-2 h-4 w-4" />
-                  Sunset
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                  <MoonIcon className="mr-2 h-4 w-4" />
-                  Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
-                  <Monitor className="mr-2 h-4 w-4" />
-                  System
-                </DropdownMenuItem>
+                {themeList.map((themeConfig) => (
+                  <DropdownMenuItem
+                    key={themeConfig.id}
+                    onClick={() => setTheme(themeConfig.id)}
+                  >
+                    <themeConfig.icon className="mr-2 h-4 w-4" />
+                    {themeConfig.label}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
 

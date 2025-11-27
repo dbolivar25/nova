@@ -179,6 +179,49 @@
   --sidebar-ring: oklch(0.95 0.01 255);
 }
 
+.rose-pine {
+  /* Rose Pine - Soho vibes for the classy minimalist */
+  --background: oklch(0.17 0.02 280);
+  --foreground: oklch(0.90 0.02 280);
+  --card: oklch(0.19 0.025 280);
+  --card-foreground: oklch(0.90 0.02 280);
+  --popover: oklch(0.19 0.025 280);
+  --popover-foreground: oklch(0.90 0.02 280);
+  --primary: oklch(0.82 0.07 20);
+  --primary-foreground: oklch(0.17 0.02 280);
+  --secondary: oklch(0.22 0.03 280);
+  --secondary-foreground: oklch(0.85 0.02 280);
+  --muted: oklch(0.22 0.03 280);
+  --muted-foreground: oklch(0.62 0.03 280);
+  --accent: oklch(0.75 0.10 300);
+  --accent-foreground: oklch(0.17 0.02 280);
+  --destructive: oklch(0.68 0.18 5);
+  --border: oklch(0.32 0.03 280);
+  --input: oklch(0.22 0.03 280);
+  --ring: oklch(0.82 0.07 20);
+
+  /* Accent colors - Rose Pine signature */
+  --warm: oklch(0.82 0.07 20);
+  --glow: oklch(0.75 0.10 300);
+
+  /* Chart colors - Rose Pine palette */
+  --chart-1: oklch(0.82 0.07 20);
+  --chart-2: oklch(0.84 0.12 70);
+  --chart-3: oklch(0.75 0.10 300);
+  --chart-4: oklch(0.82 0.06 200);
+  --chart-5: oklch(0.50 0.10 220);
+
+  /* Sidebar */
+  --sidebar: oklch(0.15 0.02 280);
+  --sidebar-foreground: oklch(0.90 0.02 280);
+  --sidebar-primary: oklch(0.82 0.07 20);
+  --sidebar-primary-foreground: oklch(0.17 0.02 280);
+  --sidebar-accent: oklch(0.22 0.03 280);
+  --sidebar-accent-foreground: oklch(0.90 0.02 280);
+  --sidebar-border: oklch(0.27 0.025 280);
+  --sidebar-ring: oklch(0.82 0.07 20);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

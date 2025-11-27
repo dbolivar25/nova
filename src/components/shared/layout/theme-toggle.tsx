@@ -1,6 +1,6 @@
 "use client"
 
-import { Moon, Sun, Sunset, Monitor } from "lucide-react"
+import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/shared/ui/button"
 import {
   DropdownMenu,
@@ -8,10 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/shared/ui/dropdown-menu"
-import { useTheme } from "next-themes"
+import { useThemeConfig } from "@/shared/hooks/use-theme-config"
+import { themeList } from "@/shared/lib/theme/config"
 
 export function ThemeToggle() {
-  const { setTheme } = useTheme()
+  const { setTheme } = useThemeConfig()
 
   return (
     <DropdownMenu>
@@ -23,22 +24,16 @@ export function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer">
-          <Sun className="mr-2 h-4 w-4" />
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("sunset")} className="cursor-pointer">
-          <Sunset className="mr-2 h-4 w-4" />
-          Sunset
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer">
-          <Moon className="mr-2 h-4 w-4" />
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer">
-          <Monitor className="mr-2 h-4 w-4" />
-          System
-        </DropdownMenuItem>
+        {themeList.map((themeConfig) => (
+          <DropdownMenuItem
+            key={themeConfig.id}
+            onClick={() => setTheme(themeConfig.id)}
+            className="cursor-pointer"
+          >
+            <themeConfig.icon className="mr-2 h-4 w-4" />
+            {themeConfig.label}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   )

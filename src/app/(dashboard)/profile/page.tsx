@@ -224,6 +224,7 @@ export default function ProfilePage() {
                     <SelectItem value="light">Light</SelectItem>
                     <SelectItem value="sunset">Sunset</SelectItem>
                     <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="rose-pine">Rose Pine</SelectItem>
                     <SelectItem value="system">System</SelectItem>
                   </SelectContent>
                 </Select>
