@@ -14,7 +14,7 @@ export default function SignUpPage() {
       <SignUp
         appearance={{
           elements: {
-            formButtonPrimary: 
+            formButtonPrimary:
               "bg-primary hover:bg-primary/90 text-primary-foreground",
             card: "bg-card",
             headerTitle: "text-foreground",
@@ -28,6 +28,7 @@ export default function SignUpPage() {
               "text-primary hover:text-primary/80"
           }
         }}
+        afterSignUpUrl="/dashboard?survey=true"
       />
     </div>
   );

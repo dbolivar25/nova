@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/shared/ui/skeleton";
 import { useUser } from "@clerk/nextjs";
 import { format, parseISO, differenceInDays } from "date-fns";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, PenLine, ChevronRight, BookOpen, Flame, Trophy } from "lucide-react";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/features/journal/hooks/use-journal";
 import { StreakFlame } from "@/components/features/journal/streak-flame";
@@ -16,6 +17,9 @@ import { SurveyDialog } from "@/components/features/onboarding/survey-flow";
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
 
@@ -24,8 +28,11 @@ export default function DashboardPage() {
   const { data: stats } = useJournalStats();
 
   useEffect(() => {
-    setIsSurveyOpen(true);
-  }, []);
+    if (searchParams?.get("survey") === "true") {
+      setIsSurveyOpen(true);
+      router.replace(pathname);
+    }
+  }, [pathname, router, searchParams]);
 
   const recentEntries = useMemo(() => entriesData?.entries || [], [entriesData?.entries]);
 
@@ -94,10 +101,7 @@ export default function DashboardPage() {
         <p className="text-muted-foreground text-lg">
           {format(today, "EEEE, MMMM d, yyyy")}
         </p>
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <Badge variant="secondary" className="rounded-full">Personalize Nova</Badge>
-          <span className="text-muted-foreground">We’ll open a quick survey to tune your experience.</span>
-        </div>
+        <Badge variant="secondary" className="rounded-full">Personalize Nova</Badge>
       </div>
 
       {/* Main Cards Grid */}
