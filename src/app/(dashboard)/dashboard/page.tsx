@@ -101,7 +101,6 @@ export default function DashboardPage() {
         <p className="text-muted-foreground text-lg">
           {format(today, "EEEE, MMMM d, yyyy")}
         </p>
-        <Badge variant="secondary" className="rounded-full">Personalize Nova</Badge>
       </div>
 
       {/* Main Cards Grid */}
