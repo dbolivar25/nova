@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shared/ui/card"
 import { Button } from "@/components/shared/ui/button"
 import { Label } from "@/components/shared/ui/label"
@@ -19,12 +19,35 @@ import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/layout/page-header"
 import { useUserPreferences } from "@/features/user/hooks/use-preferences"
 import { useTheme } from "next-themes"
+import {
+  THEME_PREFERENCE_KEY,
+  ThemePreference,
+  applyThemePreference,
+  getStoredThemePreference,
+} from "@/shared/lib/theme-preferences"
 
 export default function ProfilePage() {
   const { user } = useUser()
   const { preferences, isLoading, updatePreferences } = useUserPreferences()
   const [isExporting, setIsExporting] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()
+  const [themePreference, setThemePreference] = useState<ThemePreference>(getStoredThemePreference())
+
+  useEffect(() => {
+    setThemePreference(getStoredThemePreference())
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== THEME_PREFERENCE_KEY) {
+        return
+      }
+
+      setThemePreference(getStoredThemePreference())
+    }
+
+    window.addEventListener("storage", handleStorage)
+
+    return () => window.removeEventListener("storage", handleStorage)
+  }, [])
 
   const handleExportData = async (format: 'json' | 'csv') => {
     setIsExporting(true)
@@ -66,6 +89,11 @@ export default function ProfilePage() {
     } catch (error) {
       console.error(`Failed to update ${key}:`, error)
     }
+  }
+
+  const handleThemePreferenceChange = (value: ThemePreference) => {
+    setThemePreference(value)
+    applyThemePreference(value, setTheme)
   }
 
   // Format time for display
@@ -214,15 +242,17 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <Select
-                  value={theme}
-                  onValueChange={setTheme}
+                  value={themePreference}
+                  onValueChange={(value) => handleThemePreferenceChange(value as ThemePreference)}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="sunset">Sunset</SelectItem>
                     <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="time">Time of Day</SelectItem>
                     <SelectItem value="system">System</SelectItem>
                   </SelectContent>
                 </Select>
