@@ -24,14 +24,10 @@ import {
   History,
   Home,
   LogOut,
-  Moon,
   PenLine,
   Plus,
   Search,
   MessageCircle,
-  Sun,
-  Sunset,
-  Monitor,
   User,
 } from "lucide-react";
 import { useJournalEntries, useJournalSearch } from "@/features/journal/hooks/use-journal";
@@ -40,6 +36,7 @@ import { toast } from "sonner";
 import { SignOutButton } from "@clerk/nextjs";
 import type { JournalEntry, Mood } from "@/features/journal/types/journal";
 import { useTheme } from "next-themes";
+import { themeList } from "@/shared/lib/theme/config";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -238,9 +235,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     },
   ];
 
-  type ThemePreference = "light" | "sunset" | "dark" | "system";
-
-  const handleThemeSelection = (preference: ThemePreference) => {
+  const handleThemeSelection = (preference: string) => {
     setTheme(preference);
 
     const message =
@@ -253,15 +248,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     setSearch("");
   };
 
-  const themeActions = [
-    { icon: Sun, label: "Use Light Theme", preference: "light" as const },
-    { icon: Sunset, label: "Use Sunset Theme", preference: "sunset" as const },
-    { icon: Moon, label: "Use Dark Theme", preference: "dark" as const },
-    { icon: Monitor, label: "Use System Theme", preference: "system" as const },
-  ].map((action) => ({
-    icon: action.icon,
-    label: `${action.label}${(theme ?? "system") === action.preference ? " (Current)" : ""}`,
-    action: () => handleThemeSelection(action.preference),
+  const themeActions = themeList.map((themeConfig) => ({
+    icon: themeConfig.icon,
+    label: `Use ${themeConfig.label} Theme${(theme ?? "system") === themeConfig.id ? " (Current)" : ""}`,
+    action: () => handleThemeSelection(themeConfig.id),
   }));
 
   // Settings actions
