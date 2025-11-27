@@ -19,5 +19,4 @@ export interface SurveyState {
   responses: SurveyResponses;
   currentStep: number;
   lastUpdated: string;
-  completedAt?: string;
 }

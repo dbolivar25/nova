@@ -8,18 +8,15 @@ import { Skeleton } from "@/components/shared/ui/skeleton";
 import { useUser } from "@clerk/nextjs";
 import { format, parseISO, differenceInDays } from "date-fns";
 import Link from "next/link";
-import { ArrowRight, PenLine, ChevronRight, BookOpen, Flame, Trophy, Sparkles } from "lucide-react";
+import { ArrowRight, PenLine, ChevronRight, BookOpen, Flame, Trophy } from "lucide-react";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/features/journal/hooks/use-journal";
 import { StreakFlame } from "@/components/features/journal/streak-flame";
 import { StreakBadges } from "@/components/features/journal/streak-badges";
-import { loadSurveyState } from "@/features/onboarding/storage";
-import type { SurveyState } from "@/features/onboarding/types";
 import { SurveyDialog } from "@/components/features/onboarding/survey-flow";
 
 export default function DashboardPage() {
   const { user } = useUser();
 
-  const [surveyState, setSurveyState] = useState<SurveyState | null>(null);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
 
   const { entry: todayEntry } = useTodaysJournalEntry();
@@ -27,23 +24,8 @@ export default function DashboardPage() {
   const { data: stats } = useJournalStats();
 
   useEffect(() => {
-    const stored = loadSurveyState();
-    if (stored) {
-      setSurveyState(stored);
-    }
-
-    if (!stored?.completedAt) {
-      setIsSurveyOpen(true);
-    }
+    setIsSurveyOpen(true);
   }, []);
-
-  useEffect(() => {
-    if (isSurveyOpen) return;
-    const stored = loadSurveyState();
-    if (stored) {
-      setSurveyState(stored);
-    }
-  }, [isSurveyOpen]);
 
   const recentEntries = useMemo(() => entriesData?.entries || [], [entriesData?.entries]);
 
@@ -114,17 +96,7 @@ export default function DashboardPage() {
         </p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <Badge variant="secondary" className="rounded-full">Personalize Nova</Badge>
-          {surveyState?.completedAt ? (
-            <span className="text-muted-foreground">
-              Completed {format(new Date(surveyState.completedAt), "PPP")}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">We’ll only ask once to tune your experience.</span>
-          )}
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsSurveyOpen(true)}>
-            <Sparkles className="h-4 w-4" />
-            {surveyState?.completedAt ? "Update survey" : "Start survey"}
-          </Button>
+          <span className="text-muted-foreground">We’ll open a quick survey to tune your experience.</span>
         </div>
       </div>
 
@@ -301,8 +273,6 @@ export default function DashboardPage() {
       <SurveyDialog
         open={isSurveyOpen}
         onOpenChange={setIsSurveyOpen}
-        initialState={surveyState ?? undefined}
-        onComplete={(next) => setSurveyState(next)}
       />
     </div>
   );

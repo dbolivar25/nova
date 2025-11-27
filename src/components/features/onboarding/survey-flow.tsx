@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { ArrowRight, CheckCircle2, ListChecks, Sparkles, Trash2, Undo2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, ListChecks, Trash2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/shared/ui/badge";
 import { Button } from "@/components/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/shared/ui/dialog";
@@ -42,7 +42,6 @@ function normalizeState(state: SurveyState | null | undefined): SurveyState {
       ...state.responses,
     },
     lastUpdated: state.lastUpdated ?? defaultState.lastUpdated,
-    completedAt: state.completedAt,
   };
 }
 
@@ -91,7 +90,6 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
   const [hydrated, setHydrated] = useState(false);
   const [goalDraft, setGoalDraft] = useState("");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("increase");
-  const [suggestions, setSuggestions] = useState<DailyGoal[]>([]);
 
   useEffect(() => {
     if (!open) {
@@ -168,15 +166,10 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
     }));
   };
 
-  const handleGenerateSuggestions = () => {
-    setSuggestions(generateGoalSuggestions(state.responses));
-  };
-
   const handleReset = () => {
     setState({ ...defaultState, lastUpdated: new Date().toISOString() });
     setGoalDraft("");
     setGoalDirection("increase");
-    setSuggestions([]);
     clearSurveyState();
   };
 
@@ -184,7 +177,6 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
     setState((prev) => {
       const completedState = updateLastUpdated({
         ...prev,
-        completedAt: prev.completedAt ?? new Date().toISOString(),
         currentStep: steps.length - 1,
       });
       onComplete?.(completedState);
@@ -249,9 +241,7 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
                 <div className="text-sm font-semibold leading-tight">{steps[state.currentStep]?.title}</div>
                 <p className="text-sm text-muted-foreground">{steps[state.currentStep]?.description}</p>
               </div>
-              <div className="text-right text-xs text-muted-foreground">
-                {formattedSavedAt ? `Saved ${formattedSavedAt}` : "Local only"}
-              </div>
+              <div className="text-right text-xs text-muted-foreground">{formattedSavedAt ? `Saved ${formattedSavedAt}` : "Local only"}</div>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
@@ -323,15 +313,9 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
             {state.currentStep === 5 && (
               <div className="space-y-6 py-1">
                 <div className="space-y-3">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <Label className="text-sm font-semibold">Daily goals & habits</Label>
-                      <p className="text-xs text-muted-foreground">Include what to reduce—not just add.</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="gap-2" onClick={handleGenerateSuggestions}>
-                      <Sparkles className="h-4 w-4" />
-                      Suggest ideas
-                    </Button>
+                  <div>
+                    <Label className="text-sm font-semibold">Daily goals & habits</Label>
+                    <p className="text-xs text-muted-foreground">Include what to reduce—not just add.</p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
@@ -354,35 +338,6 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
-
-                  {suggestions.length > 0 && (
-                    <div className="space-y-2 rounded-lg border border-border/60 bg-muted/30 p-3">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        Quick picks
-                      </div>
-                      <div className="grid gap-2 md:grid-cols-2">
-                        {suggestions.map((goal) => (
-                          <button
-                            type="button"
-                            key={goal.id}
-                            className="flex items-center justify-between rounded-md border border-border/50 bg-card/60 p-3 text-left transition hover:border-primary/40"
-                            onClick={() => handleAddGoal(goal.text, goal.direction)}
-                          >
-                            <div>
-                              <p className="text-sm font-medium">{goal.text}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {goal.direction === "reduce" ? "Minimize" : "Practice daily"}
-                              </p>
-                            </div>
-                            <Badge variant={goal.direction === "reduce" ? "outline" : "secondary"}>
-                              {goal.direction === "reduce" ? "Reduce" : "Increase"}
-                            </Badge>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {state.responses.dailyGoals.length > 0 && (
                     <div className="space-y-2">
@@ -438,10 +393,7 @@ export function SurveyDialog({ open, onOpenChange, initialState, onComplete }: S
                   ) : (
                     <div className="grid gap-2 md:grid-cols-2">
                       {state.responses.dailyGoals.map((goal) => (
-                        <div
-                          key={goal.id}
-                          className="rounded-lg border border-border/60 bg-card/50 p-3"
-                        >
+                        <div key={goal.id} className="rounded-lg border border-border/60 bg-card/50 p-3">
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="text-sm font-semibold leading-tight">{goal.text}</p>
@@ -546,48 +498,6 @@ function QuestionBlock({
       />
     </div>
   );
-}
-
-function generateGoalSuggestions(responses: SurveyResponses): DailyGoal[] {
-  const ideas: DailyGoal[] = [];
-  const addIdea = (text: string, direction: GoalDirection) => {
-    ideas.push({
-      id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-      text,
-      direction,
-    });
-  };
-
-  if (responses.incorporate) {
-    addIdea(`Practice ${responses.incorporate.split(" ").slice(0, 5).join(" ")} for 10 minutes`, "increase");
-  }
-
-  if (responses.proudOf) {
-    addIdea("Capture one proud moment nightly to reinforce it", "increase");
-  }
-
-  if (responses.notProudOf) {
-    addIdea("Add a 3-minute pause before reacting in tough moments", "reduce");
-    addIdea("Replace doomscrolling with a short stretch", "reduce");
-  }
-
-  if (responses.horizonGoals) {
-    addIdea("Spend 20 focused minutes on your weekly goal", "increase");
-  }
-
-  if (ideas.length === 0) {
-    addIdea("Take a 5-minute reflection walk", "increase");
-    addIdea("Keep screens away for the first 30 minutes after waking", "reduce");
-  }
-
-  const unique = new Map<string, DailyGoal>();
-  ideas.forEach((idea) => {
-    if (!unique.has(idea.text)) {
-      unique.set(idea.text, idea);
-    }
-  });
-
-  return Array.from(unique.values()).slice(0, 6);
 }
 
 function updateLastUpdated(next: SurveyState): SurveyState {
