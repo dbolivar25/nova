@@ -214,7 +214,7 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <Select
-                  value={theme}
+                  value={theme ?? "system"}
                   onValueChange={setTheme}
                 >
                   <SelectTrigger className="w-32">
@@ -222,6 +222,7 @@ export default function ProfilePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="sunset">Sunset</SelectItem>
                     <SelectItem value="dark">Dark</SelectItem>
                     <SelectItem value="system">System</SelectItem>
                   </SelectContent>

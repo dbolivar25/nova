@@ -30,14 +30,16 @@ import {
   Search,
   MessageCircle,
   Sun,
+  Sunset,
+  Monitor,
   User,
 } from "lucide-react";
 import { useJournalEntries, useJournalSearch } from "@/features/journal/hooks/use-journal";
 import { getSearchSnippet, highlightText } from "@/shared/lib/utils/highlight";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
 import { SignOutButton } from "@clerk/nextjs";
 import type { JournalEntry, Mood } from "@/features/journal/types/journal";
+import { useTheme } from "next-themes";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -236,18 +238,33 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     },
   ];
 
+  const handleThemeSelection = (preference: "light" | "sunset" | "dark" | "system") => {
+    setTheme(preference);
+
+    const message =
+      preference === "system"
+        ? "System theme enabled"
+        : `Switched to ${preference} theme`;
+
+    toast.success(message);
+    onOpenChange(false);
+    setSearch("");
+  };
+
+  const themeActions = [
+    { icon: Sun, label: "Use Light Theme", preference: "light" },
+    { icon: Sunset, label: "Use Sunset Theme", preference: "sunset" },
+    { icon: Moon, label: "Use Dark Theme", preference: "dark" },
+    { icon: Monitor, label: "Use System Theme", preference: "system" },
+  ].map((action) => ({
+    icon: action.icon,
+    label: `${action.label}${(theme ?? "system") === action.preference ? " (Current)" : ""}`,
+    action: () => handleThemeSelection(action.preference),
+  }));
+
   // Settings actions
   const settingsActions = [
-    {
-      icon: theme === "dark" ? Sun : Moon,
-      label: theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
-      action: () => {
-        setTheme(theme === "dark" ? "light" : "dark");
-        toast.success(`Switched to ${theme === "dark" ? "light" : "dark"} mode`);
-        onOpenChange(false);
-        setSearch("");
-      },
-    },
+    ...themeActions,
     {
       icon: User,
       label: "Profile Settings",
