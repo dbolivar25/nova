@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/shared/ui/button";
 import { Badge } from "@/components/shared/ui/badge";
 import { Progress } from "@/components/shared/ui/progress";
 import { Skeleton } from "@/components/shared/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/shared/ui/card";
 import { useUser } from "@clerk/nextjs";
 import { format, parseISO, differenceInDays } from "date-fns";
 import Link from "next/link";
@@ -15,17 +16,33 @@ import {
   BookOpen,
   Flame,
   Trophy,
+  Sparkles,
+  ListChecks,
+  Check,
 } from "lucide-react";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/features/journal/hooks/use-journal";
 import { StreakFlame } from "@/components/features/journal/streak-flame";
 import { StreakBadges } from "@/components/features/journal/streak-badges";
+import { loadSurveyState } from "@/features/onboarding/storage";
 
 export default function DashboardPage() {
   const { user } = useUser();
 
+  const [surveyStatus, setSurveyStatus] = useState<{ name: string; lastUpdated: string } | null>(null);
+
   const { entry: todayEntry } = useTodaysJournalEntry();
   const { data: entriesData, isLoading: isLoadingEntries } = useJournalEntries(6, 0);
   const { data: stats } = useJournalStats();
+
+  useEffect(() => {
+    const stored = loadSurveyState();
+    if (stored) {
+      setSurveyStatus({
+        name: stored.responses.name,
+        lastUpdated: stored.lastUpdated,
+      });
+    }
+  }, []);
 
   const recentEntries = useMemo(() => entriesData?.entries || [], [entriesData?.entries]);
 
@@ -187,6 +204,69 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      <Card className="overflow-hidden border border-border/60 bg-gradient-to-r from-primary/5 via-card to-card">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <Sparkles className="h-4 w-4" />
+              <span>Personal survey</span>
+            </div>
+            <CardTitle className="font-serif text-2xl">Capture your current season</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Note what you’re proud of, what to minimize, and the goals that will guide daily prompts.
+            </p>
+          </div>
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            {surveyStatus ? (
+              <Badge variant="secondary" className="w-fit">
+                Saved locally{surveyStatus.name ? ` for ${surveyStatus.name}` : ""}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="w-fit">Local-only beta</Badge>
+            )}
+            {surveyStatus?.lastUpdated && (
+              <span className="text-xs text-muted-foreground">
+                Updated {format(new Date(surveyStatus.lastUpdated), "PPP p")}
+              </span>
+            )}
+            <Button asChild className="gap-2">
+              <Link href="/dashboard/onboarding">
+                {surveyStatus ? "Resume survey" : "Start survey"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">You’ll cover</p>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <CheckBullet /> What you’re proud of and want to grow
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckBullet /> Habits or traits to reduce or replace
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckBullet /> Goals across the week, month, year, and beyond
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckBullet /> A daily list with AI-inspired ideas to try
+              </li>
+            </ul>
+          </div>
+          <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <ListChecks className="h-4 w-4 text-primary" />
+              Local-first proof of concept
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We keep everything in your browser for now—no database changes required. It’s a quick way to align Nova with your current priorities.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Bottom Section */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Entries */}
@@ -266,6 +346,14 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function CheckBullet() {
+  return (
+    <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <Check className="h-3 w-3" />
+    </span>
   );
 }
 

@@ -8,6 +8,7 @@ import {
   PenLine,
   History,
   Search,
+  ListChecks,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/shared/lib/utils";
@@ -38,6 +39,11 @@ const navItems = [
     title: "Today's Entry",
     url: "/journal/today",
     icon: PenLine,
+  },
+  {
+    title: "Personal Survey",
+    url: "/dashboard/onboarding",
+    icon: ListChecks,
   },
   {
     title: "Journal History",
