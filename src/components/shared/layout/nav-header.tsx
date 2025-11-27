@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { UserButton } from "@clerk/nextjs"
 import { cn } from "@/shared/lib/utils"
@@ -15,8 +14,9 @@ import {
   ChartBar,
   User,
 } from "lucide-react"
-import { useThemeConfig } from "@/shared/hooks/use-theme-config"
+import { useTheme } from "next-themes"
 import { themeList } from "@/shared/lib/theme/config"
+import { NovaLogo } from "@/components/shared/ui/nova-logo"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +34,7 @@ const navigation = [
 
 export function NavHeader() {
   const pathname = usePathname()
-  const { setTheme, logoSrc } = useThemeConfig()
+  const { setTheme } = useTheme()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,14 +42,7 @@ export function NavHeader() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="relative h-6 w-6">
-                <Image
-                  src={logoSrc}
-                  alt="Nova"
-                  fill
-                  sizes="24px"
-                />
-              </div>
+              <NovaLogo className="h-6 w-6" />
               <span className="font-serif text-xl font-semibold">Nova</span>
             </Link>
 

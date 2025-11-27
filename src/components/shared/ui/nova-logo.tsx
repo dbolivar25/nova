@@ -1,0 +1,65 @@
+import { cn } from "@/shared/lib/utils";
+
+interface NovaLogoProps {
+  className?: string;
+}
+
+export function NovaLogo({ className }: NovaLogoProps) {
+  return (
+    <svg
+      viewBox="0 0 371.25 373.65"
+      fill="none"
+      strokeLinecap="round"
+      className={cn("text-foreground", className)}
+    >
+      <g transform="translate(41.1 69.88) rotate(346.99 50 143.53)">
+        <path d="M0 0C16.67 24.09 99.37 96.69 100.01 144.53 100.64 192.38 19.85 263.3 3.82 287.06" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(116.6 -52.39) rotate(75.29 49.81 148.45)">
+        <path d="M0 0C16.72 24.85 100.44 99.6 100.32 149.08 100.2 198.56 16.13 272.25 -0.71 296.89" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(239.76 18.02) rotate(165.77 43.75 143.21)">
+        <path d="M0 0C15.71 23.1 95.39 90.87 94.26 138.61 93.13 186.34 10.07 261.78 -6.77 286.42" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(158.54 132.51) rotate(254.95 48.48 146.12)">
+        <path d="M0 0C16.5 24.07 99.33 95.72 98.99 144.42 98.65 193.13 14.8 267.6 -2.03 292.23" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(85.42 106.19) rotate(346.99 33.89 102.14)">
+        <path d="M0 0C11.53 16.83 69.44 66.91 69.2 100.95 68.96 135 10.35 187.06 -1.42 204.28" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(136.41 22.65) rotate(75.29 33.89 102.14)">
+        <path d="M0 0C11.53 16.83 69.44 66.91 69.2 100.95 68.96 135 10.35 187.06 -1.42 204.28" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(220.35 69.77) rotate(165.77 33.89 102.14)">
+        <path d="M0 0C11.53 16.83 69.44 66.91 69.2 100.95 68.96 135 10.35 187.06 -1.42 204.28" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(166.38 149.86) rotate(254.95 33.89 102.14)">
+        <path d="M0 0C11.53 16.83 69.44 66.91 69.2 100.95 68.96 135 10.35 187.06 -1.42 204.28" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(104.09 105.42) rotate(6.77 28.06 80.48)">
+        <path d="M0 0C9.35 13.49 55.74 54.09 56.13 80.91 56.51 107.74 11.28 147.62 2.31 160.96" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(166.36 54.95) rotate(95.07 27.91 83.26)">
+        <path d="M0 0C9.37 13.95 56.27 55.97 56.21 83.72 56.15 111.48 9.05 152.73 -0.38 166.53" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(218.88 114.54) rotate(185.56 24.63 80.45)">
+        <path d="M0 0C8.82 13.02 53.54 51.28 52.93 78.09 52.32 104.91 5.77 147.09 -3.66 160.89" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(153.8 160.28) rotate(274.74 27.16 81.85)">
+        <path d="M0 0C9.24 13.48 55.64 53.62 55.45 80.9 55.26 108.19 8.29 149.9 -1.14 163.7" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(129.07 131.23) rotate(6.77 18.98 57.22)">
+        <path d="M0 0C6.46 9.43 38.9 37.48 38.76 56.55 38.63 75.63 5.8 104.79 -0.8 114.43" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(171.79 96.87) rotate(95.07 18.98 57.22)">
+        <path d="M0 0C6.46 9.43 38.9 37.48 38.76 56.55 38.63 75.63 5.8 104.79 -0.8 114.43" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(207.1 137.62) rotate(185.56 18.98 57.22)">
+        <path d="M0 0C6.46 9.43 38.9 37.48 38.76 56.55 38.63 75.63 5.8 104.79 -0.8 114.43" stroke="currentColor" strokeWidth="4" />
+      </g>
+      <g transform="translate(163.46 169.6) rotate(274.74 18.98 57.22)">
+        <path d="M0 0C6.46 9.43 38.9 37.48 38.76 56.55 38.63 75.63 5.8 104.79 -0.8 114.43" stroke="currentColor" strokeWidth="4" />
+      </g>
+    </svg>
+  );
+}

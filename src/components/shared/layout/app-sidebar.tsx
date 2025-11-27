@@ -25,8 +25,7 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { useCommand } from "@/components/shared/providers/command-provider";
 import { useEffect, useState } from "react";
-import { useThemeConfig } from "@/shared/hooks/use-theme-config";
-import Image from "next/image";
+import { NovaLogo } from "@/components/shared/ui/nova-logo";
 
 const navItems = [
   {
@@ -66,12 +65,9 @@ export function AppSidebar() {
   const { user } = useUser();
   const { toggle } = useCommand();
   const [isMac, setIsMac] = useState(false);
-  const { logoSrc } = useThemeConfig();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
-    setMounted(true);
   }, []);
 
   return (
@@ -80,15 +76,7 @@ export function AppSidebar() {
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-3 group">
             <div className="flex h-10 w-10 items-center justify-center transition-transform duration-200 group-hover:scale-105">
-              {mounted && (
-                <Image
-                  src={logoSrc}
-                  alt="Nova Logo"
-                  width={40}
-                  height={40}
-                  className="h-10 w-10"
-                />
-              )}
+              <NovaLogo className="h-10 w-10" />
             </div>
             <span className="font-serif text-2xl font-semibold text-sidebar-foreground">Nova</span>
           </Link>

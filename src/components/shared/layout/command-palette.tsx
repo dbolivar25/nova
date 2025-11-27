@@ -35,8 +35,8 @@ import { getSearchSnippet, highlightText } from "@/shared/lib/utils/highlight";
 import { toast } from "sonner";
 import { SignOutButton } from "@clerk/nextjs";
 import type { JournalEntry, Mood } from "@/features/journal/types/journal";
-import { useThemeConfig } from "@/shared/hooks/use-theme-config";
-import { themeList, type ThemeId } from "@/shared/lib/theme/config";
+import { useTheme } from "next-themes";
+import { themeList } from "@/shared/lib/theme/config";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -58,7 +58,7 @@ const moodIcons: Record<Mood, React.ComponentType<{ className?: string }>> = {
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
-  const { theme, setTheme } = useThemeConfig();
+  const { theme, setTheme } = useTheme();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -235,7 +235,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     },
   ];
 
-  const handleThemeSelection = (preference: ThemeId) => {
+  const handleThemeSelection = (preference: string) => {
     setTheme(preference);
 
     const message =
