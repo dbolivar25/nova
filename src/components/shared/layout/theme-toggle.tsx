@@ -1,6 +1,6 @@
 "use client"
 
-import { Moon, Sun, Monitor } from "lucide-react"
+import { Clock3, Moon, Sun, Sunset, Monitor } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/shared/ui/button"
 import {
@@ -9,9 +9,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/shared/ui/dropdown-menu"
+import { ThemePreference, applyThemePreference } from "@/shared/lib/theme-preferences"
 
 export function ThemeToggle() {
   const { setTheme } = useTheme()
+
+  const handleThemeChange = (preference: ThemePreference) => {
+    applyThemePreference(preference, setTheme)
+  }
 
   return (
     <DropdownMenu>
@@ -23,15 +28,23 @@ export function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => handleThemeChange("light")} className="cursor-pointer">
           <Sun className="mr-2 h-4 w-4" />
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => handleThemeChange("sunset")} className="cursor-pointer">
+          <Sunset className="mr-2 h-4 w-4" />
+          Sunset
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleThemeChange("dark")} className="cursor-pointer">
           <Moon className="mr-2 h-4 w-4" />
           Dark
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => handleThemeChange("time")} className="cursor-pointer">
+          <Clock3 className="mr-2 h-4 w-4" />
+          Time of Day
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleThemeChange("system")} className="cursor-pointer">
           <Monitor className="mr-2 h-4 w-4" />
           System
         </DropdownMenuItem>

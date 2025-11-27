@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster } from "sonner";
+import { ThemePreferenceManager } from "@/components/shared/layout/theme-preference-manager";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = React.useState(
@@ -111,9 +112,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <NextThemesProvider
         attribute="class"
         defaultTheme="light"
+        storageKey="nova-theme"
+        themes={["light", "sunset", "dark"]}
         enableSystem
         disableTransitionOnChange
       >
+        <ThemePreferenceManager />
         {children}
         <Toaster
           position="bottom-right"
