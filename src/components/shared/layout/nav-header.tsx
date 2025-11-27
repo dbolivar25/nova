@@ -6,7 +6,17 @@ import { usePathname } from "next/navigation"
 import { UserButton } from "@clerk/nextjs"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/components/shared/ui/button"
-import { MoonIcon, SunIcon, PenLine, Calendar, MessageCircle, ChartBar, User } from "lucide-react"
+import {
+  MoonIcon,
+  SunIcon,
+  PenLine,
+  Calendar,
+  MessageCircle,
+  ChartBar,
+  User,
+  Sunset,
+  Monitor,
+} from "lucide-react"
 import { useTheme } from "next-themes"
 import {
   DropdownMenu,
@@ -25,7 +35,7 @@ const navigation = [
 
 export function NavHeader() {
   const pathname = usePathname()
-  const { setTheme, resolvedTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -77,12 +87,19 @@ export function NavHeader() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setTheme("light")}>
+                  <SunIcon className="mr-2 h-4 w-4" />
                   Light
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("sunset")}>
+                  <Sunset className="mr-2 h-4 w-4" />
+                  Sunset
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  <MoonIcon className="mr-2 h-4 w-4" />
                   Dark
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("system")}>
+                  <Monitor className="mr-2 h-4 w-4" />
                   System
                 </DropdownMenuItem>
               </DropdownMenuContent>
