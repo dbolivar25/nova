@@ -30,7 +30,7 @@ export default function ProfilePage() {
     setIsExporting(true)
     try {
       const response = await fetch(`/api/user/export?format=${format}`)
-      
+
       if (!response.ok) {
         throw new Error('Export failed')
       }
@@ -79,7 +79,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
+      <PageHeader
         title="Profile Settings"
         subtitle="Manage your account and preferences"
       />
@@ -133,8 +133,8 @@ export default function ProfilePage() {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   disabled={isExporting}
                   className="min-w-[130px]"
@@ -153,7 +153,7 @@ export default function ProfilePage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => handleExportData('json')}
                   className="cursor-pointer"
                   disabled={isExporting}
@@ -168,7 +168,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => handleExportData('csv')}
                   className="cursor-pointer"
                   disabled={isExporting}
@@ -183,8 +183,8 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardContent>
       </Card>
@@ -226,6 +226,7 @@ export default function ProfilePage() {
                     <SelectItem value="dark">Dark</SelectItem>
                     <SelectItem value="rose-pine">Rose Pine</SelectItem>
                     <SelectItem value="evergreen">Evergreen</SelectItem>
+                    <SelectItem value="sky">Sky</SelectItem>
                     <SelectItem value="system">System</SelectItem>
                   </SelectContent>
                 </Select>
@@ -263,7 +264,7 @@ export default function ProfilePage() {
                   </div>
                   <Select
                     value={preferences?.reminder_time || "09:00:00"}
-                    onValueChange={(value) => 
+                    onValueChange={(value) =>
                       handlePreferenceChange("reminder_time", value)
                     }
                   >
@@ -300,7 +301,7 @@ export default function ProfilePage() {
                 </div>
                 <Select
                   value={String(preferences?.prompt_count || 3)}
-                  onValueChange={(value) => 
+                  onValueChange={(value) =>
                     handlePreferenceChange("prompt_count", parseInt(value))
                   }
                 >
