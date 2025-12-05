@@ -1,8 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { PenLine, Brain, Shield, Feather, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
+import { ThemeToggle } from "@/components/shared/layout/theme-toggle";
+import { NovaLogo } from "@/components/shared/ui/nova-logo";
 import { siteDescription, siteName, siteOgImage, siteUrl } from "@/shared/lib/site-metadata";
 
 export const metadata: Metadata = {
@@ -108,27 +109,11 @@ export default function Home() {
       <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="relative h-8 w-8">
-              <Image
-                src="/nova-logo.svg"
-                alt="Nova Logo"
-                fill
-                className="block dark:hidden"
-                sizes="32px"
-                priority
-              />
-              <Image
-                src="/nova-logo-dark-mode.svg"
-                alt="Nova Logo"
-                fill
-                className="hidden dark:block"
-                sizes="32px"
-                priority
-              />
-            </div>
+            <NovaLogo className="h-8 w-8" />
             <span className="font-serif text-xl font-semibold">Nova</span>
           </Link>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
               <Link href="/sign-in">Sign in</Link>
             </Button>
@@ -313,22 +298,7 @@ export default function Home() {
       <footer className="border-t border-border/50 px-6 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
-            <div className="relative h-5 w-5">
-              <Image
-                src="/nova-logo.svg"
-                alt="Nova"
-                fill
-                className="block dark:hidden"
-                sizes="20px"
-              />
-              <Image
-                src="/nova-logo-dark-mode.svg"
-                alt="Nova"
-                fill
-                className="hidden dark:block"
-                sizes="20px"
-              />
-            </div>
+            <NovaLogo className="h-5 w-5" />
             <span className="font-serif text-sm font-medium">Nova</span>
           </div>
           <p className="text-sm text-muted-foreground">
