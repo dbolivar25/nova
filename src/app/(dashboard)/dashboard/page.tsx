@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/shared/ui/button";
 import { Badge } from "@/components/shared/ui/badge";
 import { Progress } from "@/components/shared/ui/progress";
@@ -8,24 +8,31 @@ import { Skeleton } from "@/components/shared/ui/skeleton";
 import { useUser } from "@clerk/nextjs";
 import { format, parseISO, differenceInDays } from "date-fns";
 import Link from "next/link";
-import {
-  ArrowRight,
-  PenLine,
-  ChevronRight,
-  BookOpen,
-  Flame,
-  Trophy,
-} from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ArrowRight, PenLine, ChevronRight, BookOpen, Flame, Trophy } from "lucide-react";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/features/journal/hooks/use-journal";
 import { StreakFlame } from "@/components/features/journal/streak-flame";
 import { StreakBadges } from "@/components/features/journal/streak-badges";
+import { SurveyDialog } from "@/components/features/onboarding/survey-flow";
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
 
   const { entry: todayEntry } = useTodaysJournalEntry();
   const { data: entriesData, isLoading: isLoadingEntries } = useJournalEntries(6, 0);
   const { data: stats } = useJournalStats();
+
+  useEffect(() => {
+    if (searchParams?.get("survey") === "true") {
+      setIsSurveyOpen(true);
+      router.replace(pathname);
+    }
+  }, [pathname, router, searchParams]);
 
   const recentEntries = useMemo(() => entriesData?.entries || [], [entriesData?.entries]);
 
@@ -87,7 +94,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       {/* Welcome Header */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <h1 className="font-serif text-4xl font-semibold tracking-tight">
           Good {greeting}, {firstName}
         </h1>
@@ -265,6 +272,11 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <SurveyDialog
+        open={isSurveyOpen}
+        onOpenChange={setIsSurveyOpen}
+      />
     </div>
   );
 }
