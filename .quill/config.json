@@ -1,0 +1,12 @@
+{
+  "models": {
+    "commit": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5"
+    },
+    "changelog": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5"
+    }
+  }
+}
