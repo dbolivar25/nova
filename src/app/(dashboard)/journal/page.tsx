@@ -7,7 +7,8 @@ import { format, isSameDay, startOfMonth, endOfMonth, parseISO } from "date-fns"
 import { Badge } from "@/components/shared/ui/badge"
 import { Separator } from "@/components/shared/ui/separator"
 import { Button } from "@/components/shared/ui/button"
-import { ChevronRight, CalendarDays, TrendingUp, BarChart3, Clock } from "lucide-react"
+import { ChevronRight, CalendarDays, TrendingUp, BarChart3, Clock, Bookmark } from "lucide-react"
+import { useBookmarks } from "@/features/journal/hooks/use-bookmarks"
 import Link from "next/link"
 import { PageHeader } from "@/components/shared/layout/page-header"
 import { Skeleton } from "@/components/shared/ui/skeleton"
@@ -43,6 +44,9 @@ export default function JournalPage() {
 
   // Fetch journal stats
   const { data: stats, isLoading: isLoadingStats } = useJournalStats()
+
+  // Bookmarks
+  const { isBookmarked } = useBookmarks()
 
   // Get entries for calendar display
   const entriesInMonth = useMemo((): CalendarEntry[] => {
@@ -251,8 +255,11 @@ export default function JournalPage() {
                     <Link 
                       key={entry.id}
                       href={`/journal/${entry.entry_date}`}
-                      className="group p-4 rounded-xl border bg-card hover:bg-accent hover:shadow-md transition-all"
+                      className="group relative p-4 rounded-xl border bg-card hover:bg-accent hover:shadow-md transition-all"
                     >
+                      {isBookmarked(entry.id) && (
+                        <Bookmark className="absolute top-2 right-2 h-4 w-4 text-primary fill-primary" />
+                      )}
                       <div className="space-y-2">
                         <div className="flex items-start justify-between">
                           <div>
@@ -264,7 +271,7 @@ export default function JournalPage() {
                             </p>
                           </div>
                           {entry.mood && (
-                            <Badge variant="outline" className="text-xs capitalize">
+                            <Badge variant="outline" className={`text-xs capitalize ${isBookmarked(entry.id) ? "mr-5" : ""}`}>
                               {entry.mood}
                             </Badge>
                           )}

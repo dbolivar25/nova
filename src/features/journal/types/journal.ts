@@ -49,3 +49,11 @@ export interface UpdateJournalEntryInput {
     responseText: string;
   }[];
 }
+
+export interface BookmarkedEntry {
+  id: string;
+  entry_date: string;
+  mood?: Mood | null;
+  word_count?: number | null;
+  bookmarkedAt: string;
+}
