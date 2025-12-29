@@ -356,6 +356,7 @@ export class NovaContextService {
       .eq('submission_id', submission.id);
 
     // Parse responses into context
+    // Note: hasCompletedOnboarding is true if they have a completed submission (not just the flag)
     const context: OnboardingSurveyContext = {
       proudTraits: [],
       improvementTraits: [],
@@ -366,7 +367,7 @@ export class NovaContextService {
         habitsToRemove: [],
         habitsToMinimize: [],
       },
-      hasCompletedOnboarding: user.onboarding_completed || false,
+      hasCompletedOnboarding: true, // We have a completed submission, so this is true
     };
 
     if (responses) {
@@ -374,32 +375,33 @@ export class NovaContextService {
         const question = response.survey_questions as { slug: string; question_type: string };
         const value = response.response_value;
 
+        // Note: slugs use underscores in DB (proud_traits, etc.)
         switch (question.slug) {
-          case 'proud-traits':
+          case 'proud_traits':
             if (Array.isArray(value)) {
               context.proudTraits = value as string[];
             }
             break;
 
-          case 'improvement-traits':
+          case 'improvement_traits':
             if (Array.isArray(value)) {
               context.improvementTraits = value as string[];
             }
             break;
 
-          case 'desired-traits':
+          case 'desired_traits':
             if (Array.isArray(value)) {
               context.desiredTraits = value as string[];
             }
             break;
 
-          case 'life-satisfaction':
+          case 'life_satisfaction':
             if (typeof value === 'number') {
               context.lifeSatisfaction = value;
             }
             break;
 
-          case 'goals-timeframe':
+          case 'timeframe_goals':
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
               const goalsValue = value as { week?: string; month?: string; year?: string; lifetime?: string };
               context.goals = {
@@ -411,7 +413,7 @@ export class NovaContextService {
             }
             break;
 
-          case 'daily-goals':
+          case 'daily_goals':
             if (typeof value === 'object' && value !== null && 'goals' in value) {
               const goalsValue = value as { goals: Array<{ text: string; type: string }> };
               for (const goal of goalsValue.goals) {
