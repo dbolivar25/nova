@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shared/ui/card"
 import { Button } from "@/components/shared/ui/button"
 import { Label } from "@/components/shared/ui/label"
@@ -13,18 +14,59 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/shared/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/shared/ui/alert-dialog"
 import { useUser } from "@clerk/nextjs"
-import { Download, Shield, Bell, Hash, Clock, FileJson, FileText, Palette } from "lucide-react"
+import { Download, Shield, Bell, Hash, Clock, FileJson, FileText, Palette, ClipboardList, Edit, RotateCcw, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/layout/page-header"
 import { useUserPreferences } from "@/features/user/hooks/use-preferences"
 import { useTheme } from "next-themes"
 
 export default function ProfilePage() {
+  const router = useRouter()
   const { user } = useUser()
   const { preferences, isLoading, updatePreferences } = useUserPreferences()
   const [isExporting, setIsExporting] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [showResetDialog, setShowResetDialog] = useState(false)
   const { theme, setTheme } = useTheme()
+
+  const handleEditSurvey = () => {
+    router.push("/onboarding")
+  }
+
+  const handleResetSurvey = async () => {
+    // Close dialog FIRST (synchronously)
+    setShowResetDialog(false)
+    setIsResetting(true)
+    
+    try {
+      const response = await fetch("/api/surveys/onboarding/submissions/reset", {
+        method: "POST",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to reset survey")
+      }
+
+      toast.success("Survey reset successfully")
+      router.push("/onboarding")
+    } catch (error) {
+      console.error("Reset failed:", error)
+      toast.error("Failed to reset survey")
+    } finally {
+      setIsResetting(false)
+    }
+  }
 
   const handleExportData = async (format: 'json' | 'csv') => {
     setIsExporting(true)
@@ -322,6 +364,77 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Onboarding Survey */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Onboarding Survey</CardTitle>
+          <CardDescription>View or update your self-assessment and daily goals</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                <Label>Your Responses</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Edit your survey answers to update Nova&apos;s personalization
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleEditSurvey}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Survey
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="h-4 w-4" />
+                <Label>Start Fresh</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Reset and retake the survey from the beginning
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowResetDialog(true)}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset Survey
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Reset Survey Confirmation Dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Onboarding Survey?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will archive your current survey responses and start fresh. 
+              Your daily goals will be preserved, but Nova will use your new 
+              responses for personalization.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetSurvey} disabled={isResetting}>
+              {isResetting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                "Reset & Start Over"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

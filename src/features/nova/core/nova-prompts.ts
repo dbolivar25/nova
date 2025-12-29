@@ -12,6 +12,7 @@ import type {
   UserJournalContext,
   PromptResponseContext,
 } from "@/integrations/baml_client/types";
+import type { OnboardingSurveyContext } from "@/features/nova/services/nova-context-service";
 
 // ============================================
 // Static Templates (from BAML template_strings)
@@ -268,6 +269,61 @@ export function renderTemporalContext(temporalContext: TemporalContext): string 
 `.trim();
 }
 
+export function renderOnboardingContext(context: OnboardingSurveyContext | null): string {
+  if (!context || !context.hasCompletedOnboarding) {
+    return `
+<user_self_assessment>
+  <status>not_completed</status>
+  <note>User has not completed their self-assessment onboarding yet.</note>
+</user_self_assessment>
+`.trim();
+  }
+
+  const renderList = (items: string[], tag: string) => {
+    if (items.length === 0) return `    <${tag}>None specified</${tag}>`;
+    return items.map((item) => `    <${tag}>${item}</${tag}>`).join("\n");
+  };
+
+  const goalsSection = Object.entries(context.goals)
+    .filter(([, value]) => value && value.trim())
+    .map(([key, value]) => `    <${key}_goal>${value}</${key}_goal>`)
+    .join("\n");
+
+  return `
+<user_self_assessment>
+  <character_traits>
+    <proud_of description="Traits the user is proud of and considers strengths">
+${renderList(context.proudTraits, "trait")}
+    </proud_of>
+    <wants_to_improve description="Traits the user wants to work on">
+${renderList(context.improvementTraits, "trait")}
+    </wants_to_improve>
+    <aspires_to description="Traits the user wants to develop">
+${renderList(context.desiredTraits, "trait")}
+    </aspires_to>
+  </character_traits>
+
+  ${context.lifeSatisfaction !== undefined ? `<life_satisfaction scale="1-10">${context.lifeSatisfaction}</life_satisfaction>` : ""}
+
+  <goals description="User's stated goals at different timeframes">
+${goalsSection || "    <note>No specific goals stated</note>"}
+  </goals>
+
+  <daily_habits description="Habits the user is actively tracking">
+    <building description="Habits user wants to add/build">
+${renderList(context.dailyGoals.habitsToAdd, "habit")}
+    </building>
+    <breaking description="Habits user wants to remove/stop">
+${renderList(context.dailyGoals.habitsToRemove, "habit")}
+    </breaking>
+    <reducing description="Habits user wants to minimize/limit">
+${renderList(context.dailyGoals.habitsToMinimize, "habit")}
+    </reducing>
+  </daily_habits>
+</user_self_assessment>
+`.trim();
+}
+
 // ============================================
 // AI SDK Message Conversion
 // ============================================
@@ -407,9 +463,14 @@ export interface NovaSystemPromptContext {
   userContext: UserJournalContext;
   journalContext: JournalEntryContext[];
   temporalContext: TemporalContext;
+  onboardingContext?: OnboardingSurveyContext | null;
 }
 
 export function buildNovaSystemPrompt(context: NovaSystemPromptContext): string {
+  const onboardingSection = context.onboardingContext 
+    ? renderOnboardingContext(context.onboardingContext)
+    : "";
+
   return `
 ${NOVA_FOUNDATIONAL_PRINCIPLES}
 
@@ -419,6 +480,8 @@ ${NOVA_RESPONSE_GUIDANCE}
 
 ${renderUserContext(context.userContext)}
 
+${onboardingSection}
+
 ${renderJournalContext(context.journalContext)}
 
 ${renderTemporalContext(context.temporalContext)}
@@ -427,5 +490,7 @@ ${NOVA_OUTPUT_FORMAT}
 
 Remember: Use tools to gather data, then type out your final response as a \`\`\`json code block. DO NOT call a "json" tool - just type the text.
 Use [1](@source-1), [2](@source-2) for inline citations matching sources array order.
+
+IMPORTANT: Pay attention to the user's self-assessment data above. Use their stated traits, goals, and daily habits to personalize your responses and make connections to their journaling patterns.
 `.trim();
 }
