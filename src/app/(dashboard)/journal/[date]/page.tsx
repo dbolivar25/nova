@@ -9,7 +9,8 @@ import { Separator } from "@/components/shared/ui/separator"
 import { Skeleton } from "@/components/shared/ui/skeleton"
 import { useJournalEntryByDate } from "@/features/journal/hooks/use-journal"
 import Link from "next/link"
-import { ArrowLeft, MessageSquare, Edit } from "lucide-react"
+import { ArrowLeft, MessageSquare, Edit, Bookmark, BookmarkCheck } from "lucide-react"
+import { useBookmarks } from "@/features/journal/hooks/use-bookmarks"
 
 export default function JournalEntryPage() {
   const params = useParams()
@@ -17,6 +18,7 @@ export default function JournalEntryPage() {
   const date = params?.date as string
 
   const { data: entry, isLoading, error } = useJournalEntryByDate(date || "")
+  const { isBookmarked, toggleBookmark } = useBookmarks()
 
   // Validate date format
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -133,14 +135,28 @@ export default function JournalEntryPage() {
             {wordCount} words • {readingTime} min read
           </p>
         </div>
-        {date === format(new Date(), "yyyy-MM-dd") && (
-          <Button variant="outline" asChild>
-            <Link href="/journal/today">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Entry
-            </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => toggleBookmark(entry)}
+            aria-label={isBookmarked(entry.id) ? "Remove bookmark" : "Bookmark entry"}
+          >
+            {isBookmarked(entry.id) ? (
+              <BookmarkCheck className="h-4 w-4 text-primary" />
+            ) : (
+              <Bookmark className="h-4 w-4" />
+            )}
           </Button>
-        )}
+          {date === format(new Date(), "yyyy-MM-dd") && (
+            <Button variant="outline" asChild>
+              <Link href="/journal/today">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Entry
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Prompt Responses */}
