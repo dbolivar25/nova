@@ -16,6 +16,36 @@ import type {
 } from '@/integrations/baml_client/types';
 import { differenceInDays, format, getWeek, getQuarter } from 'date-fns';
 
+// ============================================
+// Onboarding/Survey Context Types
+// ============================================
+
+export interface OnboardingSurveyContext {
+  /** User's self-assessment: traits they're proud of */
+  proudTraits: string[];
+  /** User's self-assessment: traits they want to improve */
+  improvementTraits: string[];
+  /** User's self-assessment: traits they aspire to develop */
+  desiredTraits: string[];
+  /** User's goals at different timeframes */
+  goals: {
+    week?: string;
+    month?: string;
+    year?: string;
+    lifetime?: string;
+  };
+  /** User's daily goals/habits */
+  dailyGoals: {
+    habitsToAdd: string[];
+    habitsToRemove: string[];
+    habitsToMinimize: string[];
+  };
+  /** Life satisfaction scale (1-10) */
+  lifeSatisfaction?: number;
+  /** Whether user has completed onboarding */
+  hasCompletedOnboarding: boolean;
+}
+
 export class NovaContextService {
   /**
    * Build complete user journal context
@@ -246,5 +276,175 @@ export class NovaContextService {
       journalContext,
       temporalContext,
     };
+  }
+
+  /**
+   * Get onboarding survey context - user's self-assessment data
+   */
+  static async getOnboardingSurveyContext(
+    userId: string,
+    supabase?: SupabaseClient<Database>
+  ): Promise<OnboardingSurveyContext | null> {
+    const client = supabase ?? (await createServerSupabaseClient());
+
+    // Get user from database
+    const { data: user } = await client
+      .from('users')
+      .select('id, onboarding_completed')
+      .eq('clerk_id', userId)
+      .single();
+
+    if (!user) {
+      return null;
+    }
+
+    // Get the onboarding survey
+    const { data: survey } = await client
+      .from('surveys')
+      .select('id')
+      .eq('slug', 'onboarding')
+      .single();
+
+    if (!survey) {
+      return {
+        proudTraits: [],
+        improvementTraits: [],
+        desiredTraits: [],
+        goals: {},
+        dailyGoals: {
+          habitsToAdd: [],
+          habitsToRemove: [],
+          habitsToMinimize: [],
+        },
+        hasCompletedOnboarding: user.onboarding_completed || false,
+      };
+    }
+
+    // Get the user's most recent completed submission
+    const { data: submission } = await client
+      .from('user_survey_submissions')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('survey_id', survey.id)
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!submission) {
+      return {
+        proudTraits: [],
+        improvementTraits: [],
+        desiredTraits: [],
+        goals: {},
+        dailyGoals: {
+          habitsToAdd: [],
+          habitsToRemove: [],
+          habitsToMinimize: [],
+        },
+        hasCompletedOnboarding: user.onboarding_completed || false,
+      };
+    }
+
+    // Get all responses with question slugs
+    const { data: responses } = await client
+      .from('user_survey_responses')
+      .select(`
+        response_value,
+        survey_questions!inner(slug, question_type)
+      `)
+      .eq('submission_id', submission.id);
+
+    // Parse responses into context
+    const context: OnboardingSurveyContext = {
+      proudTraits: [],
+      improvementTraits: [],
+      desiredTraits: [],
+      goals: {},
+      dailyGoals: {
+        habitsToAdd: [],
+        habitsToRemove: [],
+        habitsToMinimize: [],
+      },
+      hasCompletedOnboarding: user.onboarding_completed || false,
+    };
+
+    if (responses) {
+      for (const response of responses) {
+        const question = response.survey_questions as { slug: string; question_type: string };
+        const value = response.response_value;
+
+        switch (question.slug) {
+          case 'proud-traits':
+            if (Array.isArray(value)) {
+              context.proudTraits = value as string[];
+            }
+            break;
+
+          case 'improvement-traits':
+            if (Array.isArray(value)) {
+              context.improvementTraits = value as string[];
+            }
+            break;
+
+          case 'desired-traits':
+            if (Array.isArray(value)) {
+              context.desiredTraits = value as string[];
+            }
+            break;
+
+          case 'life-satisfaction':
+            if (typeof value === 'number') {
+              context.lifeSatisfaction = value;
+            }
+            break;
+
+          case 'goals-timeframe':
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+              const goalsValue = value as { week?: string; month?: string; year?: string; lifetime?: string };
+              context.goals = {
+                week: goalsValue.week,
+                month: goalsValue.month,
+                year: goalsValue.year,
+                lifetime: goalsValue.lifetime,
+              };
+            }
+            break;
+
+          case 'daily-goals':
+            if (typeof value === 'object' && value !== null && 'goals' in value) {
+              const goalsValue = value as { goals: Array<{ text: string; type: string }> };
+              for (const goal of goalsValue.goals) {
+                if (goal.type === 'add') {
+                  context.dailyGoals.habitsToAdd.push(goal.text);
+                } else if (goal.type === 'remove') {
+                  context.dailyGoals.habitsToRemove.push(goal.text);
+                } else if (goal.type === 'minimize') {
+                  context.dailyGoals.habitsToMinimize.push(goal.text);
+                }
+              }
+            }
+            break;
+        }
+      }
+    }
+
+    // Also fetch active daily goals from user_daily_goals (may have been modified after onboarding)
+    const { data: activeGoals } = await client
+      .from('user_daily_goals')
+      .select('text, goal_type')
+      .eq('user_id', user.id)
+      .eq('is_active', true);
+
+    if (activeGoals && activeGoals.length > 0) {
+      // Override with current active goals (more up-to-date than survey responses)
+      context.dailyGoals = {
+        habitsToAdd: activeGoals.filter((g) => g.goal_type === 'add').map((g) => g.text),
+        habitsToRemove: activeGoals.filter((g) => g.goal_type === 'remove').map((g) => g.text),
+        habitsToMinimize: activeGoals.filter((g) => g.goal_type === 'minimize').map((g) => g.text),
+      };
+    }
+
+    return context;
   }
 }

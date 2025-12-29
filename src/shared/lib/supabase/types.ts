@@ -204,6 +204,247 @@ export type Database = {
           },
         ]
       }
+      survey_questions: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          help_text: string | null
+          id: string
+          is_required: boolean | null
+          metadata: Json | null
+          placeholder: string | null
+          question_text: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          slug: string
+          step_number: number | null
+          survey_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order: number
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          metadata?: Json | null
+          placeholder?: string | null
+          question_text: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          slug: string
+          step_number?: number | null
+          survey_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          metadata?: Json | null
+          placeholder?: string | null
+          question_text?: string
+          question_type?: Database["public"]["Enums"]["question_type"]
+          slug?: string
+          step_number?: number | null
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          slug: string
+          title: string
+          trigger_config: Json | null
+          trigger_type: string | null
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          slug: string
+          title: string
+          trigger_config?: Json | null
+          trigger_type?: string | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          slug?: string
+          title?: string
+          trigger_config?: Json | null
+          trigger_type?: string | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      user_daily_goals: {
+        Row: {
+          category: Database["public"]["Enums"]["goal_category"] | null
+          created_at: string | null
+          display_order: number | null
+          goal_type: Database["public"]["Enums"]["goal_type"]
+          id: string
+          is_active: boolean | null
+          is_ai_recommended: boolean | null
+          source_submission_id: string | null
+          text: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["goal_category"] | null
+          created_at?: string | null
+          display_order?: number | null
+          goal_type: Database["public"]["Enums"]["goal_type"]
+          id?: string
+          is_active?: boolean | null
+          is_ai_recommended?: boolean | null
+          source_submission_id?: string | null
+          text: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["goal_category"] | null
+          created_at?: string | null
+          display_order?: number | null
+          goal_type?: Database["public"]["Enums"]["goal_type"]
+          id?: string
+          is_active?: boolean | null
+          is_ai_recommended?: boolean | null
+          source_submission_id?: string | null
+          text?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_goals_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "user_survey_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_daily_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_goal_completions: {
+        Row: {
+          completed: boolean | null
+          completion_date: string
+          created_at: string | null
+          goal_id: string
+          id: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed?: boolean | null
+          completion_date: string
+          created_at?: string | null
+          goal_id: string
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed?: boolean | null
+          completion_date?: string
+          created_at?: string | null
+          goal_id?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_goal_completions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "user_daily_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_goal_recommendations: {
+        Row: {
+          accepted_count: number | null
+          context_snapshot: Json | null
+          created_at: string | null
+          dismissed_count: number | null
+          id: string
+          model_id: string | null
+          recommendations: Json
+          submission_id: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_count?: number | null
+          context_snapshot?: Json | null
+          created_at?: string | null
+          dismissed_count?: number | null
+          id?: string
+          model_id?: string | null
+          recommendations: Json
+          submission_id?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_count?: number | null
+          context_snapshot?: Json | null
+          created_at?: string | null
+          dismissed_count?: number | null
+          id?: string
+          model_id?: string | null
+          recommendations?: Json
+          submission_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_goal_recommendations_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "user_survey_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_goal_recommendations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_personality: {
         Row: {
           analysis_version: number | null
@@ -283,6 +524,99 @@ export type Database = {
           },
         ]
       }
+      user_survey_responses: {
+        Row: {
+          created_at: string | null
+          id: string
+          question_id: string
+          response_value: Json
+          submission_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question_id: string
+          response_value: Json
+          submission_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question_id?: string
+          response_value?: Json
+          submission_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_survey_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_survey_responses_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "user_survey_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_survey_submissions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          current_step: number | null
+          id: string
+          started_at: string | null
+          status: string | null
+          survey_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+          survey_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+          survey_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_survey_submissions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_survey_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           clerk_id: string
@@ -291,6 +625,7 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          onboarding_completed: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -300,6 +635,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          onboarding_completed?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -309,6 +645,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          onboarding_completed?: boolean | null
           updated_at?: string | null
         }
         Relationships: []
@@ -359,6 +696,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      goal_category:
+        | "health"
+        | "productivity"
+        | "relationships"
+        | "mindset"
+        | "learning"
+        | "finance"
+        | "creativity"
+        | "other"
+      goal_type: "add" | "remove" | "minimize"
       insight_type:
         | "emotional_trends"
         | "key_themes"
@@ -375,6 +722,18 @@ export type Database = {
         | "sad"
         | "angry"
         | "peaceful"
+      question_type:
+        | "text"
+        | "textarea"
+        | "tags"
+        | "select"
+        | "multiselect"
+        | "scale"
+        | "checkbox"
+        | "date"
+        | "ranking"
+        | "goals_timeframe"
+        | "daily_goals"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -502,6 +861,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      goal_category: [
+        "health",
+        "productivity",
+        "relationships",
+        "mindset",
+        "learning",
+        "finance",
+        "creativity",
+        "other",
+      ],
+      goal_type: ["add", "remove", "minimize"],
       insight_type: [
         "emotional_trends",
         "key_themes",
@@ -519,6 +889,19 @@ export const Constants = {
         "sad",
         "angry",
         "peaceful",
+      ],
+      question_type: [
+        "text",
+        "textarea",
+        "tags",
+        "select",
+        "multiselect",
+        "scale",
+        "checkbox",
+        "date",
+        "ranking",
+        "goals_timeframe",
+        "daily_goals",
       ],
     },
   },

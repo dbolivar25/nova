@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/shared/ui/button";
 import { Badge } from "@/components/shared/ui/badge";
 import { Progress } from "@/components/shared/ui/progress";
@@ -16,12 +17,43 @@ import {
   Flame,
   Trophy,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useJournalEntries, useTodaysJournalEntry, useJournalStats } from "@/features/journal/hooks/use-journal";
 import { StreakFlame } from "@/components/features/journal/streak-flame";
 import { StreakBadges } from "@/components/features/journal/streak-badges";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user } = useUser();
+  const [hasShownSkipReminder, setHasShownSkipReminder] = useState(false);
+
+  // Show reminder toast if user skipped onboarding
+  useEffect(() => {
+    if (hasShownSkipReminder) return;
+    
+    // Check cookie on client side
+    const cookies = document.cookie.split(";").reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split("=");
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    if (cookies["nova-onboarding-completed"] === "skipped") {
+      setHasShownSkipReminder(true);
+      
+      // Small delay to let the page render first
+      setTimeout(() => {
+        toast.info("Complete your profile for the best Nova AI experience", {
+          description: "Help Nova understand you better by filling out a quick survey.",
+          action: {
+            label: "Complete now",
+            onClick: () => router.push("/onboarding"),
+          },
+          duration: 10000,
+        });
+      }, 1500);
+    }
+  }, [hasShownSkipReminder, router]);
 
   const { entry: todayEntry } = useTodaysJournalEntry();
   const { data: entriesData, isLoading: isLoadingEntries } = useJournalEntries(6, 0);

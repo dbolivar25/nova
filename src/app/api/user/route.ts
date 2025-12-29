@@ -61,8 +61,24 @@ export async function GET() {
         console.error("Error creating user preferences:", prefsError);
       }
 
+      // New users haven't completed onboarding
       return NextResponse.json({ user: newUser });
     }
+
+    // Set onboarding cookie if completed
+    const createResponse = (userData: typeof existingUser) => {
+      const response = NextResponse.json({ user: userData });
+      if (userData.onboarding_completed) {
+        response.cookies.set("nova-onboarding-completed", "true", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365, // 1 year
+        });
+      }
+      return response;
+    };
 
     // Check if we need to update user info from Clerk
     const needsUpdate =
@@ -90,10 +106,10 @@ export async function GET() {
         );
       }
 
-      return NextResponse.json({ user: updatedUser });
+      return createResponse(updatedUser);
     }
 
-    return NextResponse.json({ user: existingUser });
+    return createResponse(existingUser);
   } catch (error) {
     console.error("Error in user API:", error);
     return NextResponse.json(
