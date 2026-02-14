@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/shared/ui/badge";
 import { Skeleton } from "@/components/shared/ui/skeleton";
 import {
+  Bookmark,
   Brain,
   Calendar,
   ChartBar,
@@ -30,6 +31,7 @@ import {
   MessageCircle,
   User,
 } from "lucide-react";
+import { useBookmarks } from "@/features/journal/hooks/use-bookmarks";
 import { useJournalEntries, useJournalSearch } from "@/features/journal/hooks/use-journal";
 import { getSearchSnippet, highlightText } from "@/shared/lib/utils/highlight";
 import { toast } from "sonner";
@@ -291,6 +293,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     action.label.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Bookmarks
+  const { bookmarks } = useBookmarks();
+
 
   // Reset search when dialog closes
   useEffect(() => {
@@ -356,6 +361,45 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                 >
                   <action.icon className="mr-2 h-4 w-4" />
                   <span>{action.label}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
+        {/* Bookmarked Entries */}
+        {bookmarks.length > 0 && (
+          <>
+            <CommandGroup heading="Bookmarked Entries">
+              {bookmarks.slice(0, 5).map((bookmark) => (
+                <CommandItem
+                  key={bookmark.id}
+                  value={`bookmark ${bookmark.entry_date} ${format(parseISO(bookmark.entry_date), "EEEE MMMM")}`}
+                  onSelect={() => {
+                    router.push(`/journal/${bookmark.entry_date}`);
+                    onOpenChange(false);
+                    setSearch("");
+                  }}
+                  className="cursor-pointer group"
+                >
+                  <Bookmark className="mr-2 h-4 w-4 text-primary fill-primary" />
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="font-medium">
+                      {format(parseISO(bookmark.entry_date), "EEEE, MMM d")}
+                    </span>
+                    {bookmark.mood && (
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {bookmark.mood}
+                      </span>
+                    )}
+                    {bookmark.word_count && bookmark.word_count > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {bookmark.word_count} words
+                      </Badge>
+                    )}
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </CommandItem>
               ))}
             </CommandGroup>
